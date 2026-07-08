@@ -23,6 +23,7 @@ CREATE TABLE IF NOT EXISTS public.courts (
 -- ── 2. BOOKINGS TABLE ────────────────────────────────────────
 CREATE TABLE IF NOT EXISTS public.bookings (
   ref                  text PRIMARY KEY,
+  booking_group_ref    text,
   full_name            text NOT NULL,
   contact_number       text,
   email                text,
@@ -53,6 +54,7 @@ CREATE TABLE IF NOT EXISTS public.bookings (
 
 CREATE INDEX IF NOT EXISTS idx_bookings_court_date ON public.bookings (court_id, date);
 CREATE INDEX IF NOT EXISTS idx_bookings_status     ON public.bookings (status);
+CREATE INDEX IF NOT EXISTS idx_bookings_group_ref  ON public.bookings (booking_group_ref);
 
 
 -- ── 3. SETTINGS TABLE ────────────────────────────────────────
