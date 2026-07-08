@@ -58,17 +58,6 @@ body.dark .nav { background:rgba(9,21,33,.94); }
 .logo-tx .logo-name { display:block; font-size:1.35rem; letter-spacing:2px; }
 .logo-tx .logo-sub { display:block; font-size:.78rem; color:var(--accent); letter-spacing:1.5px; }
 .nav-r { display:flex; align-items:center; gap:14px; }
-.nav-headline {
-  font-family:'Bebas Neue',sans-serif; font-size:1.15rem; letter-spacing:2px;
-  display:flex; flex-direction:column; align-items:center; line-height:1.1;
-  flex:1; text-align:center; pointer-events:none;
-}
-.nav-headline .hl { color:var(--accent); }
-.nav-tagline {
-  font-family:'Outfit',sans-serif; font-size:.6rem; color:var(--muted);
-  letter-spacing:3px; text-transform:uppercase; font-weight:600;
-}
-@media(max-width:620px) { .nav-headline { display:none; } }
 /* switch */
 .sw-wrap { display:flex; align-items:center; gap:7px; font-size:.85rem; color:var(--muted); }
 .sw { position:relative; width:42px; height:23px; }
@@ -2145,8 +2134,29 @@ footer { background:var(--card); border-top:1px solid var(--border); padding:40p
   font-family: 'Bebas Neue', sans-serif;
   font-size: clamp(.8rem, 2.5vw, 1rem);
   letter-spacing: 7px; color: #ffb043;
-  margin-top: 4px; margin-bottom: 36px;
+  margin-top: 4px; margin-bottom: 18px;
   animation: spFadeUp .6s ease .45s both;
+}
+.sp-slogan {
+  margin-bottom: 30px;
+  animation: spFadeUp .55s ease .54s both;
+}
+.sp-slogan-kicker {
+  font-family: 'Bebas Neue', sans-serif;
+  color: #ff6a00;
+  font-size: clamp(1rem, 3vw, 1.35rem);
+  letter-spacing: 6px;
+  line-height: 1;
+  margin-bottom: 8px;
+  text-shadow: 0 0 22px rgba(255,106,0,.34), 0 3px 18px rgba(0,0,0,.72);
+}
+.sp-slogan-main {
+  font-family: 'Bebas Neue', sans-serif;
+  color: #fffaf5;
+  font-size: clamp(1.55rem, 5vw, 2.55rem);
+  letter-spacing: 3px;
+  line-height: .95;
+  text-shadow: 0 5px 34px rgba(0,0,0,.86);
 }
 @keyframes spFadeUp {
   from { opacity:0; transform:translateY(18px); }
@@ -2154,7 +2164,7 @@ footer { background:var(--card); border-top:1px solid var(--border); padding:40p
 }
 /* Divider */
 .sp-line {
-  width: 64px; height: 2px; margin-bottom: 36px;
+  width: 64px; height: 2px; margin-bottom: 30px;
   background: linear-gradient(90deg, transparent, #ffb043, transparent);
   animation: spFadeUp .4s ease .55s both;
 }
@@ -2224,7 +2234,11 @@ footer { background:var(--card); border-top:1px solid var(--border); padding:40p
   }
   .sp-logo-img { width: 92px; height: 92px; margin-bottom: 20px; }
   .sp-brand { letter-spacing: 3px; }
-  .sp-sub { letter-spacing: 4px; margin-bottom: 30px; }
+  .sp-sub { letter-spacing: 4px; margin-bottom: 14px; }
+  .sp-slogan { margin-bottom: 24px; }
+  .sp-slogan-kicker { letter-spacing: 4px; margin-bottom: 6px; }
+  .sp-slogan-main { font-size: clamp(1.45rem, 7.6vw, 2rem); letter-spacing: 2px; }
+  .sp-line { margin-bottom: 24px; }
   .sp-tap-text { letter-spacing: 6px; }
   .sp-bottom { bottom: 18px; font-size: .62rem; letter-spacing: 1.8px; }
 }
@@ -2669,6 +2683,10 @@ body.light #splashScreen { background: #071320; }
     <img class="sp-logo-img" src="pickle-bliss-logo.jpg" alt="Pickle Bliss Court Logo" />
     <div class="sp-brand">PICKLE BLISS COURT</div>
     <div class="sp-sub">PICKLEBALL COURT RESERVATIONS</div>
+    <div class="sp-slogan">
+      <div class="sp-slogan-kicker">PLAY. CONNECT. UNWIND.</div>
+      <div class="sp-slogan-main">YOUR NEW FAVOURITE COURT</div>
+    </div>
     <div class="sp-line"></div>
     <div class="sp-tap-ring-wrap">
       <svg class="sp-tap-icon" viewBox="0 0 100 100">
@@ -2819,9 +2837,6 @@ body.light #splashScreen { background: #071320; }
       <span class="logo-name">Pickle Bliss Court</span>
       <span class="logo-sub">Bliss, Poblacion, Monkayo</span>
     </span>
-  </div>
-  <div class="nav-headline">
-    🏓 <span class="hl">𝑺𝒆𝒓𝒗𝒆. 𝑺𝒎𝒂𝒔𝒉. 𝑾𝒊𝒏. 𝑹𝒆𝒑𝒆𝒂𝒕.</span>
   </div>
   <div class="nav-r">
     <div class="sw-wrap">
