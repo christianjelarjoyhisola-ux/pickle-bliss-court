@@ -40,7 +40,7 @@ CREATE TABLE IF NOT EXISTS public.bookings (
   received_account     text,
   payment_flow         text,
   payment_status       text NOT NULL DEFAULT 'unpaid'
-    CHECK (payment_status IN ('unpaid','pending','for_verification','downpayment_paid','paid','failed')),
+    CHECK (payment_status IN ('unpaid','pending','for_verification','downpayment_paid','paid','failed','rejected')),
   payment_provider     text,
   payment_session_id   text,
   payment_checkout_url text,
@@ -48,7 +48,7 @@ CREATE TABLE IF NOT EXISTS public.bookings (
   gcash_ref            text,
   downpayment          numeric,
   status               text NOT NULL DEFAULT 'pending'
-    CHECK (status IN ('pending','confirmed','cancelled','completed')),
+    CHECK (status IN ('pending','verifying','confirmed','cancelled','completed')),
   created_at           timestamptz NOT NULL DEFAULT now()
 );
 
