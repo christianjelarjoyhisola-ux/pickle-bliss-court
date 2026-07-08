@@ -41,7 +41,6 @@ const PESO_TOLERANCE = 5; // allow ±₱5 rounding; underpay beyond this is a ha
 const HARD_FLAGS = new Set([
   "REF_FORMAT_INVALID",
   "SUSPECTED_FAKE",     // OCR ran and image has zero receipt-like content
-  "IMAGE_UNREADABLE",   // OCR found NO text at all -> random/blank/non-receipt image
   "DUPLICATE_REF",
   "DUPLICATE_INVOICE",
   "DUPLICATE_INSTAPAY_REF",
@@ -451,6 +450,23 @@ function extractBpiTransactionRefNo(text: string): string | null {
 }
 
 function extractAmount(text: string): number | null {
+  const normalized = String(text || "")
+    .replace(/\u20b1/g, "P")
+    .replace(/\s+/g, " ")
+    .trim();
+
+  // GCash receipts can include unrelated decimals in footer/eco sections.
+  // Prefer explicit payment amount labels before falling back to any decimal.
+  const labeledAmountPatterns = [
+    /total\s+amount\s+sent\s*(?:php|p)?\s*[:\-]?\s*([\d,]+\.\d{2})/i,
+    /amount\s*(?:sent)?\s*(?:php|p)?\s*[:\-]?\s*([\d,]+\.\d{2})/i,
+    /(?:php|p)\s*([\d,]+\.\d{2})/i,
+  ];
+  for (const pattern of labeledAmountPatterns) {
+    const match = normalized.match(pattern);
+    if (match) return parseFloat(match[1].replace(/,/g, ""));
+  }
+
   // Prefer values near an amount keyword / peso sign.
   const near = text.match(/(?:amount|total|php|₱|p\s)\s*[:\-]?\s*([\d,]+\.\d{2})/i);
   if (near) return parseFloat(near[1].replace(/,/g, ""));
@@ -999,10 +1015,10 @@ Deno.serve(async (req) => {
       // No OCR provider configured at all — cannot verify content, manual review.
       flags.push("OCR_UNAVAILABLE");
     } else if (!ocrText) {
-      // Google Vision ran but found NO text.
-      // That means a random photo, a blank image, or a non-receipt upload —
-      // auto-reject. A real customer with a poor photo can simply re-upload.
-      flags.push("IMAGE_UNREADABLE"); // HARD — random/blank/non-receipt image
+      // Google Vision ran but found no usable text, or the OCR call failed.
+      // Keep this in manual review: clear mobile screenshots can still fail OCR
+      // because of compression, screenshots-within-screenshots, or API latency.
+      flags.push("IMAGE_UNREADABLE");
     }
 
     // ── field extraction ────────────────────────────────────────────────────
