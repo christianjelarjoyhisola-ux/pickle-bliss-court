@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover" />
+<title>Pickle Bliss Court — Admin Login</title>
+<link rel="icon" type="image/png" href="pickle-bliss-logo.jpg">
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Outfit:wght@400;500;600;700&display=swap" rel="stylesheet"/>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html{-webkit-text-size-adjust:100%;text-size-adjust:100%;touch-action:manipulation}
+:root{--navy:#d90416;--navy-dark:#a80012;--court-red:#d90416;--court-red-dark:#a80012;--pickle-lime:#ff6a00;--green:var(--navy);--green-dark:var(--navy-dark);--cta:var(--court-red);--cta-dark:#ff6a00;--glow:rgba(217,4,22,.18);--ac:217,4,22;--bg:#fff8f2;--card:#fff;--border:#f0d8cf;--text:#111;--muted:#6b6b6b;--input:#fff1e8;--red:#d90416;}
+body.light{--bg:#fff8f2;--card:#fff;--border:#f0d8cf;--text:#111;--muted:#6b6b6b;--input:#fff1e8;}body.dark{--bg:#130606;--card:#211010;--border:#4a211c;--text:#fff8f2;--muted:#d9c8bf;--input:#2b1412;--green:#ff4b1f;--green-dark:#d90416;--glow:rgba(255,106,0,.2);--ac:255,106,0;}
+body{font-family:'Outfit',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;display:flex;align-items:center;justify-content:center;position:relative;overflow:hidden;transition:background .3s,color .3s;touch-action:manipulation;padding:16px;}
+button,input,select,textarea,label,a,[role="button"],.btn{touch-action:manipulation}
+.bg-glow{position:fixed;top:-100px;left:50%;transform:translateX(-50%);width:700px;height:500px;border-radius:50%;background:radial-gradient(ellipse,rgba(var(--ac),.1) 0%,transparent 70%);pointer-events:none;}
+.bg-grid{position:fixed;inset:0;opacity:.035;background-image:repeating-linear-gradient(0deg,var(--green) 0,var(--green) 1px,transparent 1px,transparent 72px),repeating-linear-gradient(90deg,var(--green) 0,var(--green) 1px,transparent 1px,transparent 80px);pointer-events:none;}
+.card{position:relative;z-index:10;background:var(--card);border:1px solid var(--border);border-radius:20px;padding:44px 38px;width:100%;max-width:400px;box-shadow:0 24px 64px rgba(217,4,22,.12);}
+.logo{text-align:center;margin-bottom:28px;}
+.logo-ic{width:76px;height:76px;background:#fff;border:2px solid rgba(var(--ac),.28);border-radius:50%;display:block;object-fit:contain;padding:5px;margin:0 auto 14px;box-shadow:0 8px 24px var(--glow);}
+.logo-tx{font-family:'Bebas Neue',sans-serif;font-size:2rem;letter-spacing:2px;}
+.logo-sub{color:var(--muted);font-size:.88rem;margin-top:4px;}
+.divider{height:1px;background:var(--border);margin:22px 0;}
+.err{background:rgba(248,81,73,.1);border:1px solid rgba(248,81,73,.3);border-radius:8px;padding:11px 14px;font-size:.86rem;color:#ff7875;margin-bottom:14px;display:none;}
+.err.show{display:block;}
+.fl{display:block;font-size:.77rem;font-weight:700;text-transform:uppercase;letter-spacing:.6px;color:var(--muted);margin-bottom:6px;}
+.fi{width:100%;padding:11px 13px;background:var(--input);border:1px solid var(--border);border-radius:8px;color:var(--text);font-family:'Outfit',sans-serif;font-size:.92rem;transition:border-color .2s,box-shadow .2s;margin-bottom:14px;}
+.fi:focus{outline:none;border-color:var(--green);box-shadow:0 0 0 3px rgba(var(--ac),.14);}
+.fi::placeholder{color:var(--muted);}
+@media (pointer: coarse){.fi,input,select,textarea,button,.btn{font-size:16px!important;}}
+.btn{display:flex;align-items:center;justify-content:center;gap:7px;width:100%;padding:13px 20px;border:none;border-radius:9px;font-family:'Outfit',sans-serif;font-size:.95rem;font-weight:700;cursor:pointer;transition:all .2s;}
+.btn-p{background:linear-gradient(135deg,var(--cta),var(--cta-dark));color:#fff;box-shadow:0 4px 14px rgba(217,4,22,.22);}
+.btn-p:hover{transform:translateY(-2px);box-shadow:0 8px 22px rgba(255,106,0,.28);}
+.hint{background:rgba(var(--ac),.07);border:1px solid rgba(var(--ac),.22);border-radius:8px;padding:12px;font-size:.82rem;color:var(--muted);margin-top:18px;text-align:center;}
+.hint strong{color:var(--green);}
+.back{display:flex;align-items:center;justify-content:center;gap:6px;margin-top:20px;font-size:.86rem;color:var(--muted);transition:color .2s;text-decoration:none;}
+.back:hover{color:var(--green);}
+.forgot-link{display:block;text-align:right;font-size:.8rem;color:var(--muted);margin-top:-8px;margin-bottom:14px;cursor:pointer;transition:color .2s;}
+.forgot-link:hover{color:var(--green);}
+.reset-panel{display:none;margin-top:18px;}
+.reset-panel.show{display:block;}
+.ok-msg{background:rgba(var(--ac),.08);border:1px solid rgba(var(--ac),.25);border-radius:8px;padding:12px 14px;font-size:.84rem;color:var(--green);margin-bottom:14px;display:none;}
+.ok-msg.show{display:block;}
+.new-pass-panel{display:none;margin-top:4px;}
+.new-pass-panel.show{display:block;}
+/* toast */
+.toasts{position:fixed;top:20px;right:20px;z-index:999;display:flex;flex-direction:column;gap:8px;}
+.toast{background:var(--card);border:1px solid var(--border);border-radius:10px;padding:12px 16px;display:flex;align-items:center;gap:10px;min-width:240px;box-shadow:0 6px 24px rgba(0,0,0,.4);animation:tin .3s ease;font-size:.86rem;}
+@keyframes tin{from{transform:translateX(110%);opacity:0}to{transform:translateX(0);opacity:1}}
+.toast.err{border-left:3px solid var(--red);}
+</style>
+</head>
+<body class="light">
+<div class="bg-glow"></div>
+<div class="bg-grid"></div>
+<div class="toasts" id="toasts"></div>
+
+<div class="card">
+  <div class="logo">
+    <img class="logo-ic" src="pickle-bliss-logo.jpg" alt="Pickle Bliss Court logo">
+    <div class="logo-tx">PICKLEBALL COURT DASHBOARD</div>
+    <div class="logo-sub">Admin Control Panel</div>
+  </div>
+  <div class="divider"></div>
+
+  <div class="err" id="errBox">❌ Invalid email or password.</div>
+
+  <!-- Login form -->
+  <div id="loginPanel">
+    <form id="loginForm" onsubmit="doLogin(event)" autocomplete="on">
+      <label class="fl" for="uname">✉️ Email</label>
+      <input type="text" inputmode="email" class="fi" id="uname" placeholder="admin@yourdomain.com" autocomplete="username"/>
+      <label class="fl" for="upass">🔒 Password</label>
+      <input type="password" class="fi" id="upass" placeholder="Enter password" autocomplete="current-password"/>
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;margin-top:-4px">
+        <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:.84rem;color:var(--muted)">
+          <input type="checkbox" id="rememberMe" style="width:15px;height:15px;accent-color:var(--green);cursor:pointer"/>
+          Keep me logged in
+        </label>
+        <span class="forgot-link" style="margin:0" onclick="showForgot()">Forgot password?</span>
+      </div>
+      <button type="submit" class="btn btn-p">Login to Dashboard →</button>
+    </form>
+  </div>
+
+  <!-- Forgot password panel -->
+  <div class="reset-panel" id="resetPanel">
+    <div class="ok-msg" id="resetOk">✅ Reset link sent! Check your email inbox.</div>
+    <label class="fl">✉️ Enter your admin email</label>
+    <input type="email" class="fi" id="resetEmail" placeholder="admin@yourdomain.com"/>
+    <button class="btn btn-p" onclick="doReset()">Send Reset Link</button>
+    <span class="forgot-link" style="text-align:center;margin-top:12px;" onclick="showLogin()">← Back to login</span>
+  </div>
+
+  <!-- New password panel (after clicking reset link) -->
+  <div class="new-pass-panel" id="newPassPanel">
+    <label class="fl">🔒 New Password</label>
+    <input type="password" class="fi" id="newPass" placeholder="Enter new password (min 8 chars)"/>
+    <label class="fl">🔒 Confirm Password</label>
+    <input type="password" class="fi" id="newPassConfirm" placeholder="Confirm new password"/>
+    <button class="btn btn-p" onclick="doSetPassword()">Set New Password</button>
+  </div>
+
+  <a class="back" href="index.html">← Back to Booking Page</a>
+</div>
+
+<script>
+// Dark mode sync
+const dark = localStorage.getItem('pb_template_theme') === 'dark';
+document.body.classList.toggle('dark', dark);
+document.body.classList.toggle('light', !dark);
+
+async function doLogin(e) {
+  e.preventDefault();
+  const u = document.getElementById('uname').value.trim();
+  const p = document.getElementById('upass').value;
+  const btn = e.target.querySelector('button[type="submit"]');
+  btn.disabled = true;
+  btn.textContent = 'Logging in…';
+  const remember = document.getElementById('rememberMe').checked;
+  const r = await Auth.login(u, p, remember);
+  if (r.ok) {
+    const params = new URLSearchParams(window.location.search);
+    window.location.href = params.get('next') || 'admin.html';
+  } else {
+    document.getElementById('errBox').classList.add('show');
+    btn.disabled = false;
+    btn.textContent = 'Login to Dashboard →';
+  }
+}
+
+// Redirect if already logged in (skip if we were sent here from admin — avoids redirect loop)
+document.addEventListener('DOMContentLoaded', () => {
+  const params = new URLSearchParams(window.location.search);
+  const comingFromAdmin = !!params.get('next');
+  if (!comingFromAdmin && Auth.getSession()) window.location.href = 'admin.html';
+  // Check if redirected here from a password reset email
+  const hash = window.location.hash;
+  if (hash.includes('type=recovery')) {
+    document.getElementById('loginPanel').style.display = 'none';
+    document.getElementById('newPassPanel').classList.add('show');
+  }
+});
+
+function showForgot() {
+  document.getElementById('loginPanel').style.display = 'none';
+  document.getElementById('resetPanel').classList.add('show');
+  document.getElementById('errBox').classList.remove('show');
+}
+
+function showLogin() {
+  document.getElementById('loginPanel').style.display = 'block';
+  document.getElementById('resetPanel').classList.remove('show');
+  document.getElementById('resetOk').classList.remove('show');
+}
+
+async function doReset() {
+  const email = document.getElementById('resetEmail').value.trim();
+  if (!email) { alert('Please enter your email.'); return; }
+  const { error } = await _sb.auth.resetPasswordForEmail(email, {
+    redirectTo: window.location.origin + '/login.html'
+  });
+  if (error) {
+    alert('Error: ' + error.message);
+  } else {
+    document.getElementById('resetOk').classList.add('show');
+  }
+}
+
+async function doSetPassword() {
+  const p1 = document.getElementById('newPass').value;
+  const p2 = document.getElementById('newPassConfirm').value;
+  if (p1.length < 8) { alert('Password must be at least 8 characters.'); return; }
+  if (p1 !== p2) { alert('Passwords do not match.'); return; }
+  const { error } = await _sb.auth.updateUser({ password: p1 });
+  if (error) {
+    alert('Error: ' + error.message);
+  } else {
+    alert('✅ Password updated! You can now log in.');
+    window.location.href = 'login.html';
+  }
+}
+</script>
+<script src="supabase.min.js"></script>
+<script src="supabase-config.js?v=20260627-rolefix"></script>
+</body>
+</html>
