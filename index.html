@@ -6931,6 +6931,8 @@ async function submitBookingLegacy(e) {
         // screen then refresh the grid so the slot turns free immediately.
         booking.status = 'cancelled';
         booking.paymentStatus = 'rejected';
+        Object.assign(booking, receiptBookingUpdatePayload(booking._receiptResult, booking.status, booking.paymentStatus));
+        await DB.updateBooking(booking.ref, receiptBookingUpdatePayload(booking._receiptResult, booking.status, booking.paymentStatus)).catch(() => {});
         DB.notifyBookingUpdate(booking, 'payment_rejected', receiptReasonFromFlags(booking._receiptResult?.flags || [])).catch(() => {});
         showInvoice(booking);
         resetForm();
@@ -6943,6 +6945,8 @@ async function submitBookingLegacy(e) {
       } else if (ocrStatus === 'auto_approved') {
         booking.status = 'confirmed';
         booking.paymentStatus = (booking.downpayment >= booking.total - 1) ? 'paid' : 'downpayment_paid';
+        Object.assign(booking, receiptBookingUpdatePayload(booking._receiptResult, booking.status, booking.paymentStatus));
+        await DB.updateBooking(booking.ref, receiptBookingUpdatePayload(booking._receiptResult, booking.status, booking.paymentStatus)).catch(() => {});
         DB.notifyBookingUpdate(booking, 'payment_verified', 'Receipt auto-verified.').catch(() => {});
         sendCustomerConfirmationEmail(booking);
       } else {
@@ -6950,7 +6954,8 @@ async function submitBookingLegacy(e) {
         // slot shows as taken (red) while admin reviews it, not yellow forever.
         booking.status = 'pending';
         booking.paymentStatus = 'for_verification';
-        await DB.updateBooking(booking.ref, { status: 'pending', paymentStatus: 'for_verification' }).catch(() => {});
+        Object.assign(booking, receiptBookingUpdatePayload(booking._receiptResult, booking.status, booking.paymentStatus));
+        await DB.updateBooking(booking.ref, receiptBookingUpdatePayload(booking._receiptResult, booking.status, booking.paymentStatus)).catch(() => {});
         DB.notifyBookingUpdate(booking, 'payment_review_needed', receiptReasonFromFlags(booking._receiptResult?.flags || []) || 'Receipt needs owner review.').catch(() => {});
         onCardDate(booking.courtId, booking.date).catch(() => {});
       }
@@ -7149,7 +7154,11 @@ async function submitBooking(e) {
       if (ocrStatus === 'rejected') {
         booking.status = 'cancelled';
         booking.paymentStatus = 'rejected';
+        Object.assign(booking, receiptBookingUpdatePayload(booking._receiptResult, booking.status, booking.paymentStatus));
         itemBookings.forEach(row => { row.status = 'cancelled'; row.paymentStatus = 'rejected'; });
+        await Promise.allSettled(itemBookings.map(row =>
+          DB.updateBooking(row.ref, receiptBookingUpdatePayload(booking._receiptResult, row.status, row.paymentStatus))
+        ));
         DB.notifyBookingUpdate(booking, 'payment_rejected', receiptReasonFromFlags(booking._receiptResult?.flags || [])).catch(() => {});
         showInvoice(booking);
         resetForm();
@@ -7159,18 +7168,23 @@ async function submitBooking(e) {
       if (ocrStatus === 'auto_approved') {
         booking.status = 'confirmed';
         booking.paymentStatus = (booking.downpayment >= booking.total - 1) ? 'paid' : 'downpayment_paid';
+        Object.assign(booking, receiptBookingUpdatePayload(booking._receiptResult, booking.status, booking.paymentStatus));
         itemBookings.forEach(row => {
           row.status = 'confirmed';
           row.paymentStatus = (row.downpayment >= row.total - 1) ? 'paid' : 'downpayment_paid';
         });
+        await Promise.allSettled(itemBookings.map(row =>
+          DB.updateBooking(row.ref, receiptBookingUpdatePayload(booking._receiptResult, row.status, row.paymentStatus))
+        ));
         DB.notifyBookingUpdate(booking, 'payment_verified', 'Receipt auto-verified.').catch(() => {});
         sendCustomerConfirmationEmail(booking);
       } else {
         booking.status = 'pending';
         booking.paymentStatus = 'for_verification';
+        Object.assign(booking, receiptBookingUpdatePayload(booking._receiptResult, booking.status, booking.paymentStatus));
         itemBookings.forEach(row => { row.status = 'pending'; row.paymentStatus = 'for_verification'; });
         await Promise.allSettled(itemBookings.map(row =>
-          DB.updateBooking(row.ref, { status: 'pending', paymentStatus: 'for_verification' })
+          DB.updateBooking(row.ref, receiptBookingUpdatePayload(booking._receiptResult, row.status, row.paymentStatus))
         ));
         DB.notifyBookingUpdate(booking, 'payment_review_needed', receiptReasonFromFlags(booking._receiptResult?.flags || []) || 'Receipt needs owner review.').catch(() => {});
         await refreshBookingItemViews(itemBookings);
@@ -7264,6 +7278,22 @@ async function verifyUploadedReceipt(bookingRef, method, inlineData = null) {
     if (st) { st.style.background = 'rgba(184,126,0,.12)'; st.style.color = '#b87e00'; st.textContent = '🕓 Receipt uploaded — the owner will verify it manually.'; }
     return { status: 'manual_review', message: 'Receipt uploaded — pending manual verification.', flags: [], extracted: null, confidence: null, receiptImageUrl: null, receiptImageHash: null, receiptPhash: null, receiptVerifiedAt: new Date().toISOString() };
   }
+}
+
+function receiptBookingUpdatePayload(result, status, paymentStatus) {
+  const verifiedAt = result?.receiptVerifiedAt || new Date().toISOString();
+  return {
+    status,
+    paymentStatus,
+    receiptImageUrl: result?.receiptImageUrl || null,
+    receiptImageHash: result?.receiptImageHash || null,
+    receiptPhash: result?.receiptPhash || null,
+    receiptStatus: result?.status || 'manual_review',
+    receiptFlags: result?.flags || [],
+    receiptExtracted: result?.extracted || null,
+    receiptConfidence: result?.confidence ?? null,
+    receiptVerifiedAt: verifiedAt,
+  };
 }
 
 function sendCustomerConfirmationEmail(booking) {
@@ -8330,7 +8360,7 @@ async function submitOpenPlay() {
 }
 </script>
 <script src="supabase.min.js"></script>
-<script src="supabase-config.js?v=20260627-rolefix"></script>
+<script src="supabase-config.js?v=20260708-receipts"></script>
 
 <!-- MOBILE STICKY BOOK NOW BAR -->
 <div id="mobileBookBar" class="mobile-book-bar" style="display:none">

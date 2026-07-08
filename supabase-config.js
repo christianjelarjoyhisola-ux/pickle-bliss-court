@@ -622,6 +622,14 @@ window.DB = {
     if (updates.slots !== undefined) row.slots = updates.slots;
     if (updates.billedAt !== undefined) row.billed_at = updates.billedAt;
     if (updates.weeklyFeeId !== undefined) row.weekly_fee_id = updates.weeklyFeeId;
+    if (updates.receiptImageUrl !== undefined) row.receipt_image_url = updates.receiptImageUrl;
+    if (updates.receiptImageHash !== undefined) row.receipt_image_hash = updates.receiptImageHash;
+    if (updates.receiptPhash !== undefined) row.receipt_phash = updates.receiptPhash;
+    if (updates.receiptStatus !== undefined) row.receipt_status = updates.receiptStatus;
+    if (updates.receiptFlags !== undefined) row.receipt_flags = updates.receiptFlags;
+    if (updates.receiptExtracted !== undefined) row.receipt_extracted = updates.receiptExtracted;
+    if (updates.receiptConfidence !== undefined) row.receipt_confidence = updates.receiptConfidence;
+    if (updates.receiptVerifiedAt !== undefined) row.receipt_verified_at = updates.receiptVerifiedAt;
     if (updates.confirmationEmailId !== undefined) row.confirmation_email_id = updates.confirmationEmailId;
     if (updates.confirmationEmailSentAt !== undefined) row.confirmation_email_sent_at = updates.confirmationEmailSentAt;
     if (updates.confirmationEmailLastEvent !== undefined) row.confirmation_email_last_event = updates.confirmationEmailLastEvent;
