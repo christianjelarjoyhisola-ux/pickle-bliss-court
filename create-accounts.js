@@ -16,7 +16,7 @@ function loadLocalEnv() {
 }
 
 const env = loadLocalEnv();
-const SUPABASE_URL = env.SUPABASE_URL || 'https://zcuufcpkgidmaanxjufo.supabase.co';
+const SUPABASE_URL = env.SUPABASE_URL || 'https://ikqfszhqpyayzroccegi.supabase.co';
 const SERVICE_KEY = env.SUPABASE_SERVICE_ROLE_KEY || 'YOUR_SUPABASE_SERVICE_ROLE_KEY';
 
 const { createClient } = require('@supabase/supabase-js');
