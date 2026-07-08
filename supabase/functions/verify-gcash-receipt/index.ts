@@ -986,8 +986,17 @@ async function runOCR(
         };
       }
       console.error("Vision OCR returned no text:", gaps.join(","));
+      return {
+        text: "",
+        confidence: 0,
+        provider: "google_vision",
+        primaryProvider: "google_vision",
+        fallbackReason: gaps.length ? `google_no_text_missing_${gaps.join("_")}` : "google_no_text",
+        imageVariant: "original",
+      };
     } catch (e) {
       console.error("Vision OCR failed:", errMsg(e));
+      const originalError = errMsg(e);
       const variants = await buildOcrImageVariants(bytes);
       for (const variant of variants) {
         try {
@@ -1006,9 +1015,16 @@ async function runOCR(
           console.error(`Vision OCR retry failed (${variant.label}):`, errMsg(retryErr));
         }
       }
+      return {
+        text: "",
+        confidence: 0,
+        provider: "none",
+        primaryProvider: "none",
+        fallbackReason: `google_vision_failed: ${originalError}`,
+      };
     }
   }
-  return { text: "", confidence: 0, provider: "none" };
+  return { text: "", confidence: 0, provider: "none", fallbackReason: "google_vision_key_missing" };
 }
 
 async function sendTelegram(message: string) {

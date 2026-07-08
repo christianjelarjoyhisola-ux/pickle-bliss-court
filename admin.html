@@ -3570,6 +3570,7 @@ function receiptDetailValue(value, fallback = '--'){
   return esc(value);
 }
 function receiptAmountValue(value){
+  if (value === null || value === undefined || value === '') return '--';
   const n = Number(value);
   return Number.isFinite(n) ? fmt(n) : '--';
 }
@@ -3598,11 +3599,12 @@ function receiptReceiverValue(extracted){
 }
 function receiptDetailsHtml(b){
   const ex = b.receiptExtracted || {};
+  const hasOcrText = Number(ex.ocrTextLength || 0) > 0;
   const displayFlags = receiptFlagsForDisplay(b);
   const reason = displayFlags.length ? receiptReasonText(displayFlags) : 'All visible checks passed';
   const confidence = b.receiptConfidence != null ? `${Math.round(Number(b.receiptConfidence) * 100)}%` : '--';
   const rows = [
-    ['OCR Ref', receiptDetailValue(ex.ref || b.gcashRef)],
+    ['OCR Ref', hasOcrText ? receiptDetailValue(ex.ref) : '<span style="color:var(--muted)">OCR did not read text</span>'],
     ['Amount Read', receiptAmountValue(ex.amount)],
     ['Receipt Time', receiptTimeValue(ex)],
     ['Receipt Date', receiptDetailValue(ex.date)],
@@ -3610,6 +3612,7 @@ function receiptDetailsHtml(b){
     ['Window', ex.allowedPaymentWindowMinutes ? `${esc(ex.allowedPaymentWindowMinutes)} min` : '--'],
     ['OCR Engine', receiptOcrProviderLabel(ex.ocrProvider)],
     ['Receiver', receiptReceiverValue(ex), true],
+    ...(ex.ocrImageVariant ? [['OCR Image', receiptDetailValue(ex.ocrImageVariant), true]] : []),
     ...(ex.ocrFallbackReason ? [['OCR Fallback', receiptDetailValue(ex.ocrFallbackReason), true]] : []),
     ['Reason', receiptDetailValue(reason), true],
     ['Confidence', receiptDetailValue(confidence)],
