@@ -2302,13 +2302,6 @@ body.light #splashScreen { background: #071320; }
   padding:12px;
   background:linear-gradient(135deg,#130606,#2b1412);
 }
-.soft-open-note {
-  color:#fff8f2;
-  font-size:.78rem;
-  font-weight:800;
-  letter-spacing:.7px;
-  text-transform:uppercase;
-}
 .soft-open-countdown {
   color:#ffb36b;
   font-size:.78rem;
@@ -2328,11 +2321,6 @@ body.light #splashScreen { background: #071320; }
   transition:transform .15s, box-shadow .15s, background .15s;
 }
 .soft-open-btn:active { transform:translateY(1px); }
-.soft-open-close {
-  background:rgba(255,255,255,.1);
-  color:#fff8f2;
-  border:1px solid rgba(255,255,255,.16);
-}
 .soft-open-continue {
   background:linear-gradient(135deg,#d90416,#ff6a00);
   color:#fff;
@@ -2356,7 +2344,6 @@ body.light #splashScreen { background: #071320; }
   .soft-open-pop { padding:10px; }
   .soft-open-card { max-height:90vh; border-radius:12px; }
   .soft-open-actions { flex-direction:column; align-items:stretch; }
-  .soft-open-note { text-align:center; font-size:.68rem; }
   .soft-open-btn { width:100%; }
   .soft-open-x { top:8px; right:8px; }
 }
@@ -2722,11 +2709,9 @@ body.light #splashScreen { background: #071320; }
     </div>
     <div class="soft-open-actions">
       <div>
-        <div class="soft-open-note">Soft opening promo · July 8, 2026</div>
         <div class="soft-open-countdown">Closing in <span id="softOpeningCountdown">10</span>s</div>
       </div>
       <div style="display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end">
-        <button type="button" class="soft-open-btn soft-open-close" onclick="closeSoftOpeningPopup()">Close</button>
         <button type="button" class="soft-open-btn soft-open-continue" onclick="closeSoftOpeningPopup()">Continue Booking</button>
       </div>
     </div>
