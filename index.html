@@ -56,7 +56,18 @@ body.dark .nav { background:rgba(9,21,33,.94); }
 }
 .logo-tx { font-family:'Bebas Neue',sans-serif; font-size:1.1rem; letter-spacing:1.5px; line-height:1.15; }
 .logo-tx .logo-name { display:block; font-size:1.35rem; letter-spacing:2px; }
-.logo-tx .logo-sub { display:block; font-size:.78rem; color:var(--accent); letter-spacing:1.5px; }
+.logo-tx .logo-sub {
+  display:block; font-size:.78rem; color:var(--accent); letter-spacing:1.5px;
+  text-decoration:none; width:max-content; max-width:100%;
+  border-bottom:1px solid transparent;
+  transition:border-color .15s, color .15s;
+}
+.logo-tx .logo-sub:hover,
+.logo-tx .logo-sub:focus-visible {
+  color:var(--accent-dark);
+  border-bottom-color:rgba(var(--ac),.45);
+  outline:none;
+}
 .nav-r { display:flex; align-items:center; gap:14px; }
 /* switch */
 .sw-wrap { display:flex; align-items:center; gap:7px; font-size:.78rem; color:var(--muted); }
@@ -2826,7 +2837,7 @@ body.light #splashScreen { background: #071320; }
     <img class="logo-img" src="pickle-bliss-logo.jpg" alt="Pickle Bliss Court Logo" />
     <span class="logo-tx">
       <span class="logo-name">Pickle Bliss Court</span>
-      <span class="logo-sub">Bliss, Poblacion, Monkayo</span>
+      <a class="logo-sub" href="https://www.google.com/maps/search/?api=1&amp;query=Bliss%2C%20Poblacion%2C%20Monkayo" target="_blank" rel="noopener noreferrer" aria-label="Open Pickle Bliss Court location in Google Maps">Bliss, Poblacion, Monkayo</a>
     </span>
   </div>
   <div class="nav-r">
