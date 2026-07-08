@@ -2590,6 +2590,34 @@ tr:hover td { background: var(--bg2); }
           </div>
         </div>
 
+        <!-- Maya Section -->
+        <div style="margin-top:12px;padding:14px;background:var(--input);border-radius:10px;border:1px solid var(--border);">
+          <div style="font-size:.72rem;font-weight:800;text-transform:uppercase;letter-spacing:1px;color:#00a86b;margin-bottom:10px;">Maya</div>
+          <div class="frow" style="gap:10px;margin-bottom:10px;">
+            <div class="fg" style="margin:0;flex:1">
+              <label class="fl">Maya Number</label>
+              <input type="text" class="fi" id="mayaNumInput" placeholder="e.g. 09XX XXX XXXX" />
+            </div>
+            <div class="fg" style="margin:0;flex:1">
+              <label class="fl">Account Name</label>
+              <input type="text" class="fi" id="mayaNameInput" placeholder="e.g. Pickle Bliss Court" />
+            </div>
+          </div>
+          <div class="fg" style="margin:0">
+            <label class="fl">Maya QR Code Image</label>
+            <div style="display:flex;gap:12px;align-items:flex-start;flex-wrap:wrap">
+              <div id="mayaQrPreviewWrap" style="display:none">
+                <img id="mayaQrPreview" src="" alt="Maya QR" style="width:110px;height:110px;object-fit:contain;border-radius:8px;border:1px solid var(--border);background:#fff;padding:4px;"/>
+                <button type="button" onclick="removeQr('maya')" style="display:block;margin-top:6px;font-size:.7rem;color:#e53935;background:none;border:none;cursor:pointer;padding:2px 0;font-weight:600;">✕ Remove QR</button>
+              </div>
+              <label style="flex:1;min-width:160px;display:flex;align-items:center;gap:9px;padding:11px 13px;background:var(--card);border:1.5px dashed var(--border);border-radius:8px;cursor:pointer;font-size:.84rem;color:var(--muted);" onmouseover="this.style.borderColor='#00a86b'" onmouseout="this.style.borderColor='var(--border)'">
+                Upload Maya QR image
+                <input type="file" accept="image/*" id="mayaQrFile" style="display:none" onchange="handleQrUpload('maya',event)"/>
+              </label>
+            </div>
+          </div>
+        </div>
+
         <!-- GoTyme Section -->
         <div style="margin-top:12px;padding:14px;background:var(--input);border-radius:10px;border:1px solid var(--border);">
           <div style="font-size:.72rem;font-weight:800;text-transform:uppercase;letter-spacing:1px;color:var(--yellow);margin-bottom:10px;">🏦 GoTyme</div>
@@ -3505,7 +3533,7 @@ const RECEIPT_FLAG_LABELS = {
   EDITED_METADATA:'Edited image metadata', SUSPECTED_FAKE:'Not a receipt', REF_FORMAT_INVALID:'Bad reference format',
   REF_UNREADABLE:'Reference unreadable', INVOICE_UNREADABLE:'Invoice unreadable', LOW_OCR_CONFIDENCE:'Blurry / low OCR', OCR_UNAVAILABLE:'OCR unavailable', AMOUNT_UNREADABLE:'Amount unreadable',
   DATE_UNREADABLE:'Date unreadable', TIME_UNREADABLE:'Time unreadable', NUMBER_UNREADABLE:'Receiver number unreadable',
-  BDO_PAY_UNREADABLE:'BDO Pay/InstaPay unreadable', MAYA_UNREADABLE:'Maya unreadable', BPI_UNREADABLE:'BPI unreadable', BPI_CONFIRMATION_UNREADABLE:'BPI confirmation unreadable', INSTAPAY_QRPH_UNREADABLE:'InstaPay/QRPh unreadable', GXI_DESTINATION_UNREADABLE:'GXI/GCash destination unreadable', RECEIVER_NAME_UNREADABLE:'Receiver name unreadable',
+  BDO_PAY_UNREADABLE:'BDO Pay/InstaPay unreadable', MAYA_UNREADABLE:'Maya unreadable', BPI_UNREADABLE:'BPI unreadable', BPI_CONFIRMATION_UNREADABLE:'BPI confirmation unreadable', INSTAPAY_QRPH_UNREADABLE:'InstaPay/QRPh unreadable', GXI_DESTINATION_UNREADABLE:'GXI/GCash destination unreadable', RECEIVER_NAME_UNREADABLE:'Receiver name unreadable', WRONG_RECEIVER_NUMBER:'Wrong receiver number',
 };
 function receiptReasonText(flags){
   if (!flags || !flags.length) return 'No specific reason saved';
@@ -6473,6 +6501,8 @@ async function renderPaymentSettings() {
 
   if ($('gcashNumInput')) $('gcashNumInput').value = settings.gcash_merchant_number || '';
   if ($('gcashNameInput')) $('gcashNameInput').value = settings.gcash_merchant_name || '';
+  if ($('mayaNumInput')) $('mayaNumInput').value = settings.maya_merchant_number || '';
+  if ($('mayaNameInput')) $('mayaNameInput').value = settings.maya_merchant_name || '';
   if ($('gotymeNumInput')) $('gotymeNumInput').value = settings.gotyme_merchant_number || '';
   if ($('gotymeNameInput')) $('gotymeNameInput').value = settings.gotyme_merchant_name || '';
   if ($('pnbNumInput')) $('pnbNumInput').value = settings.pnb_merchant_number || '';
@@ -6491,6 +6521,12 @@ async function renderPaymentSettings() {
     $('gcashQrPreviewWrap').style.display = '';
   }
   const gotymeQr = settings.gotyme_qr_image || '';
+  const mayaQr = settings.maya_qr_image || '';
+  if (mayaQr && $('mayaQrPreview')) {
+    $('mayaQrPreview').src = mayaQr;
+    $('mayaQrPreviewWrap').style.display = '';
+  }
+  if (gotymeQr && $('gotymeQrPreview')) {
   if (gotymeQr && $('gotymeQrPreview')) {
     $('gotymeQrPreview').src = gotymeQr;
     $('gotymeQrPreviewWrap').style.display = '';
@@ -7017,15 +7053,18 @@ async function removePlatformQr() {
 
 async function removeQr(type) {
   if (!Auth.can('payments', sess.role)) { toast('You do not have access to edit payment settings.', 'err'); return; }
-  const key = type === 'gcash' ? 'gcash_qr_image' : type === 'gotyme' ? 'gotyme_qr_image' : 'pnb_qr_image';
-  const previewId = type === 'gcash' ? 'gcashQrPreview' : type === 'gotyme' ? 'gotymeQrPreview' : 'pnbQrPreview';
-  const wrapId = type === 'gcash' ? 'gcashQrPreviewWrap' : type === 'gotyme' ? 'gotymeQrPreviewWrap' : 'pnbQrPreviewWrap';
-  const fileId = type === 'gcash' ? 'gcashQrFile' : type === 'gotyme' ? 'gotymeQrFile' : 'pnbQrFile';
+  const qrMeta = {
+    gcash: { key: 'gcash_qr_image', previewId: 'gcashQrPreview', wrapId: 'gcashQrPreviewWrap', fileId: 'gcashQrFile' },
+    maya: { key: 'maya_qr_image', previewId: 'mayaQrPreview', wrapId: 'mayaQrPreviewWrap', fileId: 'mayaQrFile' },
+    gotyme: { key: 'gotyme_qr_image', previewId: 'gotymeQrPreview', wrapId: 'gotymeQrPreviewWrap', fileId: 'gotymeQrFile' },
+    pnb: { key: 'pnb_qr_image', previewId: 'pnbQrPreview', wrapId: 'pnbQrPreviewWrap', fileId: 'pnbQrFile' },
+  }[type];
+  if (!qrMeta) return;
   try {
-    await DB.saveSetting(key, '');
-    $(previewId).src = '';
-    $(wrapId).style.display = 'none';
-    if ($(fileId)) $(fileId).value = '';
+    await DB.saveSetting(qrMeta.key, '');
+    $(qrMeta.previewId).src = '';
+    $(qrMeta.wrapId).style.display = 'none';
+    if ($(qrMeta.fileId)) $(qrMeta.fileId).value = '';
     toast('QR code removed.');
   } catch(e) {
     toast('Failed to remove QR code.', 'err');
@@ -7039,20 +7078,18 @@ function handleQrUpload(type, e) {
   const reader = new FileReader();
   reader.onload = async ev => {
     const data = ev.target.result;
-    const key = type === 'gcash' ? 'gcash_qr_image' : type === 'gotyme' ? 'gotyme_qr_image' : 'pnb_qr_image';
-    if (type === 'gcash') {
-      $('gcashQrPreview').src = data;
-      $('gcashQrPreviewWrap').style.display = '';
-    } else if (type === 'gotyme') {
-      $('gotymeQrPreview').src = data;
-      $('gotymeQrPreviewWrap').style.display = '';
-    } else {
-      $('pnbQrPreview').src = data;
-      $('pnbQrPreviewWrap').style.display = '';
-    }
+    const qrMeta = {
+      gcash: { key: 'gcash_qr_image', previewId: 'gcashQrPreview', wrapId: 'gcashQrPreviewWrap' },
+      maya: { key: 'maya_qr_image', previewId: 'mayaQrPreview', wrapId: 'mayaQrPreviewWrap' },
+      gotyme: { key: 'gotyme_qr_image', previewId: 'gotymeQrPreview', wrapId: 'gotymeQrPreviewWrap' },
+      pnb: { key: 'pnb_qr_image', previewId: 'pnbQrPreview', wrapId: 'pnbQrPreviewWrap' },
+    }[type];
+    if (!qrMeta) return;
+    $(qrMeta.previewId).src = data;
+    $(qrMeta.wrapId).style.display = '';
     // Auto-save to DB
     try {
-      await DB.saveSetting(key, data);
+      await DB.saveSetting(qrMeta.key, data);
       toast(`✅ ${type.toUpperCase()} QR saved! Customers will see it instantly.`, 'ok');
     } catch (err) {
       console.error('Failed to auto-save QR:', err);
@@ -7091,12 +7128,16 @@ async function savePaymentSettings() {
 
     const gcashNum = $('gcashNumInput')?.value.trim() || '';
     const gcashName = $('gcashNameInput')?.value.trim() || '';
+    const mayaNum = $('mayaNumInput')?.value.trim() || '';
+    const mayaName = $('mayaNameInput')?.value.trim() || '';
     const gotymeNum = $('gotymeNumInput')?.value.trim() || '';
     const gotymeName = $('gotymeNameInput')?.value.trim() || '';
     const pnbNum = $('pnbNumInput')?.value.trim() || '';
     const pnbName = $('pnbNameInput')?.value.trim() || '';
     await DB.saveSetting('gcash_merchant_number', gcashNum);
     await DB.saveSetting('gcash_merchant_name', gcashName);
+    await DB.saveSetting('maya_merchant_number', mayaNum);
+    await DB.saveSetting('maya_merchant_name', mayaName);
     await DB.saveSetting('gotyme_merchant_number', gotymeNum);
     await DB.saveSetting('gotyme_merchant_name', gotymeName);
     await DB.saveSetting('pnb_merchant_number', pnbNum);
@@ -7105,10 +7146,12 @@ async function savePaymentSettings() {
     // Save QR images (base64 data URLs) — save empty string if removed
     const platformQrSrc = $('platformGcashQrPreview')?.src || '';
     const gcashQrSrc = $('gcashQrPreview')?.src || '';
+    const mayaQrSrc = $('mayaQrPreview')?.src || '';
     const gotymeQrSrc = $('gotymeQrPreview')?.src || '';
     const pnbQrSrc = $('pnbQrPreview')?.src || '';
     if (platformQrSrc.startsWith('data:')) await DB.saveSetting('platform_gcash_qr', platformQrSrc);
     if (gcashQrSrc.startsWith('data:')) await DB.saveSetting('gcash_qr_image', gcashQrSrc);
+    if (mayaQrSrc.startsWith('data:')) await DB.saveSetting('maya_qr_image', mayaQrSrc);
     if (gotymeQrSrc.startsWith('data:')) await DB.saveSetting('gotyme_qr_image', gotymeQrSrc);
     if (pnbQrSrc.startsWith('data:')) await DB.saveSetting('pnb_qr_image', pnbQrSrc);
 

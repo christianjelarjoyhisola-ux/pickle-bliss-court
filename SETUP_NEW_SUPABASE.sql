@@ -1239,6 +1239,9 @@ values
   ('booking_fee', '5'),
   ('open_play_fee', '100'),
   ('payment_method_maya', '1'),
+  ('maya_merchant_number', ''),
+  ('maya_merchant_name', 'Pickle Bliss Court'),
+  ('maya_qr_image', ''),
   ('payment_method_bpi', '1')
 on conflict (key) do nothing;
 

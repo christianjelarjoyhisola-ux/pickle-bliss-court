@@ -3012,7 +3012,7 @@ body.light #splashScreen { background: #071320; }
               <div class="pay-opt" id="payOptMaya" data-m="maya" onclick="pickPay('maya')">
                 <div class="pay-ic">M</div>
                 <div class="pay-lb">Maya</div>
-                <div class="pay-sub">QRPh to GCash</div>
+                <div class="pay-sub">Maya to Maya</div>
               </div>
               <div class="pay-opt" id="payOptBpi" data-m="bpi" onclick="pickPay('bpi')">
                 <div class="pay-ic">BPI</div>
@@ -3856,7 +3856,7 @@ async function submitHostSessionJoin() {
     if (!paymentRef) { toast(_hostSessionPayMethod === 'bpi' ? 'Enter your BPI Confirmation No.' : 'Enter your payment reference number.', 'err'); refInput?.focus(); return; }
     if (_hostSessionPayMethod === 'gcash' && !isGcashRefValid(paymentRef)) { toast('GCash reference number must be exactly 13 digits.', 'err'); refInput?.focus(); return; }
     if (_hostSessionPayMethod === 'bdopay' && !isBdoPayRefValid(paymentRef)) { toast('BDO Pay reference must look like BN-YYYYMMDD-########. Do not enter the invoice number.', 'err'); refInput?.focus(); return; }
-    if (_hostSessionPayMethod === 'maya' && !isMayaRefValid(paymentRef)) { toast('Maya Reference ID must look like B6DC F633 F08C. Do not enter the InstaPay Ref. No.', 'err'); refInput?.focus(); return; }
+    if (_hostSessionPayMethod === 'maya' && !isMayaRefValid(paymentRef)) { toast('Maya Reference ID must look like B6DC F633 F08C.', 'err'); refInput?.focus(); return; }
     if (_hostSessionPayMethod === 'bpi' && !isBpiConfirmationValid(paymentRef)) { toast('Enter the BPI Confirmation No. from the receipt, not the Transaction Ref. No.', 'err'); refInput?.focus(); return; }
     if (!_hostSessionReceiptFile) { toast('Please upload your payment receipt screenshot.', 'err'); return; }
   }
@@ -4379,7 +4379,7 @@ function paymentMethodName(method) {
 }
 
 function paymentReceiverKey(method) {
-  return method === 'bdopay' || method === 'maya' || method === 'bpi' ? 'gcash' : method;
+  return method === 'bdopay' || method === 'bpi' ? 'gcash' : method;
 }
 let paymentWatch = { ref: null, timer: null, tries: 0 };
 
@@ -4709,9 +4709,9 @@ function applyPaymentSettings(settings) {
       qrImage: settings.gcash_qr_image || '',
     },
     maya: {
-      number: settings.gcash_merchant_number || '09XX XXX XXXX',
-      name: settings.gcash_merchant_name || 'Pickle Bliss Court',
-      qrImage: settings.gcash_qr_image || '',
+      number: settings.maya_merchant_number || '09XX XXX XXXX',
+      name: settings.maya_merchant_name || 'Pickle Bliss Court',
+      qrImage: settings.maya_qr_image || '',
     },
     bpi: {
       number: settings.gcash_merchant_number || '09XX XXX XXXX',
@@ -4926,6 +4926,7 @@ function receiptReasonFromFlags(flags) {
     INSTAPAY_QRPH_UNREADABLE: 'InstaPay/QRPh text unreadable',
     GXI_DESTINATION_UNREADABLE: 'GXI/GCash destination unreadable',
     RECEIVER_NAME_UNREADABLE: 'Receiver name unreadable',
+    WRONG_RECEIVER_NUMBER: 'Wrong receiver number',
     NUMBER_UNREADABLE: 'Receiver number unreadable',
     EDITED_METADATA: 'Edited image metadata',
     LOW_OCR_CONFIDENCE: 'Low OCR confidence',
@@ -6542,8 +6543,8 @@ function pickPay(m) {
         'Please choose the correct payment method before paying.',
       ],
       maya: [
-        'Maya to GCash only.',
-        'GCash/BDO Pay receipts will be rejected.',
+        'Maya to Maya only.',
+        'GCash/BDO Pay/InstaPay receipts will be rejected.',
         'Please choose the correct payment method before paying.',
       ],
       bpi: [
@@ -6584,8 +6585,27 @@ function syncGcashSharedPanel(method) {
   const isBdo = method === 'bdopay';
   const isMaya = method === 'maya';
   const isBpi = method === 'bpi';
+  const receiver = paymentReceiver(method);
+  if ($('gcMerchantNumber')) $('gcMerchantNumber').textContent = receiver.number || 'Scan QR';
+  if ($('gcMerchantName')) $('gcMerchantName').textContent = method === 'gcash'
+    ? (maskGcashOwnerName(receiver.name) || 'Court owner account')
+    : (receiver.name || 'Court owner account');
+  const qrImg = $('gcashQrImg');
+  const qrPh = $('gcashQrPlaceholder');
+  if (qrImg) {
+    if (receiver.qrImage) {
+      qrImg.src = receiver.qrImage;
+      qrImg.alt = `${paymentMethodName(method)} QR`;
+      qrImg.style.display = '';
+      if (qrPh) qrPh.style.display = 'none';
+    } else {
+      qrImg.removeAttribute('src');
+      qrImg.style.display = 'none';
+      if (qrPh) qrPh.style.display = '';
+    }
+  }
   const header = $('gcashBox')?.querySelector('.gc-header-lbl');
-  if (header) header.textContent = isBdo ? 'BDO Pay / InstaPay' : isBpi ? 'BPI / InstaPay' : 'GCash Payment';
+  if (header) header.textContent = isBdo ? 'BDO Pay / InstaPay' : isMaya ? 'Maya Payment' : isBpi ? 'BPI / InstaPay' : 'GCash Payment';
   const title = $('gcashBox')?.querySelector('.bpay-send-title');
   if (title) title.textContent = isBdo ? '🏦 Send BDO Pay to GCash QR' : '📲 Send GCash Payment To';
   const guide = isBdo
@@ -6600,12 +6620,11 @@ function syncGcashSharedPanel(method) {
       : 'GCash to GCash only.<br>BDO Pay/InstaPay receipts will be rejected.<br>Please choose the correct payment method before paying.';
   }
   if (isMaya) {
-    if (header) header.textContent = 'Maya / QRPh';
-    if (title) title.textContent = 'Send Maya to GCash QR';
-    const mayaGuide = ['Scan GCash QR in Maya.', 'Pay exact amount via QRPh.', 'Use Reference ID, not InstaPay Ref. No.', 'Upload Maya receipt.'];
+    if (title) title.textContent = 'Send Maya Payment To';
+    const mayaGuide = ['Send to the Maya number or QR.', 'Pay exact amount in Maya.', 'Use the Maya Reference ID.', 'Upload Maya receipt.'];
     $('gcashBox')?.querySelectorAll('.payment-guide-step span span.payment-guide-long').forEach((el, i) => { if (mayaGuide[i]) el.textContent = mayaGuide[i]; });
     $('gcashBox')?.querySelectorAll('.payment-guide-step span span.payment-guide-short').forEach((el, i) => { if (mayaGuide[i]) el.textContent = mayaGuide[i]; });
-    if (receiptHelp) receiptHelp.innerHTML = 'Maya to GCash only.<br>GCash/BDO Pay receipts will be rejected.<br>Please choose the correct payment method before paying.';
+    if (receiptHelp) receiptHelp.innerHTML = 'Maya to Maya only.<br>GCash/BDO Pay/InstaPay receipts will be rejected.<br>Please choose the correct payment method before paying.';
   }
   if (isBpi) {
     if (header) header.textContent = 'BPI / InstaPay';
@@ -6684,7 +6703,7 @@ function isBpiConfirmationValid(ref) {
 function paymentRefHelpText(method) {
   if (method === 'gcash') return 'GCash reference must be exactly 13 digits.';
   if (method === 'bdopay') return 'Enter the BDO Pay Reference no. in BN-YYYYMMDD-######## format, not the invoice number. We verify the invoice from the receipt.';
-  if (method === 'maya') return 'Enter the Maya Reference ID, e.g. B6DC F633 F08C. Do not enter the InstaPay Ref. No.';
+  if (method === 'maya') return 'Enter the Maya Reference ID from the Maya-to-Maya receipt, e.g. B6DC F633 F08C.';
   if (method === 'bpi') return 'Enter the BPI Confirmation No., e.g. 1783397488347. Do not enter the Transaction Ref. No.';
   return 'Must match the reference number on the uploaded receipt.';
 }
@@ -6836,7 +6855,7 @@ async function submitBookingLegacy(e) {
     [digitalPay && !gcashRef, payMethod === 'bpi' ? 'Please enter your BPI Confirmation No. after paying.' : 'Please enter your payment reference number after paying.', 'bGcashRef', 5],
     [payMethod === 'gcash' && !isGcashRefValid(gcashRef), 'GCash reference number must be exactly 13 digits.', 'bGcashRef', 5],
     [payMethod === 'bdopay' && !isBdoPayRefValid(gcashRef), 'BDO Pay reference must look like BN-YYYYMMDD-########. Do not enter the invoice number.', 'bGcashRef', 5],
-    [payMethod === 'maya' && !isMayaRefValid(gcashRef), 'Maya Reference ID must look like B6DC F633 F08C. Do not enter the InstaPay Ref. No.', 'bGcashRef', 5],
+    [payMethod === 'maya' && !isMayaRefValid(gcashRef), 'Maya Reference ID must look like B6DC F633 F08C.', 'bGcashRef', 5],
     [payMethod === 'bpi' && !isBpiConfirmationValid(gcashRef), 'Enter the BPI Confirmation No. from the receipt, not the Transaction Ref. No.', 'bGcashRef', 5],
     [digitalPay && !_receiptFile, () => {
       // Scroll to and flash the upload zone so the user knows exactly what's missing.
@@ -7055,7 +7074,7 @@ async function submitBooking(e) {
     [digitalPay && !gcashRef, payMethod === 'bpi' ? 'Please enter your BPI Confirmation No. after paying.' : 'Please enter your payment reference number after paying.', 'bGcashRef', 5],
     [payMethod === 'gcash' && !isGcashRefValid(gcashRef), 'GCash reference number must be exactly 13 digits.', 'bGcashRef', 5],
     [payMethod === 'bdopay' && !isBdoPayRefValid(gcashRef), 'BDO Pay reference must look like BN-YYYYMMDD-########. Do not enter the invoice number.', 'bGcashRef', 5],
-    [payMethod === 'maya' && !isMayaRefValid(gcashRef), 'Maya Reference ID must look like B6DC F633 F08C. Do not enter the InstaPay Ref. No.', 'bGcashRef', 5],
+    [payMethod === 'maya' && !isMayaRefValid(gcashRef), 'Maya Reference ID must look like B6DC F633 F08C.', 'bGcashRef', 5],
     [payMethod === 'bpi' && !isBpiConfirmationValid(gcashRef), 'Enter the BPI Confirmation No. from the receipt, not the Transaction Ref. No.', 'bGcashRef', 5],
     [digitalPay && !_receiptFile, () => {
       const drop = $('bReceiptDrop');
@@ -7847,7 +7866,7 @@ async function openPlaySignup(courtId, date, h, courtName) {
   const payOptList = [
     paymentMethods.gcash   ? `<div class="pay-opt op-pay-opt ${defaultPayMethod === 'gcash' ? 'on' : ''}" data-m="gcash"   onclick="opPickPay('gcash')"><span class="po-ico">📱</span><span class="po-lbl">GCash</span><span class="po-sub">Scan QR · send ref #</span></div>` : '',
     paymentMethods.bdopay  ? `<div class="pay-opt op-pay-opt ${defaultPayMethod === 'bdopay' ? 'on' : ''}" data-m="bdopay"  onclick="opPickPay('bdopay')"><span class="po-ico">🏦</span><span class="po-lbl">BDO Pay</span><span class="po-sub">InstaPay to GCash QR</span></div>` : '',
-    paymentMethods.maya    ? `<div class="pay-opt op-pay-opt ${defaultPayMethod === 'maya' ? 'on' : ''}" data-m="maya"    onclick="opPickPay('maya')"><span class="po-ico">M</span><span class="po-lbl">Maya</span><span class="po-sub">QRPh to GCash</span></div>` : '',
+    paymentMethods.maya    ? `<div class="pay-opt op-pay-opt ${defaultPayMethod === 'maya' ? 'on' : ''}" data-m="maya"    onclick="opPickPay('maya')"><span class="po-ico">M</span><span class="po-lbl">Maya</span><span class="po-sub">Maya to Maya</span></div>` : '',
     paymentMethods.gotyme  ? `<div class="pay-opt op-pay-opt ${defaultPayMethod === 'gotyme' ? 'on' : ''}" data-m="gotyme"  onclick="opPickPay('gotyme')"><span class="po-ico">🏦</span><span class="po-lbl">GoTyme</span><span class="po-sub">Scan QR · enter ref #</span></div>` : '',
     paymentMethods.pnb     ? `<div class="pay-opt op-pay-opt ${defaultPayMethod === 'pnb' ? 'on' : ''}" data-m="pnb"     onclick="opPickPay('pnb')"><span class="po-ico">🏛️</span><span class="po-lbl">PNB</span><span class="po-sub">Scan QR · enter ref #</span></div>` : '',
     paymentMethods.cash    ? `<div class="pay-opt op-pay-opt ${defaultPayMethod === 'cash' ? 'on' : ''}" data-m="cash"    onclick="opPickPay('cash')"><span class="po-ico">💵</span><span class="po-lbl">Cash</span><span class="po-sub">Pay at front desk</span></div>` : '',
@@ -7984,7 +8003,7 @@ function opPickPay(method) {
     const meta = {
       gcash: { icon: '📱', label: 'GCash', receiver: paymentReceiverSettings.gcash },
       bdopay: { icon: '🏦', label: 'BDO Pay', receiver: paymentReceiverSettings.gcash },
-      maya: { icon: 'M', label: 'Maya', receiver: paymentReceiverSettings.gcash },
+      maya: { icon: 'M', label: 'Maya', receiver: paymentReceiverSettings.maya },
       bpi: { icon: 'BPI', label: 'BPI', receiver: paymentReceiverSettings.gcash },
       gotyme: { icon: '🏦', label: 'GoTyme', receiver: paymentReceiverSettings.gotyme },
       pnb: { icon: '🏛️', label: 'PNB', receiver: paymentReceiverSettings.pnb },
@@ -7993,7 +8012,7 @@ function opPickPay(method) {
     const methodWarning = method === 'bdopay'
       ? 'BDO Pay to GCash only.<br>GCash-to-GCash receipts will be rejected.<br>Please choose the correct payment method before paying.'
       : method === 'maya'
-        ? 'Maya to GCash only.<br>GCash/BDO Pay receipts will be rejected.<br>Please choose the correct payment method before paying.'
+        ? 'Maya to Maya only.<br>GCash/BDO Pay/InstaPay receipts will be rejected.<br>Please choose the correct payment method before paying.'
       : method === 'bpi'
         ? 'BPI to GCash/G-Xchange only.<br>Enter the BPI Confirmation No., not the Transaction Ref. No.<br>Receipts from another payment method will not auto-approve.'
       : method === 'gcash'
@@ -8217,7 +8236,7 @@ async function submitOpenPlay() {
   }
   if (payMethod === 'maya' && !isMayaRefValid(_opSignupData.gcashRef)) {
     if (refEl) refEl.style.borderColor = 'var(--red)';
-    toast('Maya Reference ID must look like B6DC F633 F08C. Do not enter the InstaPay Ref. No.', 'err');
+    toast('Maya Reference ID must look like B6DC F633 F08C.', 'err');
     refEl?.focus();
     return;
   }

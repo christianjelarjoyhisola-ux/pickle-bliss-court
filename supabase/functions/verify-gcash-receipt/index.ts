@@ -51,6 +51,7 @@ const HARD_FLAGS = new Set([
   "TIME_EXPIRED",
   "TIME_FUTURE",
   "WRONG_GCASH_NUMBER",
+  "WRONG_RECEIVER_NUMBER",
   "AMOUNT_MISMATCH",    // Only hard if significantly underpaid (>₱5)
 ]);
 
@@ -530,10 +531,16 @@ function isBdoPayReceipt(text: string): boolean {
 function isMayaReceipt(text: string): boolean {
   const t = text || "";
   return /\bmaya\b/i.test(t)
-    && (/\bsent\s+money\s+via\b/i.test(t)
+    && (/\bsent\s+money\b/i.test(t)
+      || /\bsent\s+money\s+via\b/i.test(t)
+      || /\bcompleted\b/i.test(t)
       || /\breference\s+id\b/i.test(t)
       || /\binstapay\s+ref\b/i.test(t)
       || /\bqrph\b|\bqr\s*ph\b/i.test(t));
+}
+
+function hasMayaCompletedIndicator(text: string): boolean {
+  return /\bcompleted\b/i.test(text || "");
 }
 
 function isBpiReceipt(text: string): boolean {
@@ -1023,7 +1030,7 @@ function ocrCriticalGaps(text: string, provider: PaymentProvider, typedRef: stri
   const gaps: string[] = [];
   if (!extractReference(text, provider, typedRef)) gaps.push("reference");
   if (extractReceiptAmount(text) == null) gaps.push("amount");
-  if (!parseReceiptDateTime(text).date) gaps.push("date");
+  if (provider !== "maya" && !parseReceiptDateTime(text).date) gaps.push("date");
   return gaps;
 }
 
@@ -1312,7 +1319,7 @@ Deno.serve(async (req) => {
     // ── field extraction ────────────────────────────────────────────────────
     const extractedRef = extractReference(ocrText, provider, typedRef);
     const extractedInvoice = provider === "bdopay" ? extractBdoInvoiceNumber(ocrText) : null;
-    const extractedInstapayRefNo = provider === "maya" ? extractMayaInstapayRefNo(ocrText) : null;
+    const extractedInstapayRefNo = null;
     const extractedBpiTransactionRefNo = provider === "bpi" ? extractBpiTransactionRefNo(ocrText) : null;
     const extractedAmount = extractReceiptAmount(ocrText);
     const { date: receiptDate, shifted: receiptDateTime } = parseReceiptDateTime(ocrText);
@@ -1385,7 +1392,8 @@ Deno.serve(async (req) => {
         if (!hasExpectedReceiverName(ocrText, expectedName)) flags.push("RECEIVER_NAME_UNREADABLE");
         if (!extractedInvoice) flags.push("INVOICE_UNREADABLE");
       } else if (provider === "maya") {
-        // Maya focused path: do not require GCash/GXI/BDO Pay evidence here.
+        // Maya-to-Maya focused path: do not require GCash/GXI/InstaPay/QRPh
+        // evidence and do not require a receipt timestamp.
         if (!extractedRef) flags.push("REF_UNREADABLE");
         else if (typedRef && extractedRef !== typedRef) flags.push("REF_MISMATCH");
 
@@ -1393,15 +1401,11 @@ Deno.serve(async (req) => {
         else if (extractedAmount == null) flags.push("AMOUNT_UNREADABLE");
         else if (extractedAmount < expectedAmount - PESO_TOLERANCE) flags.push("AMOUNT_MISMATCH");
 
-        if (!receiptDate) flags.push("DATE_UNREADABLE");
-        else if (bookingStartedDate && receiptDate !== bookingStartedDate) flags.push("DATE_NOT_TODAY");
-        if (!receiptDateTime) flags.push("TIME_UNREADABLE");
-        else if (!bookingStartedAt) flags.push("TIME_UNREADABLE");
-        else if ((receiptAgeMinutes as number) < -PAYMENT_EARLY_TOLERANCE_MINUTES) flags.push("TIME_FUTURE");
-        else if ((receiptAgeMinutes as number) > PAYMENT_WINDOW_MINUTES) flags.push("TIME_EXPIRED");
-
         if (!hasMayaIndicator(ocrText)) flags.push("MAYA_UNREADABLE");
-        if (!hasInstapayQrphIndicator(ocrText)) flags.push("INSTAPAY_QRPH_UNREADABLE");
+        if (!hasMayaCompletedIndicator(ocrText)) flags.push("MAYA_UNREADABLE");
+        const numCheck = checkReceiverNumber(ocrText, expectedNumber);
+        if (numCheck === "wrong") flags.push("WRONG_RECEIVER_NUMBER");
+        else if (numCheck === "unreadable" && expectedNumber) flags.push("NUMBER_UNREADABLE");
         if (!hasExpectedReceiverName(ocrText, expectedName)) flags.push("RECEIVER_NAME_UNREADABLE");
       } else if (provider === "bpi") {
         // BPI focused path: require BPI + InstaPay + GCash/G-Xchange destination,
@@ -1542,7 +1546,7 @@ Deno.serve(async (req) => {
       ocrImageVariant,
       ocrConfidence,
       ocrTextLength: ocrText.length,
-      expectedReceiverNumber: provider === "bdopay" || provider === "maya" || provider === "bpi" ? null : expectedNumber || null,
+      expectedReceiverNumber: provider === "bdopay" || provider === "bpi" ? null : expectedNumber || null,
       expectedReceiverName: expectedName || null,
     };
 
