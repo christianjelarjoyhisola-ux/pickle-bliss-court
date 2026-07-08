@@ -4,6 +4,6 @@
     "pg": "^8.21.0"
   },
   "devDependencies": {
-    "wrangler": "^4.100.0"
+    "wrangler": "^4.108.0"
   }
 }
