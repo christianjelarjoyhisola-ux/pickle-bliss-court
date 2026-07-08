@@ -120,10 +120,10 @@ body.dark .nav { background:rgba(9,21,33,.94); }
 /* SECTIONS */
 .sec { max-width:1080px; margin:0 auto; padding:40px 20px; }
 .sec-hd { margin-bottom:26px; }
-.sec-hd h2 { font-size:1.9rem; margin-bottom:4px; }
-.sec-hd p { color:var(--muted); font-size:.88rem; }
+.sec-hd h2 { font-size:2.15rem; margin-bottom:8px; letter-spacing:1.5px; }
+.sec-hd p { color:var(--muted); font-size:.94rem; line-height:1.55; max-width:560px; }
 .find-time-entry {
-  display:flex; align-items:center; justify-content:space-between; gap:14px;
+  display:none; align-items:center; justify-content:space-between; gap:14px;
   margin:-10px 0 12px; padding:9px 10px 9px 12px;
   background:rgba(var(--ac),.06);
   border:1px solid rgba(var(--ac),.18); border-radius:10px;
@@ -133,7 +133,7 @@ body.dark .nav { background:rgba(9,21,33,.94); }
 .find-time-entry .btn { flex-shrink:0; min-height:34px; padding:7px 13px; }
 .shared-date-entry {
   display:flex; align-items:center; justify-content:space-between; gap:12px;
-  margin:-4px 0 14px; padding:10px 12px;
+  margin:2px 0 18px; padding:14px;
   position:sticky; top:72px; z-index:190;
   background:linear-gradient(135deg,rgba(var(--ac),.18),rgba(var(--ac),.06)), var(--card);
   border:1.5px solid rgba(var(--ac),.42); border-radius:14px;
@@ -145,7 +145,7 @@ body.dark .nav { background:rgba(9,21,33,.94); }
 }
 .shared-date-title strong { display:block; font-size:.88rem; color:var(--text); line-height:1.15; }
 .shared-date-title span {
-  display:block; font-size:.66rem; color:var(--muted); font-weight:800;
+  display:none; font-size:.66rem; color:var(--muted); font-weight:800;
   letter-spacing:.45px; text-transform:uppercase; white-space:nowrap;
 }
 .shared-date-control {
@@ -553,16 +553,16 @@ body.dark .shared-date-display {
 .tab-dot-full { background:var(--red); }
 .tab-dot-mnt  { background:var(--muted); }
 .tab-dot-all  { background:linear-gradient(135deg,var(--accent) 0 45%,var(--lime) 45% 72%,var(--red) 72%); }
-@media(max-width:700px) { .court-tabs { display:flex; } }
+@media(max-width:700px) { .court-tabs { display:none; } }
 
 /* ── MOBILE COURT TABS HINT ── */
 .court-tabs-hint {
-  display:none;
+  display:none !important;
   font-size:.72rem; font-weight:700;
   text-transform:uppercase; letter-spacing:.8px;
   color:var(--muted); margin-bottom:6px;
 }
-@media(max-width:700px) { .court-tabs-hint { display:block; } }
+@media(max-width:700px) { .court-tabs-hint { display:none !important; } }
 
 /* ── ACTIVE COURT MOBILE HEADER ── */
 .cc-mobile-hd {
@@ -2817,9 +2817,9 @@ body.light #splashScreen { background: #071320; }
   </div>
   <div class="nav-r">
     <div class="sw-wrap">
-      <span>☀️</span>
+      <span>Light</span>
       <label class="sw"><input type="checkbox" id="darkTog" checked><span class="sw-tr"></span></label>
-      <span>🌙</span>
+      <span>Dark</span>
     </div>
   </div>
 </nav>
@@ -2827,21 +2827,13 @@ body.light #splashScreen { background: #071320; }
 <!-- COURTS -->
 <div class="sec" id="courts" style="padding-top:24px">
   <div class="sec-hd">
-    <h2>🏟️ SELECT A COURT</h2>
-    <p>Tap an Open Play session or choose any available court hours, then continue.</p>
+    <h2>BOOK YOUR COURT</h2>
+    <p>Choose your date, then select any available time to reserve your session.</p>
   </div>
-  <div class="find-time-entry">
-    <div>
-      <strong>Find an available time</strong>
-      <span>Search all courts by date and duration.</span>
-    </div>
-    <button class="btn btn-p btn-sm" type="button" onclick="openFindTimeModal()">Search</button>
-  </div>
-  <div class="court-tabs-hint">👇 Tap a court to view available times 👇</div>
   <div class="shared-date-entry">
     <div class="shared-date-title">
       <strong>Booking date</strong>
-      <span>All courts</span>
+      <span></span>
     </div>
     <div class="shared-date-control">
       <button class="shared-date-nav" type="button" onclick="shiftSharedCourtDate(-1)" aria-label="Previous day">‹</button>
@@ -4467,13 +4459,13 @@ function getOpenPlaySessionState(date, session, spotsLeft = 1) {
 }
 
 function courtAvailabilityBadge({ blocked, date, allSlots, curHour, bookedHours, courtId }) {
-  if (blocked) return { cls: 'mnt', text: '🔧 Maintenance' };
+  if (blocked) return { cls: 'mnt', text: 'Maintenance' };
 
   const isPastDate_ = date < todayStr();
   const futureHours = allSlots.filter(h => h > curHour);
   const maintenanceHours = futureHours.filter(h => isMaintenanceHour(date, h, courtId));
   if (futureHours.length > 0 && maintenanceHours.length === futureHours.length) {
-    return { cls: 'mnt', text: '🔧 Maintenance' };
+    return { cls: 'mnt', text: 'Maintenance' };
   }
 
   const activeHours = futureHours.filter(h => !isMaintenanceHour(date, h, courtId));
@@ -4481,10 +4473,10 @@ function courtAvailabilityBadge({ blocked, date, allSlots, curHour, bookedHours,
   const openPlayHours = activeHours.filter(h => isOpenPlayHour(date, h, courtId));
   const availableRegular = regularHours.filter(h => !bookedHours.has(h)).length;
 
-  if (availableRegular > 0) return { cls: 'av', text: `⚡ ${availableRegular} available` };
-  if (regularHours.length === 0 && openPlayHours.length > 0) return { cls: 'av', text: '🏓 Open Play only' };
+  if (availableRegular > 0) return { cls: 'av', text: `${availableRegular} available` };
+  if (regularHours.length === 0 && openPlayHours.length > 0) return { cls: 'av', text: 'Open Play only' };
   if (activeHours.length === 0) return { cls: 'done', text: isPastDate_ ? 'Past date' : 'Done today' };
-  return { cls: 'full', text: '⛔ Fully booked' };
+  return { cls: 'full', text: 'Fully booked' };
 }
 
 function openPlaySessionHtml({ courtId, courtName, date, session, spotsLeft, maxPlayers, compact = false }) {
@@ -6025,8 +6017,9 @@ async function renderCourts() {
       spotsLeft: Math.max(0, (openPlayMaxPlayers || 40) - count),
     };
   });
+  const visibleCourts = courts.slice(0, 1);
 
-  courtsGrid.innerHTML = courts.map(c => {
+  courtsGrid.innerHTML = visibleCourts.map(c => {
     const blk = c.blocked;
     const allSlots = Array.from({length: closeHour - openHour}, (_, i) => i + openHour);
 
@@ -6075,7 +6068,7 @@ async function renderCourts() {
       : '';
 
     const slotsHtml = blk
-      ? `<div class="cc-slots-empty">🔧 Court is under maintenance</div>`
+      ? `<div class="cc-slots-empty">Court is under maintenance</div>`
       : openPlayCardHtml + allSlots.map(h => {
           const isPast_   = h <= curHour;
           const isBooked_ = bookedHours.has(h);
@@ -6086,7 +6079,7 @@ async function renderCourts() {
           if (isPast_)    return `<div class="cc-slot-btn past-slot"><div class="csl-time">${timeRange}</div><div class="csl-tag">${isSelectedPast ? 'Past' : 'Done'}</div></div>`;
           if (isBooked_ && verifyingHoursSet.has(h)) return `<div class="cc-slot-btn processing"><div class="csl-time">${timeRange}</div><div class="csl-tag">Processing...</div></div>`;
           if (isBooked_) return `<div class="cc-slot-btn taken"><div class="csl-time">${timeRange}</div><div class="csl-name">Booked</div></div>`;
-          if (isMaint_)  { const _ml=getMaintenanceLabel(selectedDate,h,c.id); return `<div class="cc-slot-btn maintenance"><div class="csl-time">${timeRange}</div><div class="csl-tag">${esc(_ml.icon)} ${esc(_ml.text)}</div></div>`; }
+          if (isMaint_)  { const _ml=getMaintenanceLabel(selectedDate,h,c.id); return `<div class="cc-slot-btn maintenance"><div class="csl-time">${timeRange}</div><div class="csl-tag">${esc(_ml.text)}</div></div>`; }
           if (isOpenPlay_) return '';
           return `<div class="cc-slot-btn${isSelectedSlot_ ? ' selected' : ''}" data-h="${h}" onclick="event.stopPropagation(); toggleCardSlot('${jsArg(c.id)}','${jsArg(selectedDate)}',${h})"><div class="csl-time">${timeRange}</div><div class="csl-price">₱${_cRate(h)}</div></div>`;
         }).join('');
@@ -6101,7 +6094,7 @@ async function renderCourts() {
       <!-- MOBILE-ONLY HEADER -->
       <div class="cc-mobile-hd">
         <div class="cc-mobile-title">
-          <span class="cc-mobile-name">📍 ${esc(c.name)}</span>
+          <span class="cc-mobile-name">${esc(c.name)}</span>
           <span class="cc-mobile-meta">${esc(rateRange)} · ${esc(c.desc || 'Court')}</span>
         </div>
         <div class="cc-mobile-side">
@@ -6123,8 +6116,8 @@ async function renderCourts() {
       <div class="cc-times">
         <div class="cc-times-head">
           <div>
-            <div class="cc-times-title">🕐 Available times</div>
-            <div class="cc-times-sub">Join Open Play or select any available court slots</div>
+            <div class="cc-times-title">Available Times</div>
+            <div class="cc-times-sub">Select one or more available time slots.</div>
           </div>
           <input type="hidden" id="cDate_${esc(c.id)}" value="${esc(selectedDate)}" />
         </div>
@@ -6151,12 +6144,12 @@ async function renderCourts() {
 
   const active = bookings.filter(b => b.status !== 'cancelled');
   const totalRev = fmt(active.reduce((s,b) => s+b.total, 0));
-  if ($('sCourts')) $('sCourts').textContent = courts.length;
+  if ($('sCourts')) $('sCourts').textContent = visibleCourts.length;
   if ($('sBook'))   $('sBook').textContent   = bookings.length;
   if ($('sRev'))    $('sRev').textContent    = totalRev;
 
   animateCourtCards();
-  animateStat($('sCourts'), String(courts.length));
+  animateStat($('sCourts'), String(visibleCourts.length));
   animateStat($('sBook'),   String(bookings.length));
   if ($('sRev')) animateStat($('sRev'), totalRev);
 
@@ -6165,7 +6158,7 @@ async function renderCourts() {
   if (tabsEl) {
     const today_ = selectedDate;
     const cur_   = curHour;
-    const singleCourtTabs = courts.map(c => {
+    const singleCourtTabs = visibleCourts.map(c => {
       const blk = c.blocked;
       const allSl_ = Array.from({length: closeHour - openHour}, (_, i) => i + openHour);
       const booked_ = new Set(
@@ -6179,13 +6172,8 @@ async function renderCourts() {
         <span class="tab-dot ${dotCls}"></span>${esc(shortName)}
       </button>`;
     }).join('');
-    tabsEl.innerHTML = `<button class="court-tab" data-court="all" onclick="switchCourtTab('all')" title="All Courts">
-      <span class="tab-dot tab-dot-all"></span>All Courts
-    </button>` + singleCourtTabs;
-    if (courts.length > 0) {
-      const activeCourtId = cardSelectionList()[0]?.courtId || 'all';
-      switchCourtTab(activeCourtId);
-    }
+    tabsEl.innerHTML = visibleCourts.length > 1 ? singleCourtTabs : '';
+    if (visibleCourts.length > 0) switchCourtTab(visibleCourts[0].id);
   }
 }
 
