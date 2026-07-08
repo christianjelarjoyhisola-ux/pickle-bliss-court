@@ -3696,8 +3696,12 @@ function hostSessionPaymentMethodLabel(method) {
   return paymentMethodName(method);
 }
 
-function hostSessionReceiver(method) {
+function paymentReceiver(method) {
   return paymentReceiverSettings[paymentReceiverKey(method)] || paymentReceiverSettings.gcash || { number: '', name: '', qrImage: '' };
+}
+
+function hostSessionReceiver(method) {
+  return paymentReceiver(method);
 }
 
 function setHostSessionPayMethod(method) {
