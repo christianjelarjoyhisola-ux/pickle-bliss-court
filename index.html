@@ -2106,16 +2106,28 @@ footer { background:var(--card); border-top:1px solid var(--border); padding:40p
 .sp-content {
   position: relative; z-index: 10;
   display: flex; flex-direction: column; align-items: center; text-align: center;
-  padding: 24px;
+  width: min(92vw, 720px);
+  padding: 28px 24px;
   text-shadow: 0 2px 24px rgba(0,0,0,.7);
 }
+.sp-content::before,
+.sp-content::after {
+  content: '';
+  width: min(360px, 68vw);
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(255,106,0,.8), rgba(217,4,22,.65), transparent);
+  opacity: .72;
+  animation: spFadeUp .5s ease .48s both;
+}
+.sp-content::before { margin-bottom: 22px; }
+.sp-content::after { margin-top: 24px; }
 /* Logo */
 .sp-logo-img {
-  width: 106px; height: 106px; border-radius:50%; object-fit: contain;
+  width: 96px; height: 96px; border-radius:50%; object-fit: contain;
   background:#fff;
   border: 2px solid rgba(255,255,255,.66);
   box-shadow: 0 0 34px rgba(255,106,0,.32), 0 16px 48px rgba(0,0,0,.66);
-  margin-bottom: 24px;
+  margin-bottom: 22px;
   animation: spDropIn .75s cubic-bezier(.34,1.56,.64,1) .1s both;
 }
 @keyframes spDropIn {
@@ -2125,37 +2137,39 @@ footer { background:var(--card); border-top:1px solid var(--border); padding:40p
 /* Brand name */
 .sp-brand {
   font-family: 'Bebas Neue', sans-serif;
-  font-size: clamp(2.6rem, 9vw, 5rem);
-  letter-spacing: 6px; color: #fffaf5; line-height: 1;
+  font-size: clamp(3rem, 9vw, 5.45rem);
+  letter-spacing: 8px; color: #fffaf5; line-height: .94;
   text-shadow: 0 4px 40px rgba(0,0,0,.82);
-  animation: spFadeUp .6s ease .3s both;
+  animation: spFadeUp .6s ease .38s both;
+  margin-bottom: 10px;
 }
 .sp-sub {
   font-family: 'Bebas Neue', sans-serif;
-  font-size: clamp(.8rem, 2.5vw, 1rem);
-  letter-spacing: 7px; color: #ffb043;
-  margin-top: 4px; margin-bottom: 18px;
-  animation: spFadeUp .6s ease .45s both;
+  font-size: clamp(.72rem, 2.1vw, .9rem);
+  letter-spacing: 5px; color: rgba(255,250,245,.72);
+  margin-top: 0; margin-bottom: 0;
+  animation: spFadeUp .6s ease .5s both;
 }
 .sp-slogan {
-  margin-bottom: 30px;
-  animation: spFadeUp .55s ease .54s both;
+  order: -1;
+  margin-bottom: 14px;
+  animation: spFadeUp .55s ease .28s both;
 }
 .sp-slogan-kicker {
   font-family: 'Bebas Neue', sans-serif;
   color: #ff6a00;
-  font-size: clamp(1rem, 3vw, 1.35rem);
+  font-size: clamp(1.05rem, 3vw, 1.5rem);
   letter-spacing: 6px;
   line-height: 1;
-  margin-bottom: 8px;
+  margin-bottom: 10px;
   text-shadow: 0 0 22px rgba(255,106,0,.34), 0 3px 18px rgba(0,0,0,.72);
 }
 .sp-slogan-main {
   font-family: 'Bebas Neue', sans-serif;
   color: #fffaf5;
-  font-size: clamp(1.55rem, 5vw, 2.55rem);
-  letter-spacing: 3px;
-  line-height: .95;
+  font-size: clamp(1.35rem, 4.2vw, 2.1rem);
+  letter-spacing: 4px;
+  line-height: 1;
   text-shadow: 0 5px 34px rgba(0,0,0,.86);
 }
 @keyframes spFadeUp {
@@ -2164,55 +2178,54 @@ footer { background:var(--card); border-top:1px solid var(--border); padding:40p
 }
 /* Divider */
 .sp-line {
-  width: 64px; height: 2px; margin-bottom: 30px;
-  background: linear-gradient(90deg, transparent, #ffb043, transparent);
-  animation: spFadeUp .4s ease .55s both;
-}
-/* Tap circle */
-.sp-tap-ring-wrap {
-  position: relative; width: 78px; height: 78px;
-  display: flex; align-items: center; justify-content: center;
-  margin-bottom: 20px;
-  animation: spFadeUp .5s ease .65s both;
-}
-.sp-tap-ring-wrap::before,
-.sp-tap-ring-wrap::after {
-  content: ''; position: absolute; inset: 0; border-radius: 50%;
-  border: 2px solid #ff6a00;
-  animation: spTapPulse 2s ease-in-out infinite;
-}
-.sp-tap-ring-wrap::after {
-  inset: -10px; border-color: rgba(217,4,22,.34);
-  animation-delay: .4s;
+  display: none;
 }
 @keyframes spTapPulse {
   0%,100% { transform:scale(1);    opacity:1;  }
   50%      { transform:scale(1.14); opacity:.5; }
-}
-.sp-tap-icon {
-  display: block; width: 62px; height: 62px;
-  animation: spBounce 2.2s ease-in-out infinite;
-  filter: drop-shadow(0 4px 10px rgba(0,0,0,.46));
 }
 @keyframes spBounce {
   0%,100% { transform:translateY(0); }
   50%     { transform:translateY(-5px); }
 }
 /* Tap text */
+.sp-tap-card {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 18px;
+  min-width: min(360px, 88vw);
+  padding: 15px 22px;
+  margin-top: 30px;
+  border: 1px solid rgba(255,106,0,.5);
+  border-radius: 8px;
+  background: linear-gradient(135deg, rgba(217,4,22,.94), rgba(255,106,0,.94));
+  box-shadow: 0 18px 44px rgba(0,0,0,.42), 0 0 38px rgba(255,106,0,.18);
+  animation: spFadeUp .5s ease .68s both, spCtaGlow 2.4s ease-in-out infinite;
+}
+.sp-tap-card::after {
+  content: 'ENTER';
+  font-size: .66rem;
+  font-weight: 800;
+  letter-spacing: 2px;
+  color: rgba(255,255,255,.78);
+  border-left: 1px solid rgba(255,255,255,.34);
+  padding-left: 18px;
+}
 .sp-tap-text {
   font-family: 'Bebas Neue', sans-serif;
-  font-size: clamp(1.7rem, 4.5vw, 2.4rem);
-  letter-spacing: 10px; color: #ffb043;
-  animation: spFadeUp .5s ease .75s both, tapGlow 2.2s ease-in-out infinite;
-  margin-bottom: 10px;
+  font-size: clamp(1.55rem, 4vw, 2.15rem);
+  letter-spacing: 7px; color: #fffaf5;
+  margin-bottom: 0;
 }
-@keyframes tapGlow {
-  0%,100% { text-shadow: 0 0 16px rgba(255,176,67,.34), 0 3px 18px rgba(0,0,0,.72); }
-  50%      { text-shadow: 0 0 32px rgba(255,176,67,.62), 0 0 60px rgba(217,81,43,.24), 0 3px 18px rgba(0,0,0,.72); }
+@keyframes spCtaGlow {
+  0%,100% { transform: translateY(0); box-shadow: 0 18px 44px rgba(0,0,0,.42), 0 0 30px rgba(255,106,0,.16); }
+  50% { transform: translateY(-2px); box-shadow: 0 22px 54px rgba(0,0,0,.48), 0 0 46px rgba(255,106,0,.28); }
 }
 .sp-tap-sub {
-  font-size: .82rem; color: rgba(232,240,248,.84); letter-spacing: 1.5px;
-  animation: spFadeUp .5s ease .88s both;
+  font-size: .82rem; color: rgba(232,240,248,.84); letter-spacing: 1.4px;
+  margin-top: 12px;
+  animation: spFadeUp .5s ease .82s both;
 }
 /* Bottom label */
 .sp-bottom {
@@ -2232,14 +2245,18 @@ footer { background:var(--card); border-top:1px solid var(--border); padding:40p
       radial-gradient(circle at 50% 42%, rgba(8,9,11,.42) 0%, rgba(8,9,11,.72) 42%, transparent 66%),
       linear-gradient(180deg, rgba(8,9,11,.58), rgba(10,13,16,.78) 48%, rgba(7,8,10,.92));
   }
-  .sp-logo-img { width: 92px; height: 92px; margin-bottom: 20px; }
-  .sp-brand { letter-spacing: 3px; }
-  .sp-sub { letter-spacing: 4px; margin-bottom: 14px; }
-  .sp-slogan { margin-bottom: 24px; }
-  .sp-slogan-kicker { letter-spacing: 4px; margin-bottom: 6px; }
-  .sp-slogan-main { font-size: clamp(1.45rem, 7.6vw, 2rem); letter-spacing: 2px; }
-  .sp-line { margin-bottom: 24px; }
-  .sp-tap-text { letter-spacing: 6px; }
+  .sp-content { width: 100%; padding: 22px 20px; }
+  .sp-content::before { margin-bottom: 18px; }
+  .sp-content::after { margin-top: 20px; }
+  .sp-logo-img { width: 86px; height: 86px; margin-bottom: 18px; }
+  .sp-brand { font-size: clamp(2.7rem, 12vw, 3.6rem); letter-spacing: 4px; }
+  .sp-sub { letter-spacing: 3px; }
+  .sp-slogan { margin-bottom: 18px; }
+  .sp-slogan-kicker { letter-spacing: 4px; margin-bottom: 7px; }
+  .sp-slogan-main { font-size: clamp(1.25rem, 6.6vw, 1.72rem); letter-spacing: 2px; }
+  .sp-tap-card { min-width: min(320px, 86vw); margin-top: 26px; padding: 14px 18px; gap: 14px; }
+  .sp-tap-card::after { padding-left: 14px; letter-spacing: 1.5px; }
+  .sp-tap-text { letter-spacing: 5px; }
   .sp-bottom { bottom: 18px; font-size: .62rem; letter-spacing: 1.8px; }
 }
 /* Light mode overrides for splash */
@@ -2680,42 +2697,17 @@ body.light #splashScreen { background: #071320; }
   <div class="sp-ring"></div>
 
   <div class="sp-content">
-    <img class="sp-logo-img" src="pickle-bliss-logo.jpg" alt="Pickle Bliss Court Logo" />
-    <div class="sp-brand">PICKLE BLISS COURT</div>
-    <div class="sp-sub">PICKLEBALL COURT RESERVATIONS</div>
     <div class="sp-slogan">
       <div class="sp-slogan-kicker">PLAY. CONNECT. UNWIND.</div>
       <div class="sp-slogan-main">YOUR NEW FAVOURITE COURT</div>
     </div>
+    <img class="sp-logo-img" src="pickle-bliss-logo.jpg" alt="Pickle Bliss Court Logo" />
+    <div class="sp-brand">PICKLE BLISS COURT</div>
+    <div class="sp-sub">BLISS, POBLACION, MONKAYO</div>
     <div class="sp-line"></div>
-    <div class="sp-tap-ring-wrap">
-      <svg class="sp-tap-icon" viewBox="0 0 100 100">
-        <!-- Paddle group rotated -38deg -->
-        <g transform="rotate(-38, 46, 46)">
-          <!-- Paddle head: wide rounded square, navy fill -->
-          <rect x="18" y="4" width="42" height="46" rx="14" fill="var(--accent)"/>
-          <!-- Inner white border detail -->
-          <rect x="23" y="9" width="32" height="36" rx="9" fill="none" stroke="rgba(255,255,255,0.45)" stroke-width="2.2"/>
-          <!-- Handle -->
-          <rect x="31" y="49" width="18" height="28" rx="6" fill="var(--accent)"/>
-          <!-- Grip wrap lines -->
-          <rect x="31" y="57" width="18" height="3.5" rx="1.8" fill="rgba(0,0,0,0.28)"/>
-          <rect x="31" y="65" width="18" height="3.5" rx="1.8" fill="rgba(0,0,0,0.28)"/>
-          <!-- Handle butt cap -->
-          <rect x="31" y="73" width="18" height="4" rx="2" fill="var(--accent-dark)"/>
-        </g>
-        <!-- Pickleball (not rotated, lower-right) -->
-        <circle cx="74" cy="74" r="16" fill="#ffb043"/>
-        <!-- Ball holes pattern -->
-        <circle cx="69" cy="69" r="2.8" fill="#130606"/>
-        <circle cx="79" cy="69" r="2.8" fill="#130606"/>
-        <circle cx="74" cy="78" r="2.8" fill="#130606"/>
-        <circle cx="65" cy="76" r="2.2" fill="#130606"/>
-        <circle cx="83" cy="75" r="2.2" fill="#130606"/>
-        <circle cx="72" cy="62" r="2.2" fill="#130606"/>
-      </svg>
+    <div class="sp-tap-card">
+      <div class="sp-tap-text">TAP TO BOOK</div>
     </div>
-    <div class="sp-tap-text">TAP TO BOOK</div>
     <div class="sp-tap-sub">Select a court and reserve your slot</div>
   </div>
 
