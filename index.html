@@ -59,7 +59,8 @@ body.dark .nav { background:rgba(9,21,33,.94); }
 .logo-tx .logo-sub { display:block; font-size:.78rem; color:var(--accent); letter-spacing:1.5px; }
 .nav-r { display:flex; align-items:center; gap:14px; }
 /* switch */
-.sw-wrap { display:flex; align-items:center; gap:7px; font-size:.85rem; color:var(--muted); }
+.sw-wrap { display:flex; align-items:center; gap:7px; font-size:.78rem; color:var(--muted); }
+.sw-label { font-weight:700; letter-spacing:.2px; }
 .sw { position:relative; width:42px; height:23px; }
 .sw input { opacity:0; width:0; height:0; }
 .sw-tr {
@@ -135,9 +136,9 @@ body.dark .nav { background:rgba(9,21,33,.94); }
   display:flex; align-items:center; justify-content:space-between; gap:12px;
   margin:2px 0 18px; padding:14px;
   position:sticky; top:72px; z-index:190;
-  background:linear-gradient(135deg,rgba(var(--ac),.18),rgba(var(--ac),.06)), var(--card);
-  border:1.5px solid rgba(var(--ac),.42); border-radius:14px;
-  box-shadow:0 10px 28px rgba(15,36,56,.14);
+  background:linear-gradient(135deg,rgba(var(--ac),.09),rgba(var(--ac),.025)), var(--card);
+  border:1px solid rgba(var(--ac),.22); border-radius:12px;
+  box-shadow:0 10px 28px rgba(15,36,56,.08);
   overflow:hidden;
 }
 .shared-date-title {
@@ -155,7 +156,7 @@ body.dark .nav { background:rgba(9,21,33,.94); }
 .shared-date-nav,
 .shared-date-today,
 .shared-date-display {
-  min-height:36px; border-radius:10px; border:1px solid rgba(var(--ac),.25);
+  min-height:36px; border-radius:8px; border:1px solid rgba(var(--ac),.18);
   background:rgba(255,255,255,.7); color:var(--text); font-family:'Outfit',sans-serif;
   font-weight:900; cursor:pointer; transition:border-color .15s, background .15s, transform .15s;
 }
@@ -292,21 +293,22 @@ body.dark .shared-date-display {
   .find-time-entry { margin-top:-6px; gap:10px; }
   .find-time-entry span { display:none; }
   .find-time-entry .btn { justify-content:center; min-width:82px; }
-  .shared-date-entry { display:block; top:68px; padding:9px 10px; margin-bottom:12px; }
+  .shared-date-entry { display:block; top:68px; padding:10px; margin-bottom:12px; border-radius:12px; }
   .shared-date-title {
     flex-direction:row; align-items:center; justify-content:space-between;
-    margin-bottom:7px; gap:10px;
+    margin-bottom:8px; gap:10px;
   }
+  .shared-date-title strong { font-size:.8rem; }
   .shared-date-title span { font-size:.6rem; }
   .shared-date-control {
-    grid-template-columns:32px minmax(0,1fr) 32px 58px;
+    grid-template-columns:34px minmax(0,1fr) 34px;
     gap:5px; min-width:0;
   }
   .shared-date-nav,
   .shared-date-today,
   .shared-date-display { min-height:34px; border-radius:9px; }
   .shared-date-display { font-size:.86rem; padding:0 8px; }
-  .shared-date-today { font-size:.64rem; padding:0 8px; }
+  .shared-date-today { display:none; }
   .date-picker-overlay { align-items:flex-end; padding:12px; }
   .date-picker { width:100%; border-radius:18px 18px 14px 14px; padding:13px; }
   .date-day { border-radius:9px; font-size:.76rem; }
@@ -572,8 +574,8 @@ body.dark .shared-date-display {
   .cc-mobile-hd {
     display:flex; align-items:center; justify-content:space-between;
     padding:12px 14px;
-    background:linear-gradient(135deg,rgba(var(--ac),.10),rgba(var(--ac),.035));
-    border-bottom:1px solid rgba(var(--ac),.18);
+    background:linear-gradient(135deg,rgba(var(--ac),.075),rgba(var(--ac),.025));
+    border-bottom:1px solid rgba(var(--ac),.12);
     gap:10px;
   }
   .cc-mobile-title {
@@ -596,7 +598,7 @@ body.dark .shared-date-display {
     white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
     border:1px solid transparent;
   }
-  .cc-mobile-status.av { background:rgba(var(--lime-rgb),.16); color:var(--lime-ink); border-color:rgba(var(--lime-rgb),.34); }
+  .cc-mobile-status.av { background:rgba(255,106,0,.10); color:var(--accent); border-color:rgba(255,106,0,.24); }
   .cc-mobile-status.full { background:rgba(220,38,38,.10); color:var(--red); border-color:rgba(220,38,38,.22); }
   .cc-mobile-status.mnt { background:rgba(100,116,139,.12); color:var(--muted); border-color:rgba(100,116,139,.24); }
   .cc-mobile-status.done { background:rgba(100,116,139,.12); color:var(--muted); border-color:rgba(100,116,139,.24); }
@@ -614,8 +616,8 @@ body.dark .shared-date-display {
 }
 /* ── AVAILABLE ── dark card, blue tint border, neutral price (selected state carries the emphasis) */
 .cc-slot-btn:not(.taken):not(.past-slot):not(.open-play):not(.maintenance) {
-  background: #0d1b2e;
-  border: 1.5px solid rgba(var(--ac),.34);
+  background: #111827;
+  border: 1px solid rgba(17,24,39,.78);
   color: var(--dark-text);
 }
 .cc-slot-btn:not(.taken):not(.past-slot):not(.open-play):not(.maintenance) .csl-price {
@@ -625,9 +627,9 @@ body.dark .shared-date-display {
 /* desktop hover only */
 @media (hover: hover) {
   .cc-slot-btn:not(.taken):not(.past-slot):not(.open-play):not(.maintenance):hover {
-    background: #0f2040;
-    border-color: #4b5563;
-    box-shadow: 0 0 0 3px rgba(75,85,99,.15);
+    background: #151f33;
+    border-color: rgba(var(--ac),.34);
+    box-shadow: 0 0 0 3px rgba(var(--ac),.08);
   }
 }
 /* ── SELECTED ── orange */
@@ -2054,6 +2056,18 @@ footer { background:var(--card); border-top:1px solid var(--border); padding:40p
   transform: scale(1.02);
   z-index: 0;
 }
+@media(max-width:700px) {
+  .cc-slot-legend { display:none; }
+  .cc-times::after {
+    content:'Tap a time to select';
+    display:block;
+    margin-top:12px;
+    color:var(--muted);
+    font-size:.74rem;
+    font-weight:700;
+    letter-spacing:.2px;
+  }
+}
 #splashScreen::after {
   content: '';
   position: absolute; inset: 0;
@@ -2817,9 +2831,8 @@ body.light #splashScreen { background: #071320; }
   </div>
   <div class="nav-r">
     <div class="sw-wrap">
-      <span>Light</span>
+      <span class="sw-label">Mode</span>
       <label class="sw"><input type="checkbox" id="darkTog" checked><span class="sw-tr"></span></label>
-      <span>Dark</span>
     </div>
   </div>
 </nav>
@@ -4479,6 +4492,11 @@ function courtAvailabilityBadge({ blocked, date, allSlots, curHour, bookedHours,
   return { cls: 'full', text: 'Fully booked' };
 }
 
+function publicCourtName(court) {
+  const name = String(court?.name || '').trim();
+  return /^court\s*1$/i.test(name) ? 'Main Court' : (name || 'Main Court');
+}
+
 function openPlaySessionHtml({ courtId, courtName, date, session, spotsLeft, maxPlayers, compact = false }) {
   if (!session) return '';
   const state = getOpenPlaySessionState(date, session, spotsLeft);
@@ -6040,6 +6058,7 @@ async function renderCourts() {
     const availBadge = courtAvailabilityBadge({ blocked: blk, date: selectedDate, allSlots, curHour, bookedHours, courtId: c.id });
     const availBadgeCls = availBadge.cls;
     const availBadgeTxt = availBadge.text;
+    const displayCourtName = publicCourtName(c);
 
     // Use this court's own rate schedule, fall back to global tiers, then flat rate
     const _cTiers = getPricingTiersForCourt(c);
@@ -6058,7 +6077,7 @@ async function renderCourts() {
     const openPlayCardHtml = (!blk && todayOpenPlaySession)
       ? openPlaySessionHtml({
           courtId: c.id,
-          courtName: c.name,
+          courtName: displayCourtName,
           date: selectedDate,
           session: todayOpenPlaySession,
           spotsLeft: todayOpenPlaySpotsLeft,
@@ -6094,8 +6113,8 @@ async function renderCourts() {
       <!-- MOBILE-ONLY HEADER -->
       <div class="cc-mobile-hd">
         <div class="cc-mobile-title">
-          <span class="cc-mobile-name">${esc(c.name)}</span>
-          <span class="cc-mobile-meta">${esc(rateRange)} · ${esc(c.desc || 'Court')}</span>
+          <span class="cc-mobile-name">${esc(displayCourtName)}</span>
+          <span class="cc-mobile-meta">${esc(c.desc || 'Indoor')} · ${esc(rateRange)}</span>
         </div>
         <div class="cc-mobile-side">
           <span class="cc-mobile-status ${availBadgeCls}" id="cMobAvail_${esc(c.id)}">${esc(availBadgeTxt)}</span>
@@ -6107,8 +6126,8 @@ async function renderCourts() {
         ${courtPhotoHtml}
         <div class="cc-photo-avail ${availBadgeCls}" id="cAvail_${esc(c.id)}">${esc(availBadgeTxt)}</div>
         <div class="cc-photo-bar">
-          <span class="cc-photo-name">${esc(c.name)}</span>
-          <div class="cc-photo-rate">${esc(rateRange)} · ${esc(c.desc)}</div>
+          <span class="cc-photo-name">${esc(displayCourtName)}</span>
+          <div class="cc-photo-rate">${esc(c.desc || 'Indoor')} · ${esc(rateRange)}</div>
         </div>
       </div>
 
