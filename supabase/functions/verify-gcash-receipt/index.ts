@@ -64,6 +64,7 @@ type OcrResult = {
   primaryProvider?: OcrProvider;
   fallbackProvider?: OcrProvider;
   fallbackReason?: string;
+  imageVariant?: string;
 };
 
 function publicReceiptMessage(
@@ -124,6 +125,22 @@ function base64ToBytes(b64: string): Uint8Array {
   return bytes;
 }
 
+function bytesToBase64(bytes: Uint8Array): string {
+  let out = "";
+  const chunkSize = 0x8000;
+  for (let i = 0; i < bytes.length; i += chunkSize) {
+    out += String.fromCharCode(...bytes.subarray(i, i + chunkSize));
+  }
+  return btoa(out);
+}
+
+function pixelBrightness(pixel: number): number {
+  const r = (pixel >>> 24) & 0xff;
+  const g = (pixel >>> 16) & 0xff;
+  const b = (pixel >>> 8) & 0xff;
+  return (r + g + b) / 3;
+}
+
 async function sha256Hex(bytes: Uint8Array): Promise<string> {
   const copy = new Uint8Array(bytes.byteLength);
   copy.set(bytes);
@@ -152,6 +169,81 @@ async function dHash(bytes: Uint8Array): Promise<string | null> {
     return hex;
   } catch {
     return null; // HEIC/unknown formats — skip perceptual dedupe, not fatal
+  }
+}
+
+async function imageToJpegBase64(img: Image, quality = 92): Promise<string> {
+  const encoded = await img.encodeJPEG(quality);
+  return bytesToBase64(encoded);
+}
+
+function resizeForOcr(img: Image): Image {
+  const maxSide = Math.max(img.width, img.height);
+  const minSide = Math.min(img.width, img.height);
+  let scale = 1;
+  if (maxSide > 2200) scale = 2200 / maxSide;
+  else if (minSide < 900) scale = Math.min(2.5, 1200 / Math.max(1, minSide));
+  if (Math.abs(scale - 1) < 0.05) return img.clone();
+  return img.resize(Math.max(1, Math.round(img.width * scale)), Math.max(1, Math.round(img.height * scale)));
+}
+
+function cropBrightReceiptRegion(img: Image): Image | null {
+  const w = img.width;
+  const h = img.height;
+  if (w < 200 || h < 200) return null;
+
+  const step = Math.max(4, Math.floor(Math.min(w, h) / 260));
+  let minX = w;
+  let minY = h;
+  let maxX = 0;
+  let maxY = 0;
+  let hits = 0;
+
+  for (let y = 1; y <= h; y += step) {
+    for (let x = 1; x <= w; x += step) {
+      const brightness = pixelBrightness(img.getPixelAt(x, y));
+      if (brightness >= 168) {
+        minX = Math.min(minX, x);
+        minY = Math.min(minY, y);
+        maxX = Math.max(maxX, x);
+        maxY = Math.max(maxY, y);
+        hits++;
+      }
+    }
+  }
+
+  if (hits < 40 || maxX <= minX || maxY <= minY) return null;
+  const cropW = maxX - minX + step;
+  const cropH = maxY - minY + step;
+  const areaRatio = (cropW * cropH) / (w * h);
+  if (areaRatio < 0.12 || areaRatio > 0.92) return null;
+
+  const pad = Math.round(Math.min(w, h) * 0.025);
+  const x = Math.max(0, minX - pad);
+  const y = Math.max(0, minY - pad);
+  const width = Math.min(w - x, cropW + pad * 2);
+  const height = Math.min(h - y, cropH + pad * 2);
+  if (width < 180 || height < 180) return null;
+  return img.crop(x, y, width, height);
+}
+
+async function buildOcrImageVariants(bytes: Uint8Array): Promise<Array<{ label: string; base64: string }>> {
+  try {
+    const img = await Image.decode(bytes);
+    const variants: Array<{ label: string; base64: string }> = [];
+
+    const normalized = resizeForOcr(img);
+    variants.push({ label: "normalized_jpeg", base64: await imageToJpegBase64(normalized) });
+
+    const crop = cropBrightReceiptRegion(img);
+    if (crop) {
+      variants.push({ label: "cropped_receipt_jpeg", base64: await imageToJpegBase64(resizeForOcr(crop)) });
+    }
+
+    return variants;
+  } catch (e) {
+    console.error("receipt OCR preprocessing failed:", errMsg(e));
+    return [];
   }
 }
 
@@ -194,7 +286,7 @@ const MONTHS: Record<string, number> = {
 // against phManilaNow()). If OCR only finds the date, return the date but no
 // shifted time so it routes to manual review instead of assuming midnight.
 function parseReceiptDateTime(text: string): { date: string | null; shifted: Date | null } {
-  const normalized = String(text || "")
+  const normalized = normalizeOcrText(text)
     .replace(/[|]/g, " ")
     .replace(/\s+/g, " ")
     .trim();
@@ -228,6 +320,26 @@ function digitsOnly(s: string): string {
   return (s || "").replace(/\D/g, "");
 }
 
+function ocrDigitsOnly(s: string): string {
+  return (s || "")
+    .replace(/[oO]/g, "0")
+    .replace(/[iIl|]/g, "1")
+    .replace(/[sS]/g, "5")
+    .replace(/[bB]/g, "8")
+    .replace(/\D/g, "");
+}
+
+function normalizeOcrText(text: string): string {
+  return String(text || "")
+    .replace(/\u20b1/g, "P")
+    .replace(/[“”]/g, "\"")
+    .replace(/[‘’]/g, "'")
+    .replace(/\bN[0O]\b/gi, "No")
+    .replace(/\bR[e3]f\b/gi, "Ref")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
 function normalizeReferenceForProvider(value: string, provider: PaymentProvider): string {
   const raw = value || "";
   if (provider === "gcash") return digitsOnly(raw);
@@ -257,6 +369,7 @@ function maskedDigitPattern(digits: string): RegExp {
 
 // Extract candidate 13-digit GCash reference numbers from OCR text.
 function extractGcashRef(text: string, typedRef = ""): string | null {
+  text = normalizeOcrText(text);
   const normalizedTyped = digitsOnly(typedRef);
 
   // If the customer-entered ref is visible in the OCR text, trust it. This
@@ -267,25 +380,28 @@ function extractGcashRef(text: string, typedRef = ""): string | null {
   }
 
   // Prefer numbers immediately following receipt reference labels.
-  const labelPattern = /\b(?:ref(?:erence)?(?:\s*(?:no|number|#))?\.?)\s*[:#]?\s*([0-9][0-9\s-]{11,30}[0-9])/gi;
+  const labelPattern = /\b(?:ref(?:erence)?(?:\s*(?:no|number|#))?\.?)\s*[:#]?\s*([0-9oOiIl|sSbB][0-9oOiIl|sSbB\s-]{11,30}[0-9oOiIl|sSbB])/gi;
   let labelMatch: RegExpExecArray | null;
   while ((labelMatch = labelPattern.exec(text)) !== null) {
-    const d = digitsOnly(labelMatch[1]);
+    const d = ocrDigitsOnly(labelMatch[1]);
     if (d.length === 13) return d;
     if (normalizedTyped.length === 13 && d.includes(normalizedTyped)) return normalizedTyped;
   }
 
   // Fallback: any standalone 13-digit run.
-  const standalone = text.match(/\b\d{13}\b/);
-  if (standalone) return standalone[0];
+  const standalone = text.match(/\b[0-9oOiIl|sSbB]{13}\b/);
+  if (standalone) {
+    const d = ocrDigitsOnly(standalone[0]);
+    if (d.length === 13) return d;
+  }
 
   // Last resort: tolerate OCR spaces inside a single long numeric group.
   // Keep this after label/typed matching because phone numbers and amounts can
   // otherwise be accidentally joined into a fake 13-digit reference.
-  const cleaned = text.replace(/[^\d\s-]/g, " ");
-  const groups = cleaned.match(/(?:\d[\d\s-]{11,30}\d)/g) || [];
+  const cleaned = text.replace(/[^0-9oOiIl|sSbB\s-]/g, " ");
+  const groups = cleaned.match(/(?:[0-9oOiIl|sSbB][0-9oOiIl|sSbB\s-]{11,30}[0-9oOiIl|sSbB])/g) || [];
   for (const g of groups) {
-    const d = digitsOnly(g);
+    const d = ocrDigitsOnly(g);
     if (d.length === 13) return d;
   }
   return null;
@@ -450,8 +566,7 @@ function extractBpiTransactionRefNo(text: string): string | null {
 }
 
 function extractAmount(text: string): number | null {
-  const normalized = String(text || "")
-    .replace(/\u20b1/g, "P")
+  const normalized = normalizeOcrText(text)
     .replace(/\s+/g, " ")
     .trim();
 
@@ -812,30 +927,85 @@ function ocrCriticalGaps(text: string, provider: PaymentProvider, typedRef: stri
   return gaps;
 }
 
+function ocrScore(result: { text: string; confidence: number }, provider: PaymentProvider, typedRef: string): number {
+  const gaps = ocrCriticalGaps(result.text, provider, typedRef).length;
+  return (result.text ? 100 : 0)
+    + Math.min(80, result.text.length / 10)
+    + result.confidence * 30
+    - gaps * 35;
+}
+
+function needsOcrRetry(result: { text: string; confidence: number }, provider: PaymentProvider, typedRef: string): boolean {
+  if (!result.text) return true;
+  if (result.confidence < 0.55) return true;
+  return ocrCriticalGaps(result.text, provider, typedRef).length > 0;
+}
+
 async function runOCR(
   visionKey: string,
   base64: string,
+  bytes: Uint8Array,
   provider: PaymentProvider,
   typedRef: string,
 ): Promise<OcrResult> {
   if (visionKey) {
+    let best: OcrResult | null = null;
     try {
       const v = await googleVisionOCR(visionKey, base64);
+      best = { ...v, provider: "google_vision", primaryProvider: "google_vision", imageVariant: "original" };
       const gaps = ocrCriticalGaps(v.text, provider, typedRef);
-      if (v.text && gaps.length === 0) {
-        return { ...v, provider: "google_vision", primaryProvider: "google_vision" };
+      if (!needsOcrRetry(v, provider, typedRef)) {
+        return best;
       }
-      if (v.text) {
+
+      const variants = await buildOcrImageVariants(bytes);
+      for (const variant of variants) {
+        try {
+          const retry = await googleVisionOCR(visionKey, variant.base64);
+          const candidate: OcrResult = {
+            ...retry,
+            provider: "google_vision",
+            primaryProvider: "google_vision",
+            fallbackProvider: "google_vision",
+            fallbackReason: `retry_${variant.label}`,
+            imageVariant: variant.label,
+          };
+          if (!best || ocrScore(candidate, provider, typedRef) > ocrScore(best, provider, typedRef)) {
+            best = candidate;
+          }
+          if (!needsOcrRetry(candidate, provider, typedRef)) return candidate;
+        } catch (e) {
+          console.error(`Vision OCR retry failed (${variant.label}):`, errMsg(e));
+        }
+      }
+      if (best?.text) {
+        const bestGaps = ocrCriticalGaps(best.text, provider, typedRef);
         return {
-          ...v,
-          provider: "google_vision",
-          primaryProvider: "google_vision",
-          fallbackReason: gaps.length ? `google_missing_${gaps.join("_")}` : undefined,
+          ...best,
+          fallbackReason: best.fallbackReason || (bestGaps.length ? `google_missing_${bestGaps.join("_")}` : undefined),
         };
       }
       console.error("Vision OCR returned no text:", gaps.join(","));
     } catch (e) {
       console.error("Vision OCR failed:", errMsg(e));
+      const variants = await buildOcrImageVariants(bytes);
+      for (const variant of variants) {
+        try {
+          const retry = await googleVisionOCR(visionKey, variant.base64);
+          if (retry.text) {
+            return {
+              ...retry,
+              provider: "google_vision",
+              primaryProvider: "google_vision",
+              fallbackProvider: "google_vision",
+              fallbackReason: `original_failed_retry_${variant.label}`,
+              imageVariant: variant.label,
+            };
+          }
+        } catch (retryErr) {
+          console.error(`Vision OCR retry failed (${variant.label}):`, errMsg(retryErr));
+        }
+      }
     }
   }
   return { text: "", confidence: 0, provider: "none" };
@@ -1000,14 +1170,16 @@ Deno.serve(async (req) => {
     let ocrPrimaryProvider: OcrResult["primaryProvider"] = "none";
     let ocrFallbackProvider: OcrResult["fallbackProvider"] | null = null;
     let ocrFallbackReason: string | null = null;
+    let ocrImageVariant: string | null = null;
     try {
-      const ocr = await runOCR(visionKey, imageBase64, provider, typedRef);
+      const ocr = await runOCR(visionKey, imageBase64, bytes, provider, typedRef);
       ocrText = ocr.text;
       ocrConfidence = ocr.confidence;
       ocrProvider = ocr.provider;
       ocrPrimaryProvider = ocr.primaryProvider || ocr.provider;
       ocrFallbackProvider = ocr.fallbackProvider || null;
       ocrFallbackReason = ocr.fallbackReason || null;
+      ocrImageVariant = ocr.imageVariant || null;
     } catch (e) {
       console.error("Google Vision OCR failed:", errMsg(e));
     }
@@ -1251,6 +1423,7 @@ Deno.serve(async (req) => {
       ocrPrimaryProvider,
       ocrFallbackProvider,
       ocrFallbackReason,
+      ocrImageVariant,
       ocrConfidence,
       ocrTextLength: ocrText.length,
       expectedReceiverNumber: provider === "bdopay" || provider === "maya" || provider === "bpi" ? null : expectedNumber || null,
