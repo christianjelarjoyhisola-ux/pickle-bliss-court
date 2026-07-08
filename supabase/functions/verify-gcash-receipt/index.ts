@@ -227,6 +227,36 @@ function cropBrightReceiptRegion(img: Image): Image | null {
   return img.crop(x, y, width, height);
 }
 
+function cropPhoneScreenRegion(img: Image): Image | null {
+  const w = img.width;
+  const h = img.height;
+  if (h < w * 1.15 || w < 260 || h < 360) return null;
+
+  // Phone-photo receipts often include hands/table around a tall lit screen.
+  // A conservative centered crop removes most background while preserving the
+  // full GCash receipt, even when the phone is slightly tilted.
+  const x = Math.round(w * 0.12);
+  const y = Math.round(h * 0.03);
+  const width = Math.round(w * 0.76);
+  const height = Math.round(h * 0.94);
+  if (width < 220 || height < 320) return null;
+  return img.crop(x, y, Math.min(width, w - x), Math.min(height, h - y));
+}
+
+function cropReceiptDetailRegion(img: Image): Image | null {
+  const w = img.width;
+  const h = img.height;
+  if (w < 180 || h < 260) return null;
+
+  // Keep the top details card and reference/date row, drop ad/eco footer noise.
+  const x = Math.round(w * 0.02);
+  const y = Math.round(h * 0.02);
+  const width = Math.round(w * 0.96);
+  const height = Math.round(h * 0.68);
+  if (width < 160 || height < 220) return null;
+  return img.crop(x, y, Math.min(width, w - x), Math.min(height, h - y));
+}
+
 async function buildOcrImageVariants(bytes: Uint8Array): Promise<Array<{ label: string; base64: string }>> {
   try {
     const img = await Image.decode(bytes);
@@ -235,9 +265,32 @@ async function buildOcrImageVariants(bytes: Uint8Array): Promise<Array<{ label: 
     const normalized = resizeForOcr(img);
     variants.push({ label: "normalized_jpeg", base64: await imageToJpegBase64(normalized) });
 
+    const phone = cropPhoneScreenRegion(img);
+    if (phone) {
+      const phoneNorm = resizeForOcr(phone);
+      variants.push({ label: "phone_screen_jpeg", base64: await imageToJpegBase64(phoneNorm) });
+
+      const phoneReceipt = cropBrightReceiptRegion(phone);
+      if (phoneReceipt) {
+        const phoneReceiptNorm = resizeForOcr(phoneReceipt);
+        variants.push({ label: "phone_receipt_jpeg", base64: await imageToJpegBase64(phoneReceiptNorm) });
+
+        const phoneDetails = cropReceiptDetailRegion(phoneReceiptNorm);
+        if (phoneDetails) {
+          variants.push({ label: "phone_receipt_details_jpeg", base64: await imageToJpegBase64(resizeForOcr(phoneDetails)) });
+        }
+      }
+    }
+
     const crop = cropBrightReceiptRegion(img);
     if (crop) {
-      variants.push({ label: "cropped_receipt_jpeg", base64: await imageToJpegBase64(resizeForOcr(crop)) });
+      const cropNorm = resizeForOcr(crop);
+      variants.push({ label: "cropped_receipt_jpeg", base64: await imageToJpegBase64(cropNorm) });
+
+      const details = cropReceiptDetailRegion(cropNorm);
+      if (details) {
+        variants.push({ label: "cropped_receipt_details_jpeg", base64: await imageToJpegBase64(resizeForOcr(details)) });
+      }
     }
 
     return variants;
@@ -301,7 +354,7 @@ function parseReceiptDateTime(text: string): { date: string | null; shifted: Dat
 
   const afterDate = normalized.slice((dateOnly.index || 0) + dateOnly[0].length, (dateOnly.index || 0) + dateOnly[0].length + 80);
   const beforeDate = normalized.slice(Math.max(0, (dateOnly.index || 0) - 40), dateOnly.index || 0);
-  const timePattern = /\b(\d{1,2})\s*[:;.]\s*(\d{2})(?:\s*[:;.]\s*\d{2})?\s*([ap](?:\s*\.?\s*m\.?)?|[ap])\b/i;
+  const timePattern = /\b(\d{1,2})\s*(?:[:;.]|\s)\s*(\d{2})(?:\s*[:;.]\s*\d{2})?\s*([ap](?:\s*\.?\s*m\.?)?|[ap])\b/i;
   const time = afterDate.match(timePattern) || beforeDate.match(timePattern);
   if (time) {
     let hour = parseInt(time[1], 10);
@@ -587,6 +640,53 @@ function extractAmount(text: string): number | null {
   if (near) return parseFloat(near[1].replace(/,/g, ""));
   const any = text.match(/\b([\d,]{1,9}\.\d{2})\b/);
   return any ? parseFloat(any[1].replace(/,/g, "")) : null;
+}
+
+function extractReceiptAmount(text: string): number | null {
+  const normalized = normalizeOcrText(text)
+    .replace(/\s+/g, " ")
+    .trim();
+
+  type AmountCandidate = { amount: number; score: number; index: number };
+  const candidates: AmountCandidate[] = [];
+  const addCandidate = (raw: string, score: number, index: number) => {
+    const cleaned = raw
+      .replace(/[oO]/g, "0")
+      .replace(/[iIl|]/g, "1")
+      .replace(/,/g, "")
+      .replace(/\s+/g, "");
+    const match = cleaned.match(/^(\d{1,7})[.](\d{2})$/);
+    if (!match) return;
+    const amount = parseFloat(`${match[1]}.${match[2]}`);
+    if (!Number.isFinite(amount) || amount <= 0 || amount > 100000) return;
+    candidates.push({ amount, score, index });
+  };
+  const collect = (pattern: RegExp, score: number) => {
+    let match: RegExpExecArray | null;
+    while ((match = pattern.exec(normalized)) !== null) {
+      addCandidate(match[1], score, match.index);
+    }
+  };
+
+  // Prefer the GCash payment rows and keep footer/ad/eco numbers as fallback.
+  collect(/\btotal\s+amount\s+sent\b.{0,40}?(?:php|peso|p)?\s*[:\-]?\s*([0-9oOiIl|,]+\.\d{2})/gi, 120);
+  collect(/\bamount\s+sent\b.{0,35}?(?:php|peso|p)?\s*[:\-]?\s*([0-9oOiIl|,]+\.\d{2})/gi, 110);
+  collect(/\bamount\b.{0,30}?(?:php|peso|p)?\s*[:\-]?\s*([0-9oOiIl|,]+\.\d{2})/gi, 95);
+  collect(/(?:php|peso|p)\s*([0-9oOiIl|,]+\.\d{2})/gi, 80);
+
+  if (candidates.length) {
+    candidates.sort((a, b) => (b.score - a.score) || (a.index - b.index) || (b.amount - a.amount));
+    return candidates[0].amount;
+  }
+
+  const fallback = [...normalized.matchAll(/\b([0-9oOiIl|,]{1,9}\.\d{2})\b/g)]
+    .map((m) => {
+      const cleaned = m[1].replace(/[oO]/g, "0").replace(/[iIl|]/g, "1").replace(/,/g, "");
+      return { amount: parseFloat(cleaned), index: m.index || 0 };
+    })
+    .filter((c) => Number.isFinite(c.amount) && c.amount > 0 && c.amount <= 100000)
+    .sort((a, b) => a.index - b.index);
+  return fallback.length ? fallback[0].amount : null;
 }
 
 // Normalize a PH mobile number to its 10 significant digits (drop 0/63 prefix).
@@ -922,7 +1022,7 @@ function ocrCriticalGaps(text: string, provider: PaymentProvider, typedRef: stri
   if (!text) return ["text"];
   const gaps: string[] = [];
   if (!extractReference(text, provider, typedRef)) gaps.push("reference");
-  if (extractAmount(text) == null) gaps.push("amount");
+  if (extractReceiptAmount(text) == null) gaps.push("amount");
   if (!parseReceiptDateTime(text).date) gaps.push("date");
   return gaps;
 }
@@ -1214,7 +1314,7 @@ Deno.serve(async (req) => {
     const extractedInvoice = provider === "bdopay" ? extractBdoInvoiceNumber(ocrText) : null;
     const extractedInstapayRefNo = provider === "maya" ? extractMayaInstapayRefNo(ocrText) : null;
     const extractedBpiTransactionRefNo = provider === "bpi" ? extractBpiTransactionRefNo(ocrText) : null;
-    const extractedAmount = extractAmount(ocrText);
+    const extractedAmount = extractReceiptAmount(ocrText);
     const { date: receiptDate, shifted: receiptDateTime } = parseReceiptDateTime(ocrText);
     const bookingStartedAt = toPhWallClockDate(booking.created_at || booking.createdAt);
     const bookingStartedDate = bookingStartedAt ? bookingStartedAt.toISOString().slice(0, 10) : null;
