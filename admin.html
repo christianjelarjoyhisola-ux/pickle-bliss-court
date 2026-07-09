@@ -5666,13 +5666,16 @@ async function nbRenderSlots() {
       const disabled = state.unavailable ? 'disabled' : '';
       const label = selected ? 'Selected' : state.label;
       const range = fmtHourRange(hour, hour + 1);
+      const mobileCourtLine = courts.length > 1
+        ? `<span class="nb-mobile-rate">${esc(court.name)}</span>`
+        : '';
       rows += `<button type="button" class="nb-slot-cell ${esc(cls)}" ${disabled} onclick="nbToggleSlot('${jsArg(court.id)}', ${hour})" title="${esc(court.name)} ${range}">
         <strong>${esc(state.detail)}</strong>
         <span>${esc(label)}</span>
       </button>`;
       mobileCards += `<button type="button" class="nb-mobile-slot-card ${esc(cls)}" ${disabled} onclick="nbToggleSlot('${jsArg(court.id)}', ${hour})" title="${esc(court.name)} ${range}">
         <strong>${range}</strong>
-        ${courts.length > 1 ? `<span class="nb-mobile-rate">${esc(court.name)}</span>` : ''}
+        ${mobileCourtLine}
         <span class="nb-mobile-rate">${esc(state.detail)}</span>
         <span class="nb-mobile-status">${esc(label)}</span>
       </button>`;
@@ -6615,7 +6618,6 @@ async function renderPaymentSettings() {
     $('mayaQrPreview').src = mayaQr;
     $('mayaQrPreviewWrap').style.display = '';
   }
-  if (gotymeQr && $('gotymeQrPreview')) {
   if (gotymeQr && $('gotymeQrPreview')) {
     $('gotymeQrPreview').src = gotymeQr;
     $('gotymeQrPreviewWrap').style.display = '';
