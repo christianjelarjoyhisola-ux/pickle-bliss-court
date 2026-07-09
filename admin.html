@@ -1271,7 +1271,7 @@ tr:hover td { background: var(--bg2); }
   font-size: .78rem; font-weight: 800; white-space: nowrap;
 }
 #sec-reports .rp-stat-cards {
-  grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px; margin-bottom: 12px !important;
+  grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 10px; margin-bottom: 12px !important;
 }
 #sec-reports .rp-stat-cards .sc { min-height: 88px; padding: 14px 14px 12px; border-radius: 12px; }
 #sec-reports .rp-stat-cards .sc-lbl { font-size: .66rem; margin-bottom: 6px; }
@@ -1979,10 +1979,12 @@ tr:hover td { background: var(--bg2); }
 
       <!-- Summary cards -->
       <div class="stat-cards rp-stat-cards">
-        <div class="sc"><div class="sc-lbl">Gross Revenue</div><div class="sc-val" id="rpGross">₱0</div><div class="sc-ic">💰</div></div>
-        <div class="sc"><div class="sc-lbl">Collected</div><div class="sc-val" id="rpCollected">₱0</div><div class="sc-ic">✅</div></div>
-        <div class="sc"><div class="sc-lbl">Pending</div><div class="sc-val" id="rpPending">₱0</div><div class="sc-ic">⏳</div></div>
-        <div class="sc"><div class="sc-lbl">Active Bookings</div><div class="sc-val" id="rpCount">0</div><div class="sc-ic">📋</div></div>
+        <div class="sc"><div class="sc-lbl">Gross Revenue</div><div class="sc-val" id="rpGross">&#8369;0</div><div class="sc-ic">&#8369;</div></div>
+        <div class="sc"><div class="sc-lbl">Court Revenue</div><div class="sc-val" id="rpCourtRevenue">&#8369;0</div><div class="sc-ic">Court</div></div>
+        <div class="sc"><div class="sc-lbl">Booking Fee</div><div class="sc-val" id="rpBookingFee">&#8369;0</div><div class="sc-ic">Fee</div></div>
+        <div class="sc"><div class="sc-lbl">Collected</div><div class="sc-val" id="rpCollected">&#8369;0</div><div class="sc-ic">Paid</div></div>
+        <div class="sc"><div class="sc-lbl">Pending</div><div class="sc-val" id="rpPending">&#8369;0</div><div class="sc-ic">Due</div></div>
+        <div class="sc"><div class="sc-lbl">Active Bookings</div><div class="sc-val" id="rpCount">0</div><div class="sc-ic">Book</div></div>
       </div>
 
       <!-- Compact breakdown -->
@@ -6057,8 +6059,41 @@ function renderReportBars(targetId, entries, emptyCopy = 'No bookings in this pe
   }).join('');
 }
 
+function reportBookingFeeForBooking(b, cfg) {
+  const total = Math.max(Number(b?.total) || 0, 0);
+  const fee = Math.max(Number(calcPlatformFeeForBooking(b, cfg)) || 0, 0);
+  return Math.min(fee, total);
+}
+function reportCourtRevenueForBooking(b, cfg) {
+  return Math.max((Number(b?.total) || 0) - reportBookingFeeForBooking(b, cfg), 0);
+}
+function reportCourtRevenueEntries(txns, cfg) {
+  const courtMap = {};
+  txns.forEach(txn => {
+    const items = Array.isArray(txn.items) && txn.items.length ? txn.items : [txn];
+    if (cfg.type === 'flat' && items.length > 1) {
+      const total = items.reduce((sum, item) => sum + (Number(item.total) || 0), 0);
+      const fee = reportBookingFeeForBooking(txn, cfg);
+      items.forEach(item => {
+        const name = item.courtName || 'Unknown Court';
+        const itemTotal = Number(item.total) || 0;
+        const share = total > 0 ? itemTotal / total : 1 / items.length;
+        courtMap[name] = (courtMap[name] || 0) + Math.max(itemTotal - fee * share, 0);
+      });
+      return;
+    }
+    items.forEach(item => {
+      const name = item.courtName || 'Unknown Court';
+      courtMap[name] = (courtMap[name] || 0) + reportCourtRevenueForBooking(item, cfg);
+    });
+  });
+  return Object.entries(courtMap).sort((a, b) => b[1] - a[1]);
+}
+
 async function renderReport(){
   const allBks=await DB.getBookings();
+  const settings=await DB.getSettings();
+  const feeCfg=getPlatformFeeConfig(settings);
   const{from,to}=_rpDateRange();
   syncReportPeriodUi({ from, to });
   // Reports start from online system usage only. Manual spreadsheet imports
@@ -6071,17 +6106,19 @@ async function renderReport(){
 
   // Gross revenue = only from confirmed/completed online bookings
   const gross=txns.reduce((s,b)=>s+(b.total||0),0);
+  const bookingFee=txns.reduce((s,b)=>s+reportBookingFeeForBooking(b,feeCfg),0);
+  const courtRevenue=txns.reduce((s,b)=>s+reportCourtRevenueForBooking(b,feeCfg),0);
   const collected=txns.filter(b=>b.paymentStatus==='paid').reduce((s,b)=>s+(b.total||0),0);
   const pending=txns.filter(b=>!b.paymentStatus||b.paymentStatus==='unpaid'||b.paymentStatus==='downpayment_paid').reduce((s,b)=>s+(b.total||0),0);
   $('rpGross').textContent=fmtReportMoney(gross);
+  $('rpCourtRevenue').textContent=fmtReportMoney(courtRevenue);
+  $('rpBookingFee').textContent=fmtReportMoney(bookingFee);
   $('rpCollected').textContent=fmtReportMoney(collected);
   $('rpPending').textContent=fmtReportMoney(pending);
   $('rpCount').textContent=txns.length;
 
-  // Revenue by court
-  const courtMap={};
-  bks.forEach(b=>{const k=b.courtName||'Unknown Court';courtMap[k]=(courtMap[k]||0)+(b.total||0);});
-  const courtEntries=Object.entries(courtMap).sort((a,b)=>b[1]-a[1]);
+  // Court tab shows court rental revenue only, excluding the system booking fee.
+  const courtEntries=reportCourtRevenueEntries(txns, feeCfg);
   renderReportBars('rpCourtChart', courtEntries);
 
   // Revenue by how the player paid. This is kept separate from where the money
@@ -6128,8 +6165,10 @@ async function renderReport(){
 async function exportReportCSV(){
   if(!_rpBks.length && _curSection !== 'reports') await renderReport();
   const bks=_rpBks;
-  const h=['Transaction Ref','Name','Email','Contact','Court(s)','Schedule','Hrs','Total','Amount Paid/Downpayment','Paid Using','Money Received To','Payment Status','Booking Status','Created','Child Refs'];
-  const rows=bks.map(b=>[b.displayRef||b.ref,b.fullName,b.email,b.contactNumber,b.courtName,b.scheduleLabel||`${fmtD(b.date)} ${b.startTime}-${b.endTime}`,b.duration,b.total,b.downpayment??'',paymentMethodLabel(b.paymentMethod),receivedAccountLabel(b),b.paymentStatus||'unpaid',b.status,b.createdAt,(b.refs||[b.ref]).join(' ')]);
+  const settings=await DB.getSettings();
+  const feeCfg=getPlatformFeeConfig(settings);
+  const h=['Transaction Ref','Name','Email','Contact','Court(s)','Schedule','Hrs','Gross Total','Court Revenue','Booking Fee','Amount Paid/Downpayment','Paid Using','Money Received To','Payment Status','Booking Status','Created','Child Refs'];
+  const rows=bks.map(b=>[b.displayRef||b.ref,b.fullName,b.email,b.contactNumber,b.courtName,b.scheduleLabel||`${fmtD(b.date)} ${b.startTime}-${b.endTime}`,b.duration,b.total,reportCourtRevenueForBooking(b,feeCfg),reportBookingFeeForBooking(b,feeCfg),b.downpayment??'',paymentMethodLabel(b.paymentMethod),receivedAccountLabel(b),b.paymentStatus||'unpaid',b.status,b.createdAt,(b.refs||[b.ref]).join(' ')]);
   const csv=[h,...rows].map(r=>r.map(v=>`"${String(v??'').replace(/"/g,'""')}"`).join(',')).join('\n');
   const a=document.createElement('a');
   a.href=URL.createObjectURL(new Blob([csv],{type:'text/csv'}));
