@@ -1631,7 +1631,11 @@ tr:hover td { background: var(--bg2); }
   .nb-slot-toolbar span { font-size: .74rem; }
   .nb-slots-legend { display: none; }
   .nb-slot-matrix-wrap { display: none; }
-  .nb-mobile-slot-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+  .nb-mobile-slot-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 6px; }
+  .nb-mobile-slot-card { min-height: 64px; padding: 8px 5px; border-radius: 10px; align-items: center; text-align: center; gap: 2px; }
+  .nb-mobile-slot-card strong { font-size: .72rem; white-space: nowrap; }
+  .nb-mobile-slot-card .nb-mobile-rate { font-size: .68rem; line-height: 1.05; }
+  .nb-mobile-slot-card .nb-mobile-status { font-size: .5rem; letter-spacing: .25px; }
   .nb-slot-row { grid-template-columns: 74px repeat(var(--nb-court-count, 1), 96px); }
   .nb-slot-cell { min-height: 50px; margin: 5px; }
   .nb-slot-head, .nb-slot-time-col, .nb-court-head { padding: 8px 7px; font-size: .64rem; }
