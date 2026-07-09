@@ -1619,29 +1619,46 @@ tr:hover td { background: var(--bg2); }
 .nb-sum-row strong { text-align: right; }
 .nb-sum-muted { color: var(--text3); font-size: .74rem; }
 @media (max-width: 700px) {
-  .nb-modal { width: 100%; max-width: none; max-height: 100dvh; border-radius: 18px 18px 0 0; }
-  .nb-modal .m-hd { padding: 14px 16px; z-index: 4; }
-  .nb-modal .m-hd h2 { font-size: clamp(1.15rem, 5vw, 1.45rem); line-height: 1.05; letter-spacing: 1px; }
-  .nb-modal .m-body { padding: 16px 16px 120px; }
-  .nb-modal .m-foot { padding: 12px 16px calc(12px + env(safe-area-inset-bottom)); z-index: 4; }
-  .nb-modal .frow { grid-template-columns: 1fr !important; }
-  .nb-court-picker { gap: 7px; }
-  .nb-court-chip { max-width: 100%; overflow-wrap: anywhere; }
-  .nb-slot-toolbar { align-items: flex-start; gap: 4px; margin-top: 14px; }
-  .nb-slot-toolbar span { font-size: .74rem; }
+  #newBookingModal { align-items: stretch; padding: 0; }
+  .nb-modal {
+    width: 100%; max-width: none; height: 100dvh; max-height: 100dvh;
+    border: 0; border-radius: 0; display: flex; flex-direction: column;
+  }
+  .nb-modal .m-hd { padding: 10px 12px; z-index: 4; flex-shrink: 0; }
+  .nb-modal .m-hd h2 { font-size: clamp(1rem, 4.4vw, 1.25rem); line-height: 1; letter-spacing: .8px; }
+  .nb-modal .m-x { width: 34px; height: 34px; flex-shrink: 0; }
+  .nb-modal .m-body { padding: 10px 10px 92px; flex: 1; overflow-y: auto; }
+  .nb-modal .m-foot { padding: 10px 10px calc(10px + env(safe-area-inset-bottom)); z-index: 4; flex-shrink: 0; }
+  .nb-modal .m-foot .btn { min-height: 46px; }
+  .nb-modal .frow { grid-template-columns: repeat(2, minmax(0, 1fr)) !important; gap: 8px !important; }
+  .nb-modal .fg { margin-bottom: 10px; }
+  .nb-modal .fl { font-size: .66rem; letter-spacing: .7px; margin-bottom: 5px; }
+  .nb-modal .fi { min-height: 42px; padding: 10px 11px; font-size: .95rem; }
+  .nb-section-label { margin: 12px 0 7px; font-size: .62rem; letter-spacing: 1px; }
+  .nb-court-picker { gap: 6px; }
+  .nb-court-chip { max-width: 100%; overflow-wrap: anywhere; padding: 7px 10px; min-height: 34px; font-size: .74rem; }
+  .nb-slot-toolbar { align-items: center; gap: 6px; margin: 10px 0 7px; }
+  .nb-slot-toolbar span { font-size: .68rem; }
   .nb-slots-legend { display: none; }
   .nb-slot-matrix-wrap { display: none; }
-  .nb-mobile-slot-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 6px; }
-  .nb-mobile-slot-card { min-height: 64px; padding: 8px 5px; border-radius: 10px; align-items: center; text-align: center; gap: 2px; }
+  .nb-mobile-slot-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 5px; }
+  .nb-mobile-slot-card { min-height: 58px; padding: 7px 4px; border-radius: 9px; align-items: center; text-align: center; gap: 2px; }
   .nb-mobile-slot-card strong { font-size: .72rem; white-space: nowrap; }
-  .nb-mobile-slot-card .nb-mobile-rate { font-size: .68rem; line-height: 1.05; }
+  .nb-mobile-slot-card .nb-mobile-rate { font-size: .65rem; line-height: 1.05; }
   .nb-mobile-slot-card .nb-mobile-status { font-size: .5rem; letter-spacing: .25px; }
   .nb-slot-row { grid-template-columns: 74px repeat(var(--nb-court-count, 1), 96px); }
   .nb-slot-cell { min-height: 50px; margin: 5px; }
   .nb-slot-head, .nb-slot-time-col, .nb-court-head { padding: 8px 7px; font-size: .64rem; }
-  .nb-slots-summary { margin-top: 12px; padding: 12px; }
+  .nb-slots-summary { margin-top: 10px; padding: 10px; }
   .nb-sum-row { align-items: flex-start; gap: 10px; }
   .nb-sum-row strong { white-space: nowrap; }
+}
+@media (max-width: 390px) {
+  .nb-mobile-slot-grid { gap: 4px; }
+  .nb-mobile-slot-card { min-height: 54px; padding: 6px 3px; }
+  .nb-mobile-slot-card strong { font-size: .66rem; }
+  .nb-mobile-slot-card .nb-mobile-rate { font-size: .6rem; }
+  .nb-mobile-slot-card .nb-mobile-status { font-size: .46rem; }
 }
 @keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: .4; } }
 
