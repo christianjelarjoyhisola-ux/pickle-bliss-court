@@ -4916,7 +4916,6 @@ function applyPaymentMethodVisibility() {
   if ($('payOptPnb')) $('payOptPnb').style.display = paymentMethods.pnb ? '' : 'none';
 
   const hasAny = ALL_PAYMENT_METHODS.some(m => paymentMethods[m]);
-  const enabledMethods = ALL_PAYMENT_METHODS.filter(m => paymentMethods[m]);
   if ($('payMethodBlock')) $('payMethodBlock').style.display = hasAny ? '' : 'none';
   if ($('payMethodsHint')) {
     $('payMethodsHint').style.display = hasAny ? 'none' : '';
@@ -4925,36 +4924,21 @@ function applyPaymentMethodVisibility() {
 
   const selected = $('bPay')?.value || '';
   if (selected && !paymentMethods[selected]) {
-    $('bPay').value = '';
-    document.querySelectorAll('.pay-opt').forEach(el => el.classList.remove('on'));
-    $('gcashBox').classList.remove('show');
-    $('gotymeBox').classList.remove('show');
-    $('pnbBox').classList.remove('show');
-    const refWrap = $('gcashRefWrap');
-    if (refWrap) refWrap.style.display = 'none';
-    $('cashNote').style.display = 'none';
-  }
-  if ((!$('bPay')?.value || !paymentMethods[$('bPay')?.value]) && enabledMethods.length) {
-    pickPay(enabledMethods[0], { showGuide: false });
+    clearPaymentSelection();
   }
 }
 
 function preparePaymentStep() {
   applyPaymentMethodVisibility();
   updatePaymentWindowText();
-  const enabledMethods = ALL_PAYMENT_METHODS.filter(m => paymentMethods[m]);
   const selected = $('bPay')?.value || '';
-  const method = selected && paymentMethods[selected] ? selected : enabledMethods[0];
 
-  if (method) {
-    pickPay(method, { showGuide: false });
+  if (selected && paymentMethods[selected]) {
+    pickPay(selected, { showGuide: false });
     return;
   }
 
-  ['gcashBox', 'gotymeBox', 'pnbBox'].forEach(id => $(id)?.classList.remove('show'));
-  const refWrap = $('gcashRefWrap');
-  if (refWrap) refWrap.style.display = 'none';
-  if ($('cashNote')) $('cashNote').style.display = 'none';
+  clearPaymentSelection();
 }
 
 function formatPhTime12(date) {
@@ -5739,6 +5723,7 @@ async function proceedToBookLegacy(courtId) {
   updatePrice();
   wizStartStep = 3;
   gcashReceiptGuideShown.booking = false;
+  clearPaymentSelection();
   $('bookModal').classList.add('active');
   document.body.style.overflow = 'hidden';
   hideHostInvite({ restoreScroll: false });
@@ -5852,6 +5837,7 @@ async function proceedToBook(courtId = null) {
   updatePrice();
   wizStartStep = 3;
   gcashReceiptGuideShown.booking = false;
+  clearPaymentSelection();
   $('bookModal').classList.add('active');
   document.body.style.overflow = 'hidden';
   hideHostInvite({ restoreScroll: false });
@@ -6645,13 +6631,24 @@ function updatePrice() {
 /* =============================================
    PAYMENT
    ============================================= */
+function clearPaymentSelection() {
+  if ($('bPay')) $('bPay').value = '';
+  document.querySelectorAll('#payMethodBlock .pay-opt').forEach(el => el.classList.remove('on'));
+  ['gcashBox', 'gotymeBox', 'pnbBox'].forEach(id => $(id)?.classList.remove('show'));
+  const refWrap = $('gcashRefWrap');
+  if (refWrap) refWrap.style.display = 'none';
+  if ($('cashNote')) $('cashNote').style.display = 'none';
+  if ($('payMethodNote')) $('payMethodNote').style.display = 'none';
+  if ($('bGcashRef')) $('bGcashRef').removeAttribute('required');
+}
+
 function pickPay(m, opts = {}) {
   if (!paymentMethods[m]) {
     toast('This payment method is currently unavailable.', 'err');
     return;
   }
   const digitalPay = isDigitalPayMethod(m);
-  document.querySelectorAll('.pay-opt').forEach(el => el.classList.toggle('on', el.dataset.m === m));
+  document.querySelectorAll('#payMethodBlock .pay-opt').forEach(el => el.classList.toggle('on', el.dataset.m === m));
   $('bPay').value = m;
   clearBookingInvalid('payMethodBlock');
   const methodNote = $('payMethodNote');
