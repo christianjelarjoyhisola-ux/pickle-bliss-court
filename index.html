@@ -856,6 +856,49 @@ body.dark .shared-date-display {
 .qr-clickable { cursor:zoom-in; }
 .qr-clickable:hover { border-color:var(--accent) !important; }
 
+.gcash-guide-overlay {
+  position:fixed; inset:0; z-index:10000; display:none; align-items:center; justify-content:center;
+  background:rgba(5,12,25,.78); backdrop-filter:blur(8px); padding:18px;
+}
+.gcash-guide-overlay.show { display:flex; }
+.gcash-guide-card {
+  width:min(96vw,920px); max-height:92vh; overflow:hidden;
+  background:var(--card); border:1px solid rgba(var(--ac),.28); border-radius:16px;
+  box-shadow:0 28px 90px rgba(0,0,0,.58); animation:modalIn .2s ease;
+  display:flex; flex-direction:column;
+}
+.gcash-guide-head {
+  display:flex; align-items:center; justify-content:space-between; gap:12px;
+  padding:12px 14px; border-bottom:1px solid var(--border);
+}
+.gcash-guide-title { font-size:.88rem; font-weight:900; color:var(--accent); letter-spacing:.2px; }
+.gcash-guide-close {
+  width:34px; height:34px; border-radius:10px; border:1px solid var(--border);
+  background:var(--input); color:var(--text); cursor:pointer;
+  display:flex; align-items:center; justify-content:center; font-size:1rem;
+}
+.gcash-guide-body { padding:12px; overflow:auto; background:#eef2f7; }
+.gcash-guide-body img {
+  display:block; width:100%; height:auto; max-height:68vh; object-fit:contain;
+  border-radius:10px; background:#fff;
+}
+.gcash-guide-foot {
+  display:flex; align-items:center; justify-content:flex-end; gap:10px;
+  padding:12px 14px; border-top:1px solid var(--border); background:var(--card);
+}
+.gcash-guide-wait { margin-right:auto; font-size:.75rem; color:var(--muted); font-weight:800; }
+.gcash-guide-foot .btn { min-width:188px; justify-content:center; }
+.gcash-guide-foot .btn:disabled { opacity:.55; cursor:wait; transform:none; }
+@media(max-width:700px) {
+  .gcash-guide-overlay { padding:10px; align-items:flex-end; }
+  .gcash-guide-card { width:100%; max-height:94vh; border-radius:16px 16px 0 0; }
+  .gcash-guide-body { padding:8px; }
+  .gcash-guide-body img { max-height:70vh; }
+  .gcash-guide-foot { flex-direction:column; align-items:stretch; }
+  .gcash-guide-wait { margin-right:0; text-align:center; }
+  .gcash-guide-foot .btn { width:100%; min-width:0; }
+}
+
 /* FORM */
 .frow { display:grid; grid-template-columns:1fr 1fr; gap:16px; margin-bottom:16px; }
 .fg { margin-bottom:16px; }
@@ -3498,6 +3541,23 @@ body.light #splashScreen { background: #071320; }
   </div>
 </div>
 
+<!-- GCASH RECEIPT GUIDE MODAL -->
+<div class="gcash-guide-overlay" id="gcashReceiptGuide" onclick="gcashReceiptGuideBackdrop(event)" aria-hidden="true">
+  <div class="gcash-guide-card" role="dialog" aria-modal="true" aria-labelledby="gcashReceiptGuideTitle">
+    <div class="gcash-guide-head">
+      <div class="gcash-guide-title" id="gcashReceiptGuideTitle">GCash receipt reminder</div>
+      <button type="button" class="gcash-guide-close" onclick="closeGcashReceiptGuide()" aria-label="Close">x</button>
+    </div>
+    <div class="gcash-guide-body">
+      <img src="gcash-receipt-only-polished.png" alt="Accepted GCash receipt example and rejected receipt warning" />
+    </div>
+    <div class="gcash-guide-foot">
+      <div class="gcash-guide-wait" id="gcashReceiptGuideWait">Please review the guide for 6 seconds.</div>
+      <button type="button" class="btn btn-p" id="gcashReceiptGuideContinue" onclick="continueGcashReceiptGuide()" disabled>Continue in 6</button>
+    </div>
+  </div>
+</div>
+
 <script>
 /* =============================================
    STATE
@@ -3519,6 +3579,9 @@ let hostInviteAutoCloseTimer = null;
 let hostInviteScrollLocked = false;
 let hostInvitePreviousOverflow = '';
 let hostInviteDismissedThisView = false;
+let gcashReceiptGuideTimer = null;
+let gcashReceiptGuideSeconds = 0;
+let gcashReceiptGuideShown = { booking: false, openPlay: false };
 const HOST_INVITE_ENABLED = false;
 function normalizePlatformFeeType(type) {
   return ['flat', 'booking', 'per_booking', 'per_transaction'].includes(String(type || '').toLowerCase()) ? 'flat' : 'per_hour';
@@ -4654,6 +4717,61 @@ function qrZoomBackdrop(event) {
   if (event.target === $('qrZoomOverlay')) closeQrZoom();
 }
 
+function openGcashReceiptGuide(context = 'booking') {
+  if (context && gcashReceiptGuideShown[context]) return;
+  if (context) gcashReceiptGuideShown[context] = true;
+
+  const overlay = $('gcashReceiptGuide');
+  const btn = $('gcashReceiptGuideContinue');
+  const wait = $('gcashReceiptGuideWait');
+  if (!overlay || !btn) return;
+
+  clearInterval(gcashReceiptGuideTimer);
+  gcashReceiptGuideSeconds = 6;
+  btn.disabled = true;
+  btn.textContent = 'Continue in 6';
+  if (wait) wait.textContent = 'Please review the guide for 6 seconds.';
+  overlay.classList.add('show');
+  overlay.setAttribute('aria-hidden', 'false');
+  document.body.style.overflow = 'hidden';
+
+  gcashReceiptGuideTimer = setInterval(() => {
+    gcashReceiptGuideSeconds -= 1;
+    if (gcashReceiptGuideSeconds > 0) {
+      btn.textContent = `Continue in ${gcashReceiptGuideSeconds}`;
+      return;
+    }
+    clearInterval(gcashReceiptGuideTimer);
+    gcashReceiptGuideTimer = null;
+    btn.disabled = false;
+    btn.textContent = 'Continue to Payment';
+    if (wait) wait.textContent = 'Use only a GCash receipt screenshot before submitting.';
+    btn.focus();
+  }, 1000);
+}
+
+function closeGcashReceiptGuide() {
+  const overlay = $('gcashReceiptGuide');
+  if (!overlay) return;
+  clearInterval(gcashReceiptGuideTimer);
+  gcashReceiptGuideTimer = null;
+  overlay.classList.remove('show');
+  overlay.setAttribute('aria-hidden', 'true');
+  if (!$('bookModal')?.classList.contains('active') && !$('opModal')?.classList.contains('active')) {
+    document.body.style.overflow = '';
+  }
+}
+
+function continueGcashReceiptGuide() {
+  const btn = $('gcashReceiptGuideContinue');
+  if (btn?.disabled) return;
+  closeGcashReceiptGuide();
+}
+
+function gcashReceiptGuideBackdrop(event) {
+  if (event.target === $('gcashReceiptGuide')) closeGcashReceiptGuide();
+}
+
 /* =============================================
    DARK MODE
    ============================================= */
@@ -4817,7 +4935,7 @@ function applyPaymentMethodVisibility() {
     $('cashNote').style.display = 'none';
   }
   if ((!$('bPay')?.value || !paymentMethods[$('bPay')?.value]) && enabledMethods.length) {
-    pickPay(enabledMethods[0]);
+    pickPay(enabledMethods[0], { showGuide: false });
   }
 }
 
@@ -4829,7 +4947,7 @@ function preparePaymentStep() {
   const method = selected && paymentMethods[selected] ? selected : enabledMethods[0];
 
   if (method) {
-    pickPay(method);
+    pickPay(method, { showGuide: false });
     return;
   }
 
@@ -5362,7 +5480,7 @@ function restoreGuestResumeDraft(form = {}) {
   if ($('bPhone')) $('bPhone').value = form.phone || '';
   if ($('bEmail')) $('bEmail').value = form.email || '';
   if ($('bookingPolicyAgree')) $('bookingPolicyAgree').checked = !!form.policyAgreed;
-  if (form.payMethod && paymentMethods[form.payMethod]) pickPay(form.payMethod);
+  if (form.payMethod && paymentMethods[form.payMethod]) pickPay(form.payMethod, { showGuide: false });
   if ($('bGcashRef')) {
     $('bGcashRef').value = normalizePaymentRef(form.gcashRef || '', $('bPay')?.value || form.payMethod || 'gcash');
     updateRefCount();
@@ -5620,6 +5738,7 @@ async function proceedToBookLegacy(courtId) {
   $('bDate').value = cardSel.date;
   updatePrice();
   wizStartStep = 3;
+  gcashReceiptGuideShown.booking = false;
   $('bookModal').classList.add('active');
   document.body.style.overflow = 'hidden';
   hideHostInvite({ restoreScroll: false });
@@ -5732,6 +5851,7 @@ async function proceedToBook(courtId = null) {
   $('bDate').value = selectedDate;
   updatePrice();
   wizStartStep = 3;
+  gcashReceiptGuideShown.booking = false;
   $('bookModal').classList.add('active');
   document.body.style.overflow = 'hidden';
   hideHostInvite({ restoreScroll: false });
@@ -5743,6 +5863,7 @@ async function proceedToBook(courtId = null) {
 
 function closeBookModal() {
   const itemsToRelease = activeBookingItems();
+  closeGcashReceiptGuide();
   $('bookModal').classList.remove('active');
   document.body.style.overflow = '';
   stopSlotCountdown();
@@ -6524,7 +6645,7 @@ function updatePrice() {
 /* =============================================
    PAYMENT
    ============================================= */
-function pickPay(m) {
+function pickPay(m, opts = {}) {
   if (!paymentMethods[m]) {
     toast('This payment method is currently unavailable.', 'err');
     return;
@@ -6583,6 +6704,7 @@ function pickPay(m) {
   syncBookingRefUi(m);
   updatePaymentAmountUI();
   saveGuestBookingResume();
+  if (m === 'gcash' && opts.showGuide !== false) openGcashReceiptGuide('booking');
 }
 
 function syncGcashSharedPanel(method) {
@@ -7703,7 +7825,18 @@ document.addEventListener('DOMContentLoaded', async () => {
   initEasterSplash();
   initGrandSplash();
   $('softOpeningPopup')?.addEventListener('click', e => { if (e.target === $('softOpeningPopup')) closeSoftOpeningPopup(); });
-  document.addEventListener('keydown', e => { if (e.key === 'Escape') { closeSoftOpeningPopup(); closeSharedDatePicker(); closeQrZoom(); closeFindTimeModal(); closeBookModal(); closeOpModal(); closeHostApplyModal(); closeHostSessionModal(); } });
+  document.addEventListener('keydown', e => {
+    if (e.key !== 'Escape') return;
+    if ($('gcashReceiptGuide')?.classList.contains('show')) { closeGcashReceiptGuide(); return; }
+    closeSoftOpeningPopup();
+    closeSharedDatePicker();
+    closeQrZoom();
+    closeFindTimeModal();
+    closeBookModal();
+    closeOpModal();
+    closeHostApplyModal();
+    closeHostSessionModal();
+  });
   initScrollReveal();
 });
 
@@ -7821,6 +7954,7 @@ function firstEnabledPaymentMethod() {
 }
 
 async function openPlaySignup(courtId, date, h, courtName) {
+  gcashReceiptGuideShown.openPlay = false;
   const defaultPayMethod = firstEnabledPaymentMethod();
   const session = getOpenPlaySessionForDate(date, courtId) || { start: h, end: h + 1, label: `${fmtT(h)} – ${fmtT(h + 1)}` };
   if (getOpenPlaySessionState(date, session, 1) === 'ended') {
@@ -7939,7 +8073,7 @@ async function openPlaySignup(courtId, date, h, courtName) {
   $('opModalFt').innerHTML = `
     <button class="btn" style="border:1.5px solid var(--border);color:var(--muted);background:transparent" onclick="closeOpModal()">Cancel</button>
     <button class="btn btn-g" id="opSubmitBtn" onclick="submitOpenPlay()">🏓 Join Open Play</button>`;
-  opPickPay(defaultPayMethod);
+  opPickPay(defaultPayMethod, { showGuide: false });
   // Auto-set DP based on payment acceptance mode
   if (dpOnly || fpOnly) {
     opSetDP(_opSignupData.fullPay);
@@ -7971,7 +8105,7 @@ function openPlayDpControlsHtml(opTotal) {
     </div>`;
 }
 
-function opPickPay(method) {
+function opPickPay(method, opts = {}) {
   if (!paymentMethods[method]) return;
   _opSignupData.payMethod = method;
   document.querySelectorAll('#opPayOpts .pay-opt').forEach(el => el.classList.toggle('on', el.dataset.m === method));
@@ -8091,6 +8225,7 @@ function opPickPay(method) {
       <div style="margin-top:4px">Pay <strong style="color:var(--lime-ink)">${fmt(amt)}</strong> at the front desk upon arrival.</div>
     </div>`;
   }
+  if (method === 'gcash' && opts.showGuide !== false) openGcashReceiptGuide('openPlay');
 }
 
 function syncOpenPlayRefInput(method = _opSignupData.payMethod || 'gcash') {
@@ -8131,10 +8266,11 @@ function opSetDP(full) {
   $('opDp100')?.classList.toggle('on', full);
   const opTotal = openPlayFee + _serviceFeeRate;
   if ($('opAmtDue')) $('opAmtDue').textContent = fmt(full ? opTotal : opTotal / 2);
-  opPickPay(_opSignupData.payMethod);
+  opPickPay(_opSignupData.payMethod, { showGuide: false });
 }
 
 function closeOpModal() {
+  closeGcashReceiptGuide();
   $('opModal').classList.remove('active');
   clearOpReceipt();
 }
