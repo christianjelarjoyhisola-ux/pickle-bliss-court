@@ -6701,7 +6701,7 @@ function pickPay(m, opts = {}) {
   syncBookingRefUi(m);
   updatePaymentAmountUI();
   saveGuestBookingResume();
-  if (m === 'gcash' && opts.showGuide !== false) openGcashReceiptGuide('booking');
+  // Keep GCash guidance inline instead of opening a blocking reminder popup.
 }
 
 function syncGcashSharedPanel(method) {
@@ -8222,7 +8222,7 @@ function opPickPay(method, opts = {}) {
       <div style="margin-top:4px">Pay <strong style="color:var(--lime-ink)">${fmt(amt)}</strong> at the front desk upon arrival.</div>
     </div>`;
   }
-  if (method === 'gcash' && opts.showGuide !== false) openGcashReceiptGuide('openPlay');
+  // Keep GCash guidance inline instead of opening a blocking reminder popup.
 }
 
 function syncOpenPlayRefInput(method = _opSignupData.payMethod || 'gcash') {
