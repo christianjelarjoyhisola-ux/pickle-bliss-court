@@ -2471,8 +2471,8 @@ body.light #splashScreen { background: #071320; }
 }
 .owner-ad-continue:hover { border-color:var(--accent); color:var(--accent); }
 @media(max-width:520px) {
-  .owner-ad-pop { padding:12px; align-items:flex-end; }
-  .owner-ad-card { border-radius:18px 18px 14px 14px; }
+  .owner-ad-pop { padding:12px; align-items:center; }
+  .owner-ad-card { border-radius:18px; }
   .owner-ad-head { padding:16px 18px 0; }
   .owner-ad-body { padding:12px 18px 18px; }
   .owner-ad-body h2 { font-size:1.65rem; }
@@ -7827,15 +7827,9 @@ function dismissSplash() {
 let courtOwnerAdTimer = null;
 let courtOwnerAdRemaining = 10;
 
-function markCourtOwnerAdSeen() {
-  try { sessionStorage.setItem('courtOwnerAdSeenV1', '1'); } catch (_) {}
-}
-
 function showCourtOwnerAd() {
   const popup = $('courtOwnerAd');
-  let alreadySeen = false;
-  try { alreadySeen = sessionStorage.getItem('courtOwnerAdSeenV1') === '1'; } catch (_) {}
-  if (!popup || alreadySeen) {
+  if (!popup) {
     document.body.style.overflow = '';
     return;
   }
@@ -7863,7 +7857,6 @@ function closeCourtOwnerAd() {
   $('courtOwnerAd')?.classList.remove('show');
   $('courtOwnerAd')?.setAttribute('aria-hidden', 'true');
   document.body.style.overflow = '';
-  markCourtOwnerAdSeen();
 }
 
 // Lock scroll while splash is showing
