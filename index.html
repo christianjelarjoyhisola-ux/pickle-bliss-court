@@ -2352,90 +2352,74 @@ footer { background:var(--card); border-top:1px solid var(--border); padding:40p
 /* Light mode overrides for splash */
 body.light #splashScreen { background: #071320; }
 
-/* Soft opening promo popup */
-.soft-open-pop {
-  position:fixed; inset:0; z-index:999;
-  display:none; align-items:center; justify-content:center;
-  padding:18px;
-  background:rgba(19,6,6,.74);
-  backdrop-filter:blur(6px);
+/* Court owner promotion */
+.court-owner-ad {
+  max-width:1080px;
+  margin:34px auto 0;
+  padding:22px 24px;
+  display:flex;
+  align-items:center;
+  gap:20px;
+  border:1px solid rgba(var(--ac),.42);
+  border-radius:var(--r);
+  background:
+    radial-gradient(circle at 8% 15%,rgba(var(--ac),.18),transparent 32%),
+    linear-gradient(135deg,var(--card),rgba(var(--ac),.08));
+  box-shadow:0 16px 42px rgba(0,0,0,.14);
 }
-.soft-open-pop.show { display:flex; animation:softOpenFade .18s ease both; }
-@keyframes softOpenFade { from{opacity:0} to{opacity:1} }
-.soft-open-card {
-  position:relative;
-  width:min(1080px,100%);
-  max-height:min(86vh,760px);
-  display:flex; flex-direction:column;
-  background:#130606;
-  border:1px solid rgba(255,106,0,.42);
-  border-radius:14px;
-  box-shadow:0 28px 90px rgba(0,0,0,.58), 0 0 0 1px rgba(255,255,255,.08) inset;
-  overflow:hidden;
-  transform:translateY(10px) scale(.98);
-  animation:softOpenPop .24s cubic-bezier(.34,1.56,.64,1) both;
+.court-owner-ad-badge {
+  flex:0 0 auto;
+  min-width:72px;
+  padding:12px 10px;
+  border-radius:12px;
+  background:linear-gradient(135deg,var(--accent),var(--accent-dark));
+  color:#fff;
+  font-family:'Bebas Neue',sans-serif;
+  font-size:1.35rem;
+  letter-spacing:1.5px;
+  text-align:center;
+  box-shadow:0 8px 24px rgba(var(--ac),.24);
 }
-@keyframes softOpenPop { to{transform:translateY(0) scale(1)} }
-.soft-open-img-wrap {
-  min-height:0;
-  overflow:auto;
-  background:#fff8f2;
-}
-.soft-open-img {
+.court-owner-ad-copy { min-width:0; flex:1; }
+.court-owner-ad-kicker {
   display:block;
-  width:100%;
-  height:auto;
-}
-.soft-open-actions {
-  flex-shrink:0;
-  display:flex; align-items:center; justify-content:space-between; gap:12px;
-  padding:12px;
-  background:linear-gradient(135deg,#130606,#2b1412);
-}
-.soft-open-countdown {
-  color:#ffb36b;
-  font-size:.78rem;
+  margin-bottom:4px;
+  color:var(--accent);
+  font-size:.68rem;
   font-weight:900;
-  letter-spacing:.5px;
-  white-space:nowrap;
+  letter-spacing:1.2px;
+  text-transform:uppercase;
 }
-.soft-open-btn {
-  min-height:40px;
-  border:0;
-  border-radius:8px;
-  padding:10px 16px;
-  font-family:'Outfit',sans-serif;
+.court-owner-ad h2 {
+  font-family:'Bebas Neue',sans-serif;
+  font-size:clamp(1.35rem,3vw,1.8rem);
+  letter-spacing:.8px;
+  line-height:1.05;
+}
+.court-owner-ad p { margin-top:6px; color:var(--muted); font-size:.84rem; line-height:1.5; }
+.court-owner-ad-btn {
+  flex:0 0 auto;
+  min-height:44px;
+  padding:12px 18px;
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  gap:8px;
+  border-radius:10px;
+  background:linear-gradient(135deg,var(--accent),var(--accent-dark));
+  color:#fff;
   font-size:.84rem;
   font-weight:900;
-  cursor:pointer;
-  transition:transform .15s, box-shadow .15s, background .15s;
+  text-decoration:none;
+  box-shadow:0 8px 24px rgba(var(--ac),.24);
+  transition:transform .2s,box-shadow .2s;
 }
-.soft-open-btn:active { transform:translateY(1px); }
-.soft-open-continue {
-  background:linear-gradient(135deg,#d90416,#ff6a00);
-  color:#fff;
-  box-shadow:0 8px 24px rgba(255,106,0,.24);
-}
-.soft-open-x {
-  position:absolute;
-  top:14px; right:14px;
-  width:40px; height:40px;
-  display:flex; align-items:center; justify-content:center;
-  border-radius:50%;
-  border:1px solid rgba(255,255,255,.2);
-  background:rgba(19,6,6,.78);
-  color:#fff;
-  font-size:1.2rem;
-  font-weight:900;
-  cursor:pointer;
-  z-index:2;
-}
+.court-owner-ad-btn:hover { transform:translateY(-2px); box-shadow:0 12px 30px rgba(var(--ac),.32); }
 @media(max-width:640px) {
-  .soft-open-pop { padding:10px; }
-  .soft-open-card { max-height:90vh; border-radius:12px; }
-  .soft-open-actions { flex-direction:column; align-items:stretch; }
-  .soft-open-btn { width:100%; }
-  .soft-open-x { top:8px; right:8px; }
+  .court-owner-ad { margin:26px 14px 0; padding:18px; align-items:flex-start; flex-wrap:wrap; gap:14px; }
+  .court-owner-ad-badge { min-width:62px; padding:10px 8px; font-size:1.15rem; }
+  .court-owner-ad-copy { flex-basis:calc(100% - 76px); }
+  .court-owner-ad-btn { width:100%; }
 }
 
 /* ── BOOKING WIZARD ── */
@@ -2789,23 +2773,6 @@ body.light #splashScreen { background: #071320; }
   </div>
 
   <div class="sp-bottom">Pickle Bliss Court &nbsp;·&nbsp; Bliss, Poblacion, Monkayo</div>
-</div>
-
-<div class="soft-open-pop" id="softOpeningPopup" aria-hidden="true">
-  <div class="soft-open-card" role="dialog" aria-modal="true" aria-label="Pickle Bliss Court soft opening promo">
-    <button type="button" class="soft-open-x" onclick="closeSoftOpeningPopup()" aria-label="Close promo">&times;</button>
-    <div class="soft-open-img-wrap">
-      <img class="soft-open-img" src="softopening.jpg" alt="Pickle Bliss Court soft opening promo">
-    </div>
-    <div class="soft-open-actions">
-      <div>
-        <div class="soft-open-countdown">Closing in <span id="softOpeningCountdown">10</span>s</div>
-      </div>
-      <div style="display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end">
-        <button type="button" class="soft-open-btn soft-open-continue" onclick="closeSoftOpeningPopup()">Continue Booking</button>
-      </div>
-    </div>
-  </div>
 </div>
 
 <!-- NAVBAR -->
@@ -3363,6 +3330,16 @@ body.light #splashScreen { background: #071320; }
     <div class="hc"><div class="hc-ic">✅</div><div class="hc-tt">Get Confirmed</div><div class="hc-ds">Receive your booking reference and invoice instantly.</div></div>
   </div>
 </div>
+
+<aside class="court-owner-ad" aria-label="Free web booking system offer for pickleball court owners">
+  <div class="court-owner-ad-badge" aria-hidden="true">FREE</div>
+  <div class="court-owner-ad-copy">
+    <span class="court-owner-ad-kicker">For pickleball court owners</span>
+    <h2>Get a FREE web booking system</h2>
+    <p>Give players an easier way to check schedules and reserve your court online.</p>
+  </div>
+  <a class="court-owner-ad-btn" href="https://www.facebook.com/jelarjoychristian" target="_blank" rel="noopener noreferrer" aria-label="Message Christian Hisola on Facebook about a free pickleball court booking system">Message Christian <span aria-hidden="true">→</span></a>
+</aside>
 
 <div class="adsense-section" aria-label="Advertisement">
   <ins class="adsbygoogle adsense-slot"
@@ -7776,47 +7753,8 @@ function dismissSplash() {
   sp.classList.add('dismissed');
   sp.addEventListener('transitionend', () => {
     sp.style.display = 'none';
-    showSoftOpeningPopup();
-  }, { once: true });
-}
-
-function showSoftOpeningPopup() {
-  const popup = $('softOpeningPopup');
-  if (!popup) {
     document.body.style.overflow = '';
-    return;
-  }
-  popup.classList.add('show');
-  popup.setAttribute('aria-hidden', 'false');
-  document.body.style.overflow = 'hidden';
-  startSoftOpeningCountdown();
-}
-
-function closeSoftOpeningPopup() {
-  const popup = $('softOpeningPopup');
-  clearSoftOpeningCountdown();
-  popup?.classList.remove('show');
-  popup?.setAttribute('aria-hidden', 'true');
-  document.body.style.overflow = '';
-}
-
-let softOpeningCountdownTimer = null;
-let softOpeningCountdownRemaining = 10;
-
-function clearSoftOpeningCountdown() {
-  clearInterval(softOpeningCountdownTimer);
-  softOpeningCountdownTimer = null;
-}
-
-function startSoftOpeningCountdown() {
-  clearSoftOpeningCountdown();
-  softOpeningCountdownRemaining = 10;
-  if ($('softOpeningCountdown')) $('softOpeningCountdown').textContent = softOpeningCountdownRemaining;
-  softOpeningCountdownTimer = setInterval(() => {
-    softOpeningCountdownRemaining -= 1;
-    if ($('softOpeningCountdown')) $('softOpeningCountdown').textContent = Math.max(softOpeningCountdownRemaining, 0);
-    if (softOpeningCountdownRemaining <= 0) closeSoftOpeningPopup();
-  }, 1000);
+  }, { once: true });
 }
 // Lock scroll while splash is showing
 document.body.style.overflow = 'hidden';
@@ -7841,11 +7779,9 @@ document.addEventListener('DOMContentLoaded', async () => {
   initOpAnnounceSplash();
   initEasterSplash();
   initGrandSplash();
-  $('softOpeningPopup')?.addEventListener('click', e => { if (e.target === $('softOpeningPopup')) closeSoftOpeningPopup(); });
   document.addEventListener('keydown', e => {
     if (e.key !== 'Escape') return;
     if ($('gcashReceiptGuide')?.classList.contains('show')) { closeGcashReceiptGuide(); return; }
-    closeSoftOpeningPopup();
     closeSharedDatePicker();
     closeQrZoom();
     closeFindTimeModal();
