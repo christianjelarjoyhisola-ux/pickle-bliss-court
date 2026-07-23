@@ -1473,6 +1473,9 @@ footer { background:var(--card); border-top:1px solid var(--border); padding:40p
 .ft-c a { color:var(--muted); font-size:.87rem; transition:color .2s; }
 .ft-c a:hover { color:var(--accent); }
 .ft-bot { max-width:1080px; margin:0 auto; padding-top:20px; border-top:1px solid var(--border); display:flex; justify-content:space-between; align-items:center; font-size:.81rem; color:var(--muted); flex-wrap:wrap; gap:8px; }
+.ft-credit { text-align:right; line-height:1.6; }
+.ft-credit a { color:var(--accent); font-weight:700; text-decoration:none; }
+.ft-credit a:hover { text-decoration:underline; text-underline-offset:3px; }
 
 /* TOASTS */
 .toasts { position:fixed; top:74px; right:20px; z-index:999; display:flex; flex-direction:column; gap:8px; }
@@ -1766,7 +1769,7 @@ footer { background:var(--card); border-top:1px solid var(--border); padding:40p
 .pat-btn .pat-amt { font-size:.72rem; color:inherit; opacity:.8; margin-top:2px; }
 
 /* RESPONSIVE */
-@media(max-width:700px){ .frow{grid-template-columns:1fr;} .ft-g{grid-template-columns:1fr;gap:24px;} .ft-bot{flex-direction:column;text-align:center;} .pay-opts{grid-template-columns:1fr;} }
+@media(max-width:700px){ .frow{grid-template-columns:1fr;} .ft-g{grid-template-columns:1fr;gap:24px;} .ft-bot{flex-direction:column;text-align:center;} .ft-credit{text-align:center;} .pay-opts{grid-template-columns:1fr;} }
 @media(max-width:480px){
   .nav{padding:0 14px;}
   .bk-modal-body{padding:12px 14px;}
@@ -3377,7 +3380,7 @@ body.light #splashScreen { background: #071320; }
     <div class="ft-c">
       <h4>Support</h4>
       <ul>
-        <li><a href="#">Contact Us</a></li>
+        <li><a href="https://www.facebook.com/jelarjoychristian" target="_blank" rel="noopener noreferrer" aria-label="Contact Pickle Bliss Court on Facebook">Contact Us</a></li>
         <li><a href="#">FAQs</a></li>
         <li><a href="#">Terms of Use</a></li>
         <li style="margin-top:12px;padding-top:10px;border-top:1px solid var(--border)"><a href="login.html" style="color:var(--muted);font-size:.8rem">🔐 Staff Login</a></li>
@@ -3386,9 +3389,7 @@ body.light #splashScreen { background: #071320; }
   </div>
   <div class="ft-bot">
     <span>© 2026 Pickle Bliss Court. All rights reserved.</span>
-    <span>Built for pickleball lovers</span>
-    <br>
-    <span> Dev: <a href="https://www.facebook.com/jelarjoychristian" target="_blank" rel="noopener noreferrer" style="color:inherit;text-decoration:underline;text-underline-offset:3px;">Jelar</a></span>
+    <span class="ft-credit">Looking for a web developer? Contact <a href="https://www.facebook.com/jelarjoychristian" target="_blank" rel="noopener noreferrer" aria-label="Contact web developer Christian Jelar Joy D. Hisola on Facebook">Christian Jelar Joy D. Hisola</a></span>
   </div>
 </footer>
 
