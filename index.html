@@ -2428,10 +2428,17 @@ body.light #splashScreen { background: #071320; }
   line-height:1.08;
 }
 .owner-ad-body p { margin-top:10px; color:var(--muted); font-size:.88rem; line-height:1.6; }
+.owner-ad-action-hint {
+  margin-top:14px;
+  color:var(--text);
+  font-size:.74rem;
+  font-weight:700;
+  text-align:center;
+}
 .owner-ad-message {
   width:100%;
   min-height:48px;
-  margin-top:18px;
+  margin-top:7px;
   padding:12px 16px;
   display:flex;
   align-items:center;
@@ -2443,9 +2450,24 @@ body.light #splashScreen { background: #071320; }
   font-size:.88rem;
   font-weight:900;
   text-decoration:none;
+  box-shadow:0 0 0 0 rgba(var(--ac),.28);
   transition:background .2s,transform .2s;
+  animation:ownerAdCtaPulse 2s ease-in-out infinite;
 }
 .owner-ad-message:hover { background:var(--accent-dark); transform:translateY(-1px); }
+.owner-ad-message span { display:inline-block; animation:ownerAdArrowNudge 1.2s ease-in-out infinite; }
+@keyframes ownerAdCtaPulse {
+  0%,100% { box-shadow:0 0 0 0 rgba(var(--ac),.26); }
+  50% { box-shadow:0 0 0 7px rgba(var(--ac),.10); }
+}
+@keyframes ownerAdArrowNudge {
+  0%,100% { transform:translateX(0); }
+  50% { transform:translateX(4px); }
+}
+@media(prefers-reduced-motion:reduce) {
+  .owner-ad-message,
+  .owner-ad-message span { animation:none; }
+}
 .owner-ad-foot {
   padding:14px 22px;
   display:flex;
@@ -2843,7 +2865,8 @@ body.light #splashScreen { background: #071320; }
       <span class="owner-ad-free">100% FREE</span>
       <h2 id="courtOwnerAdTitle">Need a booking website for your pickleball court?</h2>
       <p id="courtOwnerAdDescription">Let players check schedules and reserve online with a clean, mobile-friendly booking system.</p>
-      <a class="owner-ad-message" href="https://www.facebook.com/jelarjoychristian" target="_blank" rel="noopener noreferrer" aria-label="Message Christian Hisola on Facebook about a free pickleball court booking system">Message on Facebook <span aria-hidden="true">→</span></a>
+      <div class="owner-ad-action-hint">Interested? Tap the button below to message me.</div>
+      <a class="owner-ad-message" href="https://www.facebook.com/jelarjoychristian" target="_blank" rel="noopener noreferrer" aria-label="Message Christian Hisola on Facebook about a free pickleball court booking system">Message Me on Facebook <span aria-hidden="true">→</span></a>
     </div>
     <div class="owner-ad-foot">
       <span class="owner-ad-countdown">Continuing in <strong><span id="courtOwnerAdCountdown">10</span>s</strong></span>
