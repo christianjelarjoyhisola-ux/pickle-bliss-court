@@ -2352,86 +2352,131 @@ footer { background:var(--card); border-top:1px solid var(--border); padding:40p
 /* Light mode overrides for splash */
 body.light #splashScreen { background: #071320; }
 
-/* Court owner promotion */
-.court-owner-ad {
-  margin:16px 0 0;
-  padding:16px 18px;
-  display:grid;
-  grid-template-columns:48px minmax(0,1fr) auto;
-  align-items:center;
-  gap:14px;
-  border:1px solid var(--border);
-  border-radius:var(--r);
-  background:var(--card);
-  box-shadow:0 8px 24px rgba(0,0,0,.08);
-  position:relative;
-  overflow:hidden;
-}
-.court-owner-ad::before {
-  content:'';
-  position:absolute;
-  inset:0 auto 0 0;
-  width:3px;
-  background:var(--accent);
-}
-.court-owner-ad-badge {
-  width:48px;
-  height:48px;
-  display:flex;
+/* Court owner advertisement */
+.owner-ad-pop {
+  position:fixed;
+  inset:0;
+  z-index:999;
+  display:none;
   align-items:center;
   justify-content:center;
-  border:1px solid rgba(var(--ac),.24);
-  border-radius:12px;
-  background:rgba(var(--ac),.08);
+  padding:18px;
+  background:rgba(19,6,6,.68);
+  backdrop-filter:blur(8px);
+}
+.owner-ad-pop.show { display:flex; animation:ownerAdFade .2s ease both; }
+@keyframes ownerAdFade { from{opacity:0} to{opacity:1} }
+.owner-ad-card {
+  width:min(520px,100%);
+  overflow:hidden;
+  border:1px solid var(--border);
+  border-radius:20px;
+  background:var(--card);
+  box-shadow:0 28px 80px rgba(0,0,0,.42);
+  animation:ownerAdIn .28s cubic-bezier(.2,.8,.2,1) both;
+}
+@keyframes ownerAdIn { from{opacity:0;transform:translateY(14px) scale(.98)} to{opacity:1;transform:translateY(0) scale(1)} }
+.owner-ad-progress { height:4px; background:rgba(var(--ac),.10); overflow:hidden; }
+.owner-ad-progress span { display:block; width:100%; height:100%; background:var(--accent); transition:width .3s linear; }
+.owner-ad-head {
+  padding:18px 22px 0;
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:16px;
+}
+.owner-ad-label {
   color:var(--accent);
   font-size:.64rem;
   font-weight:900;
-  letter-spacing:.6px;
-  text-align:center;
-}
-.court-owner-ad-copy { min-width:0; flex:1; }
-.court-owner-ad-kicker {
-  display:block;
-  margin-bottom:3px;
-  color:var(--accent);
-  font-size:.62rem;
-  font-weight:900;
-  letter-spacing:1px;
+  letter-spacing:1.2px;
   text-transform:uppercase;
 }
-.court-owner-ad h2 {
-  font-family:'Outfit',sans-serif;
-  font-size:1rem;
-  font-weight:800;
-  letter-spacing:0;
-  line-height:1.25;
-}
-.court-owner-ad p { margin-top:3px; color:var(--muted); font-size:.76rem; line-height:1.45; }
-.court-owner-ad-btn {
-  min-height:40px;
-  padding:10px 14px;
-  display:inline-flex;
+.owner-ad-x {
+  width:34px;
+  height:34px;
+  display:flex;
   align-items:center;
   justify-content:center;
-  gap:7px;
-  border:1px solid var(--accent);
-  border-radius:9px;
+  border:1px solid var(--border);
+  border-radius:50%;
+  background:transparent;
+  color:var(--muted);
+  font-size:1rem;
+  cursor:pointer;
+}
+.owner-ad-x:hover { border-color:var(--accent); color:var(--accent); }
+.owner-ad-body { padding:14px 22px 22px; }
+.owner-ad-free {
+  display:inline-flex;
+  margin-bottom:12px;
+  padding:5px 9px;
+  border:1px solid rgba(var(--ac),.22);
+  border-radius:999px;
+  background:rgba(var(--ac),.08);
+  color:var(--accent);
+  font-size:.65rem;
+  font-weight:900;
+  letter-spacing:.7px;
+}
+.owner-ad-body h2 {
+  max-width:430px;
+  font-family:'Outfit',sans-serif;
+  font-size:clamp(1.55rem,5vw,2.15rem);
+  font-weight:900;
+  letter-spacing:-.5px;
+  line-height:1.08;
+}
+.owner-ad-body p { margin-top:10px; color:var(--muted); font-size:.88rem; line-height:1.6; }
+.owner-ad-message {
+  width:100%;
+  min-height:48px;
+  margin-top:18px;
+  padding:12px 16px;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  gap:8px;
+  border-radius:11px;
   background:var(--accent);
   color:#fff;
+  font-size:.88rem;
+  font-weight:900;
+  text-decoration:none;
+  transition:background .2s,transform .2s;
+}
+.owner-ad-message:hover { background:var(--accent-dark); transform:translateY(-1px); }
+.owner-ad-foot {
+  padding:14px 22px;
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:14px;
+  border-top:1px solid var(--border);
+  background:var(--input);
+}
+.owner-ad-countdown { color:var(--muted); font-size:.75rem; font-weight:700; }
+.owner-ad-countdown strong { color:var(--text); }
+.owner-ad-continue {
+  min-height:38px;
+  padding:9px 14px;
+  border:1px solid var(--border);
+  border-radius:9px;
+  background:var(--card);
+  color:var(--text);
+  font-family:'Outfit',sans-serif;
   font-size:.78rem;
   font-weight:800;
-  text-decoration:none;
-  white-space:nowrap;
-  transition:background .2s,border-color .2s,transform .2s;
+  cursor:pointer;
 }
-.court-owner-ad-btn:hover { background:var(--accent-dark); border-color:var(--accent-dark); transform:translateY(-1px); }
-@media(max-width:640px) {
-  .court-owner-ad { margin-top:12px; padding:14px; grid-template-columns:42px minmax(0,1fr); gap:11px; }
-  .court-owner-ad-badge { width:42px; height:42px; border-radius:10px; font-size:.58rem; }
-  .court-owner-ad-kicker { font-size:.58rem; }
-  .court-owner-ad h2 { font-size:.92rem; }
-  .court-owner-ad p { font-size:.72rem; }
-  .court-owner-ad-btn { grid-column:1 / -1; width:100%; margin-top:1px; }
+.owner-ad-continue:hover { border-color:var(--accent); color:var(--accent); }
+@media(max-width:520px) {
+  .owner-ad-pop { padding:12px; align-items:flex-end; }
+  .owner-ad-card { border-radius:18px 18px 14px 14px; }
+  .owner-ad-head { padding:16px 18px 0; }
+  .owner-ad-body { padding:12px 18px 18px; }
+  .owner-ad-body h2 { font-size:1.65rem; }
+  .owner-ad-foot { padding:12px 18px; }
 }
 
 /* ── BOOKING WIZARD ── */
@@ -2787,6 +2832,26 @@ body.light #splashScreen { background: #071320; }
   <div class="sp-bottom">Pickle Bliss Court &nbsp;·&nbsp; Bliss, Poblacion, Monkayo</div>
 </div>
 
+<div class="owner-ad-pop" id="courtOwnerAd" aria-hidden="true">
+  <div class="owner-ad-card" role="dialog" aria-modal="true" aria-labelledby="courtOwnerAdTitle" aria-describedby="courtOwnerAdDescription">
+    <div class="owner-ad-progress" aria-hidden="true"><span id="courtOwnerAdProgress"></span></div>
+    <div class="owner-ad-head">
+      <span class="owner-ad-label">Advertisement · For court owners</span>
+      <button type="button" class="owner-ad-x" onclick="closeCourtOwnerAd()" aria-label="Close advertisement">&times;</button>
+    </div>
+    <div class="owner-ad-body">
+      <span class="owner-ad-free">100% FREE</span>
+      <h2 id="courtOwnerAdTitle">Need a booking website for your pickleball court?</h2>
+      <p id="courtOwnerAdDescription">Let players check schedules and reserve online with a clean, mobile-friendly booking system.</p>
+      <a class="owner-ad-message" href="https://www.facebook.com/jelarjoychristian" target="_blank" rel="noopener noreferrer" aria-label="Message Christian Hisola on Facebook about a free pickleball court booking system">Message on Facebook <span aria-hidden="true">→</span></a>
+    </div>
+    <div class="owner-ad-foot">
+      <span class="owner-ad-countdown">Continuing in <strong><span id="courtOwnerAdCountdown">10</span>s</strong></span>
+      <button type="button" class="owner-ad-continue" onclick="closeCourtOwnerAd()">Continue Booking</button>
+    </div>
+  </div>
+</div>
+
 <!-- NAVBAR -->
 <!-- OPEN PLAY MAY 9 ANNOUNCEMENT -->
 <div id="opAnnounceSplash" style="display:none;position:fixed;inset:0;z-index:999;background:#130606;align-items:center;justify-content:center;padding:24px;flex-direction:column;text-align:center;overflow:hidden;">
@@ -2918,15 +2983,6 @@ body.light #splashScreen { background: #071320; }
       <div class="pb-loader-txt">Loading courts</div>
     </div>
   </div>
-  <aside class="court-owner-ad" aria-label="Free web booking system offer for pickleball court owners">
-    <div class="court-owner-ad-badge" aria-hidden="true">FREE</div>
-    <div class="court-owner-ad-copy">
-      <span class="court-owner-ad-kicker">For court owners</span>
-      <h2>Need a booking system for your pickleball court?</h2>
-      <p>Get a free website where players can check schedules and reserve online.</p>
-    </div>
-    <a class="court-owner-ad-btn" href="https://www.facebook.com/jelarjoychristian" target="_blank" rel="noopener noreferrer" aria-label="Message Christian Hisola on Facebook about a free pickleball court booking system">Message on Facebook <span aria-hidden="true">→</span></a>
-  </aside>
 </div>
 
 <div class="date-picker-overlay" id="sharedDatePicker" onclick="datePickerBackdrop(event)">
@@ -7764,9 +7820,52 @@ function dismissSplash() {
   sp.classList.add('dismissed');
   sp.addEventListener('transitionend', () => {
     sp.style.display = 'none';
-    document.body.style.overflow = '';
+    showCourtOwnerAd();
   }, { once: true });
 }
+
+let courtOwnerAdTimer = null;
+let courtOwnerAdRemaining = 10;
+
+function markCourtOwnerAdSeen() {
+  try { sessionStorage.setItem('courtOwnerAdSeenV1', '1'); } catch (_) {}
+}
+
+function showCourtOwnerAd() {
+  const popup = $('courtOwnerAd');
+  let alreadySeen = false;
+  try { alreadySeen = sessionStorage.getItem('courtOwnerAdSeenV1') === '1'; } catch (_) {}
+  if (!popup || alreadySeen) {
+    document.body.style.overflow = '';
+    return;
+  }
+  popup.classList.add('show');
+  popup.setAttribute('aria-hidden', 'false');
+  document.body.style.overflow = 'hidden';
+  courtOwnerAdRemaining = 10;
+  updateCourtOwnerAdCountdown();
+  clearInterval(courtOwnerAdTimer);
+  courtOwnerAdTimer = setInterval(() => {
+    courtOwnerAdRemaining -= 1;
+    updateCourtOwnerAdCountdown();
+    if (courtOwnerAdRemaining <= 0) closeCourtOwnerAd();
+  }, 1000);
+}
+
+function updateCourtOwnerAdCountdown() {
+  if ($('courtOwnerAdCountdown')) $('courtOwnerAdCountdown').textContent = Math.max(courtOwnerAdRemaining, 0);
+  if ($('courtOwnerAdProgress')) $('courtOwnerAdProgress').style.width = `${Math.max(courtOwnerAdRemaining, 0) * 10}%`;
+}
+
+function closeCourtOwnerAd() {
+  clearInterval(courtOwnerAdTimer);
+  courtOwnerAdTimer = null;
+  $('courtOwnerAd')?.classList.remove('show');
+  $('courtOwnerAd')?.setAttribute('aria-hidden', 'true');
+  document.body.style.overflow = '';
+  markCourtOwnerAdSeen();
+}
+
 // Lock scroll while splash is showing
 document.body.style.overflow = 'hidden';
 
@@ -7790,9 +7889,11 @@ document.addEventListener('DOMContentLoaded', async () => {
   initOpAnnounceSplash();
   initEasterSplash();
   initGrandSplash();
+  $('courtOwnerAd')?.addEventListener('click', e => { if (e.target === $('courtOwnerAd')) closeCourtOwnerAd(); });
   document.addEventListener('keydown', e => {
     if (e.key !== 'Escape') return;
     if ($('gcashReceiptGuide')?.classList.contains('show')) { closeGcashReceiptGuide(); return; }
+    if ($('courtOwnerAd')?.classList.contains('show')) { closeCourtOwnerAd(); return; }
     closeSharedDatePicker();
     closeQrZoom();
     closeFindTimeModal();
