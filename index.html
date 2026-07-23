@@ -2428,6 +2428,42 @@ body.light #splashScreen { background: #071320; }
   line-height:1.08;
 }
 .owner-ad-body p { margin-top:10px; color:var(--muted); font-size:.88rem; line-height:1.6; }
+.owner-ad-benefits {
+  margin-top:15px;
+  display:grid;
+  grid-template-columns:repeat(3,minmax(0,1fr));
+  gap:8px;
+  list-style:none;
+}
+.owner-ad-benefits li {
+  min-width:0;
+  padding:10px 7px;
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  gap:5px;
+  border:1px solid var(--border);
+  border-radius:10px;
+  background:var(--input);
+  color:var(--text);
+  font-size:.67rem;
+  font-weight:700;
+  line-height:1.25;
+  text-align:center;
+}
+.owner-ad-benefits i {
+  width:20px;
+  height:20px;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  border-radius:50%;
+  background:rgba(var(--ac),.10);
+  color:var(--accent);
+  font-size:.7rem;
+  font-style:normal;
+  font-weight:900;
+}
 .owner-ad-action-hint {
   margin-top:14px;
   color:var(--text);
@@ -2865,6 +2901,11 @@ body.light #splashScreen { background: #071320; }
       <span class="owner-ad-free">100% FREE</span>
       <h2 id="courtOwnerAdTitle">Need a booking website for your pickleball court?</h2>
       <p id="courtOwnerAdDescription">Let players check schedules and reserve online with a clean, mobile-friendly booking system.</p>
+      <ul class="owner-ad-benefits" aria-label="Booking system benefits">
+        <li><i aria-hidden="true">✓</i><span>24/7 Online Booking</span></li>
+        <li><i aria-hidden="true">✓</i><span>Live Availability</span></li>
+        <li><i aria-hidden="true">✓</i><span>Mobile-Friendly</span></li>
+      </ul>
       <div class="owner-ad-action-hint">Interested? Tap the button below to message me.</div>
       <a class="owner-ad-message" href="https://www.facebook.com/jelarjoychristian" target="_blank" rel="noopener noreferrer" aria-label="Message Christian Hisola on Facebook about a free pickleball court booking system">Message Me on Facebook <span aria-hidden="true">→</span></a>
     </div>
