@@ -1462,7 +1462,13 @@ select.fi option { background:var(--card); }
   overflow:hidden;
 }
 footer { background:var(--card); border-top:1px solid var(--border); padding:40px 28px 24px; margin-top:60px; }
-.ft-g { max-width:1080px; margin:0 auto; display:grid; grid-template-columns:2fr 1fr 1fr; gap:40px; margin-bottom:28px; }
+.ft-g { max-width:1080px; margin:0 auto 28px; display:grid; grid-template-columns:2fr 1fr 1fr; grid-template-areas:"brand quick support" "brand staff staff"; column-gap:40px; row-gap:18px; }
+.ft-brand { grid-area:brand; }
+.ft-quick { grid-area:quick; }
+.ft-support { grid-area:support; }
+.ft-staff { grid-area:staff; padding-top:14px; border-top:1px solid var(--border); }
+.ft-staff a { color:var(--muted); font-size:.82rem; transition:color .2s; }
+.ft-staff a:hover { color:var(--accent); }
 .ft-d { color:var(--muted); font-size:.87rem; margin-top:12px; line-height:1.7; }
 .ft-address { color:var(--muted); font-size:.84rem; margin-top:10px; line-height:1.6; max-width:420px; }
 .ft-address a { color:var(--accent); text-decoration:none; font-weight:700; }
@@ -1769,7 +1775,20 @@ footer { background:var(--card); border-top:1px solid var(--border); padding:40p
 .pat-btn .pat-amt { font-size:.72rem; color:inherit; opacity:.8; margin-top:2px; }
 
 /* RESPONSIVE */
-@media(max-width:700px){ .frow{grid-template-columns:1fr;} .ft-g{grid-template-columns:1fr;gap:24px;} .ft-bot{flex-direction:column;text-align:center;} .ft-credit{text-align:center;} .pay-opts{grid-template-columns:1fr;} }
+@media(max-width:700px){
+  .frow{grid-template-columns:1fr;}
+  footer{padding:28px 20px 20px;margin-top:44px;}
+  .ft-g{grid-template-columns:repeat(2,minmax(0,1fr));grid-template-areas:"brand brand" "quick support" "staff staff";column-gap:24px;row-gap:20px;margin-bottom:18px;}
+  .ft-d{margin-top:10px;line-height:1.55;}
+  .ft-address{margin-top:8px;line-height:1.5;}
+  .ft-c h4{margin-bottom:10px;}
+  .ft-c li{margin-bottom:10px;}
+  .ft-staff{padding-top:14px;}
+  .ft-bot{padding-top:16px;flex-direction:column;text-align:center;gap:6px;line-height:1.5;}
+  .ft-credit{text-align:center;}
+  .ft-credit a{display:inline-block;white-space:nowrap;}
+  .pay-opts{grid-template-columns:1fr;}
+}
 @media(max-width:480px){
   .nav{padding:0 14px;}
   .bk-modal-body{padding:12px 14px;}
@@ -2701,7 +2720,7 @@ body.light #splashScreen { background: #071320; }
 <div class="host-invite-backdrop" id="hostInviteBackdrop" onclick="dismissHostInvite(event)" aria-hidden="true" hidden style="display:none !important;"></div>
 <div class="host-invite-pop" id="hostInvitePopup" aria-live="polite" hidden style="display:none !important;">
   <div class="host-invite-head">
-    <div>
+    <div class="ft-brand">
       <div class="host-invite-title">Are you an Open Play host?</div>
       <div class="host-invite-copy">Create sessions, collect player payments, and let verified players confirm automatically.</div>
     </div>
@@ -3370,26 +3389,26 @@ body.light #splashScreen { background: #071320; }
       <p class="ft-d">Your go-to platform for pickleball court reservations. Fast, simple, and reliable for all skill levels.</p>
       <p class="ft-address">Location: Bliss, Poblacion, Monkayo. <a href="https://www.google.com/maps/search/?api=1&amp;query=Bliss%2C%20Poblacion%2C%20Monkayo" target="_blank" rel="noopener noreferrer">Open map</a></p>
     </div>
-    <div class="ft-c">
+    <div class="ft-c ft-quick">
       <h4>Quick Links</h4>
       <ul>
         <li><a href="#courts">Courts</a></li>
         <li><a href="#courts">Book Now</a></li>
       </ul>
     </div>
-    <div class="ft-c">
+    <div class="ft-c ft-support">
       <h4>Support</h4>
       <ul>
         <li><a href="https://www.facebook.com/jelarjoychristian" target="_blank" rel="noopener noreferrer" aria-label="Contact Pickle Bliss Court on Facebook">Contact Us</a></li>
         <li><a href="#">FAQs</a></li>
         <li><a href="#">Terms of Use</a></li>
-        <li style="margin-top:12px;padding-top:10px;border-top:1px solid var(--border)"><a href="login.html" style="color:var(--muted);font-size:.8rem">🔐 Staff Login</a></li>
       </ul>
     </div>
+    <div class="ft-staff"><a href="login.html">🔐 Staff Login</a></div>
   </div>
   <div class="ft-bot">
     <span>© 2026 Pickle Bliss Court. All rights reserved.</span>
-    <span class="ft-credit">Looking for a web developer? Contact <a href="https://www.facebook.com/jelarjoychristian" target="_blank" rel="noopener noreferrer" aria-label="Contact web developer Christian Jelar Joy D. Hisola on Facebook">Christian Jelar Joy D. Hisola</a></span>
+    <span class="ft-credit">Need a website? Contact <a href="https://www.facebook.com/jelarjoychristian" target="_blank" rel="noopener noreferrer" aria-label="Contact web developer Christian Jelar Joy D. Hisola on Facebook">Christian Hisola</a></span>
   </div>
 </footer>
 
