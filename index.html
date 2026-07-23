@@ -2408,16 +2408,21 @@ body.light #splashScreen { background: #071320; }
 .owner-ad-x:hover { border-color:var(--accent); color:var(--accent); }
 .owner-ad-body { padding:14px 22px 22px; }
 .owner-ad-free {
-  display:inline-flex;
-  margin-bottom:12px;
-  padding:5px 9px;
-  border:1px solid rgba(var(--ac),.22);
-  border-radius:999px;
-  background:rgba(var(--ac),.08);
+  width:100%;
+  margin-top:12px;
+  padding:9px 12px;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  border:1px solid rgba(var(--ac),.28);
+  border-radius:10px;
+  background:rgba(var(--ac),.09);
   color:var(--accent);
-  font-size:.65rem;
+  font-size:.7rem;
   font-weight:900;
-  letter-spacing:.7px;
+  letter-spacing:.25px;
+  line-height:1.35;
+  text-align:center;
 }
 .owner-ad-body h2 {
   max-width:430px;
@@ -2901,8 +2906,8 @@ body.light #splashScreen { background: #071320; }
       <button type="button" class="owner-ad-x" onclick="closeCourtOwnerAd()" aria-label="Close advertisement">&times;</button>
     </div>
     <div class="owner-ad-body">
-      <span class="owner-ad-free">100% FREE</span>
       <h2 id="courtOwnerAdTitle">Spend less time managing bookings. Let your court run smarter.</h2>
+      <div class="owner-ad-free">✓ 100% FREE for court owners — no setup fee, no monthly payments, and no hidden charges.</div>
       <p id="courtOwnerAdDescription">Give players a free website to see open slots, book anytime, and stay organized automatically—without the back-and-forth messages.</p>
       <ul class="owner-ad-benefits" aria-label="Booking system benefits">
         <li><i aria-hidden="true">✓</i><span>24/7 Online Booking</span></li>
