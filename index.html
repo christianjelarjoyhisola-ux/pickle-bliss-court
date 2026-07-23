@@ -2431,13 +2431,13 @@ body.light #splashScreen { background: #071320; }
 .owner-ad-benefits {
   margin-top:15px;
   display:grid;
-  grid-template-columns:repeat(3,minmax(0,1fr));
-  gap:8px;
+  grid-template-columns:repeat(4,minmax(0,1fr));
+  gap:6px;
   list-style:none;
 }
 .owner-ad-benefits li {
   min-width:0;
-  padding:10px 7px;
+  padding:9px 4px;
   display:flex;
   flex-direction:column;
   align-items:center;
@@ -2446,7 +2446,7 @@ body.light #splashScreen { background: #071320; }
   border-radius:10px;
   background:var(--input);
   color:var(--text);
-  font-size:.67rem;
+  font-size:.63rem;
   font-weight:700;
   line-height:1.25;
   text-align:center;
@@ -2534,6 +2534,9 @@ body.light #splashScreen { background: #071320; }
   .owner-ad-head { padding:16px 18px 0; }
   .owner-ad-body { padding:12px 18px 18px; }
   .owner-ad-body h2 { font-size:1.65rem; }
+  .owner-ad-benefits { gap:5px; }
+  .owner-ad-benefits li { padding:8px 3px; font-size:.58rem; }
+  .owner-ad-benefits i { width:18px; height:18px; font-size:.62rem; }
   .owner-ad-foot { padding:12px 18px; }
 }
 
@@ -2902,12 +2905,14 @@ body.light #splashScreen { background: #071320; }
       <h2 id="courtOwnerAdTitle">Spend less time managing bookings. Let your court run smarter.</h2>
       <p id="courtOwnerAdDescription">Give players a free website to see open slots, book anytime, and stay organized automatically—without the back-and-forth messages.</p>
       <ul class="owner-ad-benefits" aria-label="Booking system benefits">
+        <li><i aria-hidden="true">✓</i><span>24/7 Online Booking</span></li>
+        <li><i aria-hidden="true">✓</i><span>No Double Bookings</span></li>
+        <li><i aria-hidden="true">✓</i><span>Mobile-Friendly</span></li>
+        <li><i aria-hidden="true">✓</i><span>Live Time Availability</span></li>
+        <li><i aria-hidden="true">✓</i><span>Easy Rescheduling</span></li>
         <li><i aria-hidden="true">✓</i><span>Less Booking Hassle</span></li>
         <li><i aria-hidden="true">✓</i><span>Automated Reservations</span></li>
-        <li><i aria-hidden="true">✓</i><span>Bookings Open 24/7</span></li>
-        <li><i aria-hidden="true">✓</i><span>Fewer Double Bookings</span></li>
-        <li><i aria-hidden="true">✓</i><span>Easier Payment Tracking</span></li>
-        <li><i aria-hidden="true">✓</i><span>Manage From Anywhere</span></li>
+        <li><i aria-hidden="true">✓</i><span>And Much More!</span></li>
       </ul>
       <div class="owner-ad-action-hint">Ready to make booking easier? Tap below to message me.</div>
       <a class="owner-ad-message" href="https://www.facebook.com/jelarjoychristian" target="_blank" rel="noopener noreferrer" aria-label="Message Christian Hisola on Facebook about a free pickleball court booking system">Message Me on Facebook <span aria-hidden="true">→</span></a>
