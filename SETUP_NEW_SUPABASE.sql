@@ -12,8 +12,10 @@
 --   1. 20260713213000_accumulated_booking_fee_remittances.sql
 --   2. 20260713233000_remittance_late_cycle_due_fix.sql
 --   3. 20260713234500_remittance_audit_metrics.sql
+--   4. 20260730213000_owner_selectable_remittance_due_date.sql
 -- They install the exact-cutoff ledger, private proof storage, security
--- policies, due-cycle correction, reconciled metrics, and RPCs.
+-- policies, due-cycle correction, reconciled metrics, owner-selectable
+-- audited due dates, and RPCs.
 -- ============================================================
 
 create extension if not exists pgcrypto;

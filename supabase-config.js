@@ -1275,6 +1275,15 @@ window.DB = {
     return data || null;
   },
 
+  async setBookingFeeRemittanceDueDate(dueOn) {
+    const { data, error } = await _sb.rpc('set_booking_fee_remittance_due_on', {
+      p_due_on: String(dueOn || '').slice(0, 10) || null,
+    });
+    if (error) throw new Error(_extractFnError(error, 'Could not save the remittance due date'));
+    _pbClearFastCache(['settings']);
+    return data || null;
+  },
+
   async prepareBookingFeeRemittance({ ownerOverride = false, overrideDueOn = null, overrideReason = null } = {}) {
     const { data, error } = await _sb.rpc('prepare_booking_fee_remittance', {
       p_idempotency_key: _remittanceIdempotencyKey('prepare'),
@@ -2143,10 +2152,13 @@ window.DB = {
     async getBookingFeeRemittanceDashboard() {
       const now = new Date();
       const next = new Date(now.getFullYear(), now.getMonth() + (now.getDate() > 14 ? 1 : 0), 14);
+      const configuredDue = String(readDb().settings.booking_fee_remittance_due_on || '');
       return {
         server_now: now.toISOString(),
         role: Auth.getSession()?.role || 'court_owner',
-        next_due_on: `${next.getFullYear()}-${String(next.getMonth() + 1).padStart(2, '0')}-14`,
+        next_due_on: /^\d{4}-\d{2}-\d{2}$/.test(configuredDue)
+          ? configuredDue
+          : `${next.getFullYear()}-${String(next.getMonth() + 1).padStart(2, '0')}-14`,
         can_prepare: false,
         live: { booking_groups_count: 0, booking_rows_count: 0, total_billable_hours: 0, amount: 0 },
         active: null,
@@ -2155,6 +2167,14 @@ window.DB = {
     },
     async getBookingFeeRemittanceHistory() { return []; },
     async getBookingFeeRemittanceDetail() { return null; },
+    async setBookingFeeRemittanceDueDate(dueOn) {
+      const dueKey = String(dueOn || '').slice(0, 10);
+      if (!/^\d{4}-\d{2}-\d{2}$/.test(dueKey)) throw new Error('Choose a valid remittance due date.');
+      const db = readDb();
+      db.settings.booking_fee_remittance_due_on = dueKey;
+      writeDb(db);
+      return { next_due_on: dueKey, server_now: new Date().toISOString(), timezone: 'Asia/Manila' };
+    },
     async prepareBookingFeeRemittance() { throw new Error('Remittance preparation requires Supabase.'); },
     async submitBookingFeeRemittance() { throw new Error('Remittance submission requires Supabase.'); },
     async getBookingFeeRemittanceProofUrl() { throw new Error('No remittance receipt is stored in local data mode.'); },

@@ -1,8 +1,25 @@
-# Changelog — Korte DOS (Bayabas, Cagayan de Oro)
+# Changelog — Pickle Bliss Court
 
 All notable changes to this project are documented here.
 Format: `[YYYY-MM-DD] — Type: Description (files affected)`
 Types: **Added**, **Changed**, **Fixed**, **Removed**, **Security**, **DB**
+
+---
+
+## [2026-07-30] - Owner-Selectable Remittance Due Date
+
+### Added
+- **System Owner due-date picker** - the Remittances banner now lets the System Owner choose and save the venue's exact next remittance date instead of being locked to the 14th.
+- **Due-date audit history** - every owner-selected date and automatic monthly roll-forward is stored permanently with its actor, source, and timestamp.
+
+### Changed
+- **Selected-date enforcement** - court owners can prepare the balance on or after the chosen due date; the next date rolls forward one calendar month after a cutoff and remains editable.
+- **Agreement Version 13** - court-owner remittance terms now refer to the audited System Owner-selected date shown in the dashboard.
+
+### Security
+- **Owner-only date changes** - a dedicated security-definer RPC validates the date in Asia/Manila, prevents dates before today or before an existing cycle, and blocks court-owner setting writes.
+
+**Files affected:** `admin.html`, `index.html`, `supabase-config.js`, `SETUP_NEW_SUPABASE.sql`, `CHANGELOG.md`, `supabase/migrations/20260730213000_owner_selectable_remittance_due_date.sql`
 
 ---
 

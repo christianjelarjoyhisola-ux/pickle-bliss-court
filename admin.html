@@ -175,6 +175,11 @@ h1, h2, h3, h4 { font-family: 'Bebas Neue', sans-serif; letter-spacing: 1px; }
 .rm-cycle-title { color:var(--text); font-size:.84rem; font-weight:900; }
 .rm-cycle-copy { margin-top:2px; color:var(--text2); font-size:.74rem; line-height:1.4; }
 .rm-pill { display:inline-flex; align-items:center; gap:6px; min-height:30px; padding:5px 10px; border:1px solid var(--border); border-radius:999px; background:var(--surface); color:var(--text2); font-size:.68rem; font-weight:900; white-space:nowrap; }
+.rm-cycle-actions { display:flex; align-items:center; justify-content:flex-end; gap:8px; flex-wrap:wrap; }
+.rm-due-controls { display:flex; align-items:flex-end; gap:7px; padding:7px; border:1px solid var(--border); border-radius:12px; background:var(--surface); }
+.rm-due-label { display:grid; gap:3px; color:var(--text3); font-size:.58rem; font-weight:900; text-transform:uppercase; letter-spacing:.55px; }
+.rm-due-input { min-height:34px; padding:5px 8px; border:1px solid var(--border); border-radius:8px; background:var(--bg2); color:var(--text); font:800 .72rem 'DM Sans',sans-serif; color-scheme:dark; }
+.rm-due-save { min-height:34px!important; padding:6px 10px!important; }
 .rm-stat-grid { display:grid; grid-template-columns:repeat(5,minmax(0,1fr)); gap:10px; margin-bottom:12px; }
 .rm-stat {
   position:relative; min-width:0; min-height:104px; padding:14px; overflow:hidden;
@@ -311,6 +316,7 @@ h1, h2, h3, h4 { font-family: 'Bebas Neue', sans-serif; letter-spacing: 1px; }
   .rm-head-actions { justify-content:stretch; }
   .rm-head-actions .btn { flex:1; justify-content:center; }
   .rm-cycle-banner, .rm-live-card { align-items:stretch; flex-direction:column; }
+  .rm-cycle-actions { justify-content:flex-start; }
   .rm-live-card { grid-template-columns:1fr; }
   .rm-live-action { min-width:0; text-align:left; }
   .rm-panel-top { align-items:stretch; flex-direction:column; }
@@ -329,6 +335,9 @@ h1, h2, h3, h4 { font-family: 'Bebas Neue', sans-serif; letter-spacing: 1px; }
   .rm-stat-value.money { font-size:1.1rem; }
   .rm-cycle-banner { align-items:flex-start; }
   .rm-cycle-banner .rm-pill { align-self:flex-start; }
+  .rm-cycle-actions, .rm-due-controls { width:100%; }
+  .rm-due-label { flex:1; }
+  .rm-due-input { width:100%; }
   .rm-live-card { padding:14px; }
   .rm-live-amount { font-size:2.15rem; }
   .rm-record-head, .rm-hero { grid-template-columns:1fr; }
@@ -2254,13 +2263,22 @@ tr:hover td { background: var(--bg2); }
 
       <div class="rm-cycle-banner">
         <div class="rm-cycle-main">
-          <div class="rm-cycle-icon" aria-hidden="true">14</div>
+          <div class="rm-cycle-icon" id="rmCycleDay" aria-hidden="true">14</div>
           <div>
-            <div class="rm-cycle-title" id="rmCycleTitle">Remittance is scheduled every 14th</div>
-            <div class="rm-cycle-copy" id="rmCycleCopy">The exact cutoff is frozen when the court owner prepares payment. New bookings after that cutoff start the next cycle.</div>
+            <div class="rm-cycle-title" id="rmCycleTitle">Remittance due date</div>
+            <div class="rm-cycle-copy" id="rmCycleCopy">The System Owner chooses the due date. The exact cutoff is frozen when payment is prepared.</div>
           </div>
         </div>
-        <span class="rm-pill" id="rmNextDuePill">Next due: &mdash;</span>
+        <div class="rm-cycle-actions">
+          <span class="rm-pill" id="rmNextDuePill">Next due: &mdash;</span>
+          <div class="rm-due-controls" id="rmDueDateControls" hidden>
+            <label class="rm-due-label" for="rmDueDateInput">
+              Choose due date
+              <input class="rm-due-input" id="rmDueDateInput" type="date" onchange="updateRemittanceDueDateDraft()" />
+            </label>
+            <button class="btn btn-p btn-sm rm-due-save" id="rmSaveDueDateBtn" type="button" onclick="saveRemittanceDueDate()">Save date</button>
+          </div>
+        </div>
       </div>
 
       <div class="rm-stat-grid" aria-label="Remittance summary">
@@ -2700,7 +2718,7 @@ tr:hover td { background: var(--bg2); }
       <!-- BOOKING FEE — System Owner only -->
       <div class="panel" data-perm="owner_only" style="max-width:680px;margin-bottom:20px;border:2px solid var(--green);">
         <h4>💰 Booking Fee <span style="font-size:.72rem;background:var(--green-bg);color:var(--green);padding:2px 8px;border-radius:8px;margin-left:8px;font-family:'DM Mono',monospace;letter-spacing:1px">SYSTEM OWNER</span></h4>
-        <p style="color:var(--muted);font-size:.84rem;margin:8px 0 12px">Player-paid booking fee added at checkout as your system revenue. Court owners collect it with each eligible booking and remit the accumulated balance on the 14th using an exact payment-time cutoff.</p>
+        <p style="color:var(--muted);font-size:.84rem;margin:8px 0 12px">Player-paid booking fee added at checkout as your system revenue. Court owners collect it with each eligible booking and remit the accumulated balance on the System Owner-selected due date using an exact payment-time cutoff.</p>
         <div class="fg" style="margin-bottom:16px">
           <label class="fl">Charging Method</label>
           <div style="display:grid;gap:8px">
@@ -3256,7 +3274,7 @@ tr:hover td { background: var(--bg2); }
         <div class="rm-field"><div class="rm-field-label">Reservations</div><div class="rm-field-value" id="rmPrepareReservations">0</div></div>
         <div class="rm-field"><div class="rm-field-label">Court Bookings</div><div class="rm-field-value" id="rmPrepareBookings">0</div></div>
         <div class="rm-field"><div class="rm-field-label">Billable Court-Hours</div><div class="rm-field-value" id="rmPrepareHours">0</div></div>
-        <div class="rm-field"><div class="rm-field-label">Next payment date</div><div class="rm-field-value" id="rmPrepareNextDue">&mdash;</div></div>
+        <div class="rm-field"><div class="rm-field-label">Selected due date</div><div class="rm-field-value" id="rmPrepareNextDue">&mdash;</div></div>
         <div class="rm-field"><div class="rm-field-label">Timezone</div><div class="rm-field-value">Asia/Manila (PHT)</div></div>
       </div>
       <div class="rm-detail-title" style="margin-top:4px">Fee calculation</div>
@@ -3304,7 +3322,7 @@ tr:hover td { background: var(--bg2); }
           </div>
         </div>
       </section>
-      <div class="rm-info-note"><span aria-hidden="true">&#128274;</span><span>Your frozen balance stays separate while proof is reviewed. New bookings continue accumulating for the next 14th.</span></div>
+      <div class="rm-info-note"><span aria-hidden="true">&#128274;</span><span>Your frozen balance stays separate while proof is reviewed. New bookings continue accumulating for the next System Owner-selected due date.</span></div>
     </div>
     <div class="m-foot">
       <button class="btn btn-g" type="button" onclick="closeRemittanceModal('rmPayModal')">Save for Later</button>
@@ -7296,6 +7314,54 @@ function updateRemittanceStatusFilter(value) {
   renderRemittanceRecords();
 }
 
+function updateRemittanceDueDateDraft() {
+  const input = $('rmDueDateInput');
+  const button = $('rmSaveDueDateBtn');
+  if (!input || !button) return;
+  const dueKey = String(input.value || '');
+  const savedDue = String(input.dataset.savedDue || '');
+  const todayKey = String(input.min || '');
+  button.disabled = !dueKey || dueKey === savedDue || (todayKey && dueKey < todayKey);
+  if (dueKey) $('rmCycleDay').textContent = String(Number(dueKey.slice(8, 10)) || '\u2014');
+}
+
+async function saveRemittanceDueDate() {
+  if (rmDashboardRole() !== 'owner') {
+    toast('Only the System Owner can choose the remittance due date.', 'err');
+    return;
+  }
+  const input = $('rmDueDateInput');
+  const button = $('rmSaveDueDateBtn');
+  const dueOn = String(input?.value || '');
+  const serverNow = rmPick(_rmState.dashboard, 'server_now', 'serverNow') || new Date().toISOString();
+  const todayKey = rmPhDateKey(serverNow);
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(dueOn)) {
+    toast('Choose a valid remittance due date.', 'err');
+    input?.focus();
+    return;
+  }
+  if (dueOn < todayKey) {
+    toast(`Choose ${rmDateOnly(todayKey)} or a later date.`, 'err');
+    input?.focus();
+    return;
+  }
+  rmSetBusy(button, true, 'Saving...');
+  try {
+    if (typeof DB.setBookingFeeRemittanceDueDate !== 'function') {
+      throw new Error('The due-date service is unavailable. Refresh after deployment completes.');
+    }
+    await DB.setBookingFeeRemittanceDueDate(dueOn);
+    toast(`Remittance due date set to ${rmDateOnly(dueOn)}.`);
+    await renderRemittances();
+  } catch (error) {
+    console.error('[saveRemittanceDueDate]', error);
+    toast(error?.message || 'Could not save the remittance due date.', 'err');
+  } finally {
+    rmSetBusy(button, false);
+    updateRemittanceDueDateDraft();
+  }
+}
+
 async function renderRemittances({ announce = false } = {}) {
   if (!Auth.can('remittances', sess.role)) { toast('You do not have access to remittances.', 'err'); return; }
   const list = $('rmRecordList');
@@ -7368,10 +7434,27 @@ async function renderRemittances({ announce = false } = {}) {
     const todayKey = rmPhDateKey(serverNow);
     const duePrefix = dueKey && dueKey < todayKey ? 'Overdue since' : dueKey === todayKey ? 'Due today' : 'Next due';
     $('rmNextDuePill').textContent = `${duePrefix}: ${nextDueLabel}`;
-    $('rmCycleTitle').textContent = dueKey === todayKey ? 'Today is remittance day' : dueKey && dueKey < todayKey ? 'The remittance date has passed' : 'Remittance is scheduled every 14th';
+    $('rmCycleDay').textContent = dueKey ? String(Number(dueKey.slice(8, 10)) || '\u2014') : '\u2014';
+    $('rmCycleTitle').textContent = dueKey === todayKey
+      ? 'Today is remittance day'
+      : dueKey && dueKey < todayKey
+        ? 'The remittance date has passed'
+        : dueKey
+          ? `Remittance is scheduled for ${nextDueLabel}`
+          : 'Choose the next remittance due date';
     $('rmCycleCopy').textContent = role === 'owner'
-      ? 'Court owners freeze the exact balance when they prepare payment. You verify the submitted proof before it becomes settled.'
-      : 'Your balance keeps accumulating until you prepare payment. The database freezes the exact cutoff at that moment.';
+      ? 'Choose or change the due date below. Every change is audited; the court owner freezes the exact balance when payment is prepared.'
+      : 'The System Owner chooses the due date. Your balance keeps accumulating until you prepare payment on or after that date.';
+
+    const dueControls = $('rmDueDateControls');
+    const dueInput = $('rmDueDateInput');
+    dueControls.hidden = role !== 'owner';
+    if (role === 'owner') {
+      dueInput.min = todayKey;
+      dueInput.value = dueKey;
+      dueInput.dataset.savedDue = dueKey;
+      updateRemittanceDueDateDraft();
+    }
 
     const prepareBtn = $('rmPrepareBtn');
     const liveAction = $('rmLiveAction');
@@ -7385,7 +7468,7 @@ async function renderRemittances({ announce = false } = {}) {
     $('rmPrepareHint').textContent = role === 'owner'
       ? (liveAmount <= 0
         ? 'An override becomes available when an eligible fee is present.'
-        : 'Exceptional cutoff only. A reason is required and permanently audited.')
+        : 'You can choose the due date above. Preparing before or after it requires an audited reason.')
       : (canPrepare.reason || (liveAmount <= 0 ? 'The button activates when an eligible fee is available.' : canPrepare.allowed ? 'The exact cutoff is created only after confirmation.' : `Next scheduled payment: ${nextDueLabel}`));
 
     renderRemittanceRecords();
@@ -7459,9 +7542,7 @@ function openRemittancePrepare() {
   $('rmPrepareHours').textContent = hours === null ? 'Not recorded' : (hours === 0 && flatBookings > 0) ? 'Not applicable - flat fee' : `${rmMetricNumber(hours)} court-hour${hours === 1 ? '' : 's'}`;
   $('rmPrepareFeeBreakdown').innerHTML = rmFeeBreakdownHtml(live);
   $('rmPrepareCoverage').textContent = rmCoverageLabel(live, { live:true });
-  $('rmPrepareNextDue').textContent = isOwnerOverride
-    ? rmDateOnly(rmPick(_rmState.dashboard, 'server_now', 'serverNow') || new Date().toISOString())
-    : rmDateOnly(rmPick(_rmState.dashboard, 'next_due_on', 'nextDueOn', 'next_due_at', 'nextDueAt'));
+  $('rmPrepareNextDue').textContent = rmDateOnly(rmPick(_rmState.dashboard, 'next_due_on', 'nextDueOn', 'next_due_at', 'nextDueAt'));
   openRemittanceModal('rmPrepareModal', '#rmPrepareConfirmBtn');
 }
 
@@ -7475,12 +7556,11 @@ async function prepareRemittanceNow() {
     let overrideDueOn = null;
     if (isOwnerOverride) {
       overrideReason = (prompt(
-        'Enter the reason for preparing this remittance outside the regular 14th cutoff:',
+        'Enter the reason for preparing this remittance outside its selected due-date workflow:',
         'Exceptional Pickle Bliss booking-fee settlement'
       ) || '').trim();
       if (overrideReason.length < 3) throw new Error('A clear override reason is required.');
-      const serverNow = rmPick(_rmState.dashboard, 'server_now', 'serverNow') || new Date().toISOString();
-      overrideDueOn = rmPhDateKey(serverNow);
+      overrideDueOn = String(rmPick(_rmState.dashboard, 'next_due_on', 'nextDueOn', 'next_due_at', 'nextDueAt') || '').slice(0, 10) || null;
     }
     const result = await DB.prepareBookingFeeRemittance({
       ownerOverride: isOwnerOverride,
@@ -9699,7 +9779,7 @@ function applyRoleVisibility(role) {
         <div style="font-size:1.7rem">📋</div>
         <div>
           <div style="font-size:1.05rem;font-weight:800;letter-spacing:.5px;color:var(--text,#e8eaf0)">PLATFORM ACCESS & BOOKING FEE AUTHORIZATION AGREEMENT</div>
-          <div style="font-size:.73rem;color:var(--muted,#7a8a9a);margin-top:2px">Pickle Bliss Court Booking System — Version 12 · Accumulated Booking Fee Remittance Terms</div>
+          <div style="font-size:.73rem;color:var(--muted,#7a8a9a);margin-top:2px">Pickle Bliss Court Booking System — Version 13 · Owner-Selected Remittance Due Date Terms</div>
         </div>
       </div>
     </div>
@@ -9727,8 +9807,8 @@ function applyRoleVisibility(role) {
       <p id="agreeFeeIntro" style="margin:0 0 14px">In consideration of the platform access provided at no setup fee, one-time fee, monthly subscription fee, hidden fee, or other platform charge to the Court Owner, the Court Owner <strong>authorizes</strong> the Platform Provider to add the current System Owner-selected <strong>non-refundable booking fee</strong> to each customer transaction processed through the system. This fee is charged to and paid by the <strong>customer/player</strong>, not the Court Owner, and is separate from the court rental fee.<br><br>The System Owner sets the booking fee amount and charging method. The fee may be charged <strong>per booked hour per confirmed booking transaction</strong> or as a <strong>per confirmed booking transaction fee</strong>, added to the player's checkout, and included in the booking-period remittance statement based on booking date.</p>
       <p id="agreeFeeBillable" style="margin:0 0 14px"><strong>When it applies.</strong> The configured booking fee applies only to a <strong>confirmed booking transaction</strong> made through the platform, meaning a booking that successfully reserved a court slot. Bookings that are cancelled before confirmation, rejected during payment verification, expired, or never held a slot are <strong>not charged</strong>.</p>
       <p id="agreeFeeCollection" style="margin:0 0 14px"><strong>Collection.</strong> The Court Owner collects the configured booking fee from the customer together with the court rental fee at the time of booking, and holds the booking fee on behalf of the Platform Provider until remittance. The booking fee is not a fee charged to the Court Owner and is not part of the Court Owner's court rental revenue.</p>
-      <p id="agreeFeeWeekly" style="margin:0 0 14px"><strong>Accumulated remittance every 14th.</strong> Eligible booking fees accumulate continuously until the Court Owner prepares remittance on the <strong>14th day of the month</strong>. At that moment, the system freezes an exact server-recorded cutoff in Asia/Manila time and creates a permanent snapshot of all eligible, unsettled confirmed booking transactions available before that cutoff. Each booking is included <strong>only once</strong>. Eligible bookings at or after the cutoff begin the next accumulated balance for the following 14th.</p>
-      <p style="margin:0 0 14px"><strong>Due date &amp; method.</strong> The accumulated balance is scheduled for remittance on the <strong>14th of each month</strong>. The Court Owner prepares the exact cutoff, remits the frozen amount via <strong>GCash</strong> to the booking fee remittance account shown in the dashboard, and submits the transaction reference and receipt screenshot. The remittance becomes <strong>Settled</strong> only after the System Owner verifies the proof; its permanent record remains available in Remittance History.</p>
+      <p id="agreeFeeWeekly" style="margin:0 0 14px"><strong>Accumulated remittance on the selected due date.</strong> Eligible booking fees accumulate continuously until the Court Owner prepares remittance on or after the <strong>due date selected by the System Owner and shown in the dashboard</strong>. At that moment, the system freezes an exact server-recorded cutoff in Asia/Manila time and creates a permanent snapshot of all eligible, unsettled confirmed booking transactions available before that cutoff. Each booking is included <strong>only once</strong>. Eligible bookings at or after the cutoff begin the next accumulated balance.</p>
+      <p style="margin:0 0 14px"><strong>Due date &amp; method.</strong> The System Owner may choose or change the next remittance due date in the dashboard. Every change is recorded in the audit history. The Court Owner prepares the exact cutoff, remits the frozen amount via <strong>GCash</strong> to the booking fee remittance account shown in the dashboard, and submits the transaction reference and receipt screenshot. The remittance becomes <strong>Settled</strong> only after the System Owner verifies the proof; its permanent record remains available in Remittance History.</p>
       <p style="margin:0 0 14px"><strong>Non-remittance.</strong> Statements not remitted past the due date are marked <strong>overdue</strong>. The Platform Provider may suspend or restrict the Court Owner's access to the booking system until all outstanding statements are settled. Suspension does not waive any amounts already due.</p>
 
       <h4 style="margin:0 0 8px;color:var(--green);font-size:.85rem;letter-spacing:.6px;text-transform:uppercase">4. Court Owner's Revenue</h4>
@@ -9774,7 +9854,7 @@ function applyRoleVisibility(role) {
         <li>You have read and fully understood all terms of this Agreement.</li>
         <li>You are the authorized Court Owner or duly authorized representative.</li>
         <li id="agreeFeeConfirmCollect">You authorize the platform to collect the System Owner-selected booking fee from customers on confirmed booking transactions.</li>
-        <li id="agreeFeeConfirmRemit">You agree to remit the continuously accumulated booking fees to the Platform Provider on the <strong>14th of each month</strong>, using the exact cutoff recorded when remittance is prepared.</li>
+        <li id="agreeFeeConfirmRemit">You agree to remit the continuously accumulated booking fees to the Platform Provider on or after the <strong>System Owner-selected due date shown in the dashboard</strong>, using the exact cutoff recorded when remittance is prepared.</li>
         <li>You agree to honor all platform bookings and not circumvent the booking fee.</li>
         <li>You understand the Platform Provider is the software provider only and does not operate the court.</li>
         <li>This electronic signature has the same legal force as a handwritten signature under RA 8792.</li>
@@ -9820,7 +9900,7 @@ function applyRoleVisibility(role) {
 
 <script>
 /* ── AGREEMENT MODAL ── */
-const AGREEMENT_VERSION = 12;
+const AGREEMENT_VERSION = 13;
 let _agreeDrawing = false, _agreeHasSig = false;
 let _agreePrevX = 0, _agreePrevY = 0;
 
@@ -9844,11 +9924,11 @@ async function updateAgreementFeeCopy() {
   setHtml('agreeFeeIntro', `In consideration of the platform access provided at no setup fee, one-time fee, monthly subscription fee, hidden fee, or other platform charge to the Court Owner, the Court Owner <strong>authorizes</strong> the Platform Provider to add the current System Owner-selected <strong>non-refundable booking fee of ${fee}</strong> to each customer transaction processed through the system. This fee is charged to and paid by the <strong>customer/player</strong>, not the Court Owner, and is separate from the court rental fee.<br><br>The System Owner sets the booking fee amount and charging method. The fee is currently configured as <strong>${feeMethod}</strong> at <strong>${fmt(cfg.amount)}</strong>, added to the player's checkout, and recorded in the running remittance ledger when the booking becomes eligible.`);
   setHtml('agreeFeeBillable', `<strong>When it applies.</strong> The configured ${configuredFeeText} applies only to a <strong>confirmed booking transaction</strong> made through the platform, meaning a booking that successfully reserved a court slot. Bookings that are cancelled before confirmation, rejected during payment verification, expired, or never held a slot are <strong>not charged</strong>.`);
   setHtml('agreeFeeCollection', `<strong>Collection.</strong> The Court Owner collects the configured ${configuredFeeText} from the customer together with the court rental fee at the time of booking, and holds the booking fee on behalf of the Platform Provider until remittance. The booking fee is not a fee charged to the Court Owner and is not part of the Court Owner's court rental revenue.`);
-  setHtml('agreeFeeWeekly', `<strong>Accumulated remittance every 14th.</strong> Eligible booking fees accumulate continuously until the Court Owner prepares remittance on the <strong>14th day of the month</strong>. The system then freezes the exact Asia/Manila server time and snapshots all eligible, unsettled confirmed booking transactions before that cutoff. At the current configuration, the fee calculation is <strong>${formula}</strong>. Each booking is included <strong>only once</strong>; eligible bookings at or after the cutoff start the next balance for the following 14th.`);
+  setHtml('agreeFeeWeekly', `<strong>Accumulated remittance on the selected due date.</strong> Eligible booking fees accumulate continuously until the Court Owner prepares remittance on or after the <strong>System Owner-selected due date shown in the dashboard</strong>. The system then freezes the exact Asia/Manila server time and snapshots all eligible, unsettled confirmed booking transactions before that cutoff. At the current configuration, the fee calculation is <strong>${formula}</strong>. Each booking is included <strong>only once</strong>; eligible bookings at or after the cutoff start the next accumulated balance.`);
   setHtml('agreeFeeRevenue', `All court rental fees set by the Court Owner (e.g. ₱200/hr, ₱250/hr) belong <strong>exclusively to the Court Owner</strong>. The Platform Provider does not take any share of the court rental revenue. The Court Owner receives 100% of the court rental rate from every confirmed booking. Only the separate configured booking fee of <strong>${fee}</strong> paid by the customer is for the Platform Provider.`);
   setHtml('agreeFeeCircumvention', `The Court Owner agrees <strong>not to direct, encourage, or assist customers to bypass the platform</strong> in order to avoid the configured booking fee of <strong>${fee}</strong>. This includes but is not limited to: advertising a direct booking channel at a lower price for platform-visible slots, accepting bookings verbally or via personal chat for slots available on the platform, waiving or hiding the booking fee outside the system, or instructing customers to "book directly" to avoid the fee.<br><br>Circumvention of the booking fee is a material breach of this Agreement and may result in immediate suspension or termination of platform access.`);
   setHtml('agreeFeeConfirmCollect', `You authorize the platform to collect the System Owner-selected booking fee of <strong>${fee}</strong> from customers on confirmed booking transactions.`);
-  setHtml('agreeFeeConfirmRemit', `You agree to remit the continuously accumulated booking fees to the Platform Provider on the <strong>14th of each month</strong>, using the exact cutoff recorded when remittance is prepared.`);
+  setHtml('agreeFeeConfirmRemit', `You agree to remit the continuously accumulated booking fees to the Platform Provider on or after the <strong>System Owner-selected due date shown in the dashboard</strong>, using the exact cutoff recorded when remittance is prepared.`);
   setHtml('agreeFeeCheckboxText', `I have read and fully understood the Platform Access &amp; Booking Fee Authorization Agreement above. I authorize the platform to collect the System Owner-selected <strong>${fee}</strong> booking fee from customers on confirmed booking transactions. I agree to honor all platform bookings and not direct customers to book directly to circumvent this fee. I understand that the Platform Provider is the software provider only and does not operate the court. This electronic signature is legally binding under RA 8792.`);
 }
 
@@ -9956,6 +10036,6 @@ async function checkAgreementGate(session) {
 </script>
 
 <script src="supabase.min.js"></script>
-<script src="supabase-config.js?v=20260730-remittance-v1"></script>
+<script src="supabase-config.js?v=20260730-remittance-due-date-v2"></script>
 </body>
 </html>
