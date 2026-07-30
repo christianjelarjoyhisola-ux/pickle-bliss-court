@@ -152,104 +152,204 @@ h1, h2, h3, h4 { font-family: 'Bebas Neue', sans-serif; letter-spacing: 1px; }
 .r-court-owner { background: var(--yellow-bg); color: var(--yellow); }
 .r-staff { background: rgba(128,128,160,.16); color: #8b8ba6; }
 .r-host { background: rgba(100,180,255,.15); color: #4a9ad4; }
-.remit-panel {
-  max-width:980px; margin-bottom:20px;
-  border:1.5px solid rgba(var(--yellow-rgb),.36) !important;
-  background:linear-gradient(135deg,rgba(var(--yellow-rgb),.07),rgba(var(--green-rgb),.025)) !important;
+/* -- BOOKING FEE REMITTANCE LEDGER ----------------------------- */
+.rm-page-head {
+  display:flex; align-items:flex-end; justify-content:space-between; gap:18px;
+  margin-bottom:14px; padding:18px; border:1px solid var(--border); border-radius:16px;
+  background:radial-gradient(circle at top right,rgba(var(--yellow-rgb),.15),transparent 40%),linear-gradient(135deg,rgba(var(--green-rgb),.12),var(--surface) 55%);
+  box-shadow:var(--shadow);
 }
-.remit-head { display:flex; align-items:center; justify-content:space-between; gap:12px; flex-wrap:wrap; margin-bottom:14px; }
-.remit-title { margin:0; color:var(--yellow); display:flex; align-items:center; gap:8px; }
-.remit-role {
-  font-size:.66rem; background:rgba(var(--yellow-rgb),.15); color:var(--yellow);
-  padding:3px 8px; border-radius:999px; font-family:'DM Mono',monospace; letter-spacing:.8px;
+.rm-page-copy { min-width:0; }
+.rm-kicker { color:var(--green); font-size:.68rem; font-weight:900; text-transform:uppercase; letter-spacing:1.25px; margin-bottom:5px; }
+.rm-page-head h2 { margin:0; font-size:clamp(1.45rem,2.5vw,2rem); letter-spacing:.8px; }
+.rm-page-head p { max-width:720px; margin:6px 0 0; color:var(--text2); font-size:.84rem; line-height:1.5; }
+.rm-head-actions { display:flex; gap:8px; flex-wrap:wrap; justify-content:flex-end; }
+.rm-head-actions .btn, .rm-action, .rm-modal .btn { min-height:44px; }
+.rm-cycle-banner {
+  display:flex; align-items:center; justify-content:space-between; gap:14px; margin-bottom:12px;
+  padding:13px 15px; border:1px solid rgba(var(--yellow-rgb),.3); border-radius:14px;
+  background:linear-gradient(135deg,rgba(var(--yellow-rgb),.11),rgba(var(--green-rgb),.035));
 }
-.remit-summary-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(180px,1fr)); gap:10px; margin-bottom:12px; }
-.remit-metric {
-  background:var(--surface); border:1px solid rgba(var(--yellow-rgb),.18);
-  border-radius:12px; padding:12px 14px; box-shadow:var(--shadow);
+.rm-cycle-main { display:flex; align-items:flex-start; gap:10px; min-width:0; }
+.rm-cycle-icon { width:36px; height:36px; flex:0 0 36px; display:grid; place-items:center; border-radius:11px; background:var(--yellow-bg); color:var(--yellow); font-size:1rem; }
+.rm-cycle-title { color:var(--text); font-size:.84rem; font-weight:900; }
+.rm-cycle-copy { margin-top:2px; color:var(--text2); font-size:.74rem; line-height:1.4; }
+.rm-pill { display:inline-flex; align-items:center; gap:6px; min-height:30px; padding:5px 10px; border:1px solid var(--border); border-radius:999px; background:var(--surface); color:var(--text2); font-size:.68rem; font-weight:900; white-space:nowrap; }
+.rm-stat-grid { display:grid; grid-template-columns:repeat(5,minmax(0,1fr)); gap:10px; margin-bottom:12px; }
+.rm-stat {
+  position:relative; min-width:0; min-height:104px; padding:14px; overflow:hidden;
+  border:1px solid var(--border); border-radius:14px; background:var(--surface); box-shadow:var(--shadow);
 }
-.remit-metric-label { font-size:.66rem; color:var(--text3); text-transform:uppercase; letter-spacing:.7px; font-weight:800; }
-.remit-metric-value { font-size:1.25rem; font-weight:900; color:var(--text); margin-top:5px; line-height:1; }
-.remit-metric-value.amount { color:var(--yellow); }
-.remit-help {
-  margin-top:12px; padding:10px 12px; border:1px solid rgba(var(--green-rgb),.14);
-  border-radius:10px; background:rgba(var(--green-rgb),.045); color:var(--text2);
-  font-size:.78rem; line-height:1.5;
+.rm-stat::after { content:''; position:absolute; width:78px; height:78px; right:-28px; bottom:-34px; border-radius:50%; background:rgba(var(--green-rgb),.07); }
+.rm-stat.warn::after { background:rgba(var(--yellow-rgb),.09); }
+.rm-stat-label { position:relative; z-index:1; color:var(--text3); font-size:.63rem; font-weight:900; text-transform:uppercase; letter-spacing:.7px; }
+.rm-stat-value { position:relative; z-index:1; margin-top:9px; color:var(--text); font:900 1.55rem/1 'Bebas Neue',sans-serif; letter-spacing:.4px; overflow-wrap:anywhere; }
+.rm-stat-value.money { color:var(--green); font-size:1.35rem; }
+.rm-stat.warn .rm-stat-value { color:var(--yellow); }
+.rm-stat-note { position:relative; z-index:1; margin-top:6px; color:var(--text3); font-size:.65rem; line-height:1.3; }
+.rm-live-card {
+  display:grid; grid-template-columns:minmax(0,1fr) auto; gap:18px; align-items:center;
+  margin-bottom:14px; padding:18px; border:1px solid rgba(var(--green-rgb),.28); border-radius:16px;
+  background:linear-gradient(135deg,rgba(var(--green-rgb),.12),rgba(var(--yellow-rgb),.045)); box-shadow:var(--shadow);
 }
-.remit-list { display:grid; gap:10px; }
-.remit-empty {
-  padding:24px 18px; text-align:center; border:1px dashed rgba(var(--yellow-rgb),.28);
-  border-radius:12px; background:var(--surface); color:var(--text2);
+.rm-live-kicker { color:var(--green); font-size:.66rem; font-weight:900; text-transform:uppercase; letter-spacing:1px; }
+.rm-live-amount { margin-top:5px; color:var(--text); font:900 clamp(2rem,5vw,3.2rem)/1 'Bebas Neue',sans-serif; letter-spacing:.8px; }
+.rm-live-meta { display:flex; flex-wrap:wrap; gap:7px 12px; margin-top:8px; color:var(--text2); font-size:.74rem; font-weight:700; }
+.rm-live-note { max-width:700px; margin-top:9px; color:var(--text3); font-size:.72rem; line-height:1.45; }
+.rm-calc-strip { display:grid; grid-template-columns:minmax(105px,.7fr) minmax(105px,.7fr) minmax(120px,.8fr) minmax(240px,1.8fr); gap:7px; margin-top:13px; }
+.rm-calc-metric { min-width:0; padding:10px 11px; border:1px solid var(--border); border-radius:11px; background:var(--bg2); }
+.rm-calc-label { color:var(--text3); font-size:.58rem; font-weight:900; text-transform:uppercase; letter-spacing:.55px; }
+.rm-calc-value { margin-top:4px; color:var(--text); font-size:.79rem; font-weight:900; line-height:1.35; overflow-wrap:anywhere; }
+.rm-calc-value.hours { color:var(--green); font:900 1rem 'DM Mono',monospace; }
+.rm-calc-value.formula { color:var(--yellow); font-family:'DM Mono',monospace; font-size:.72rem; }
+.rm-fee-breakdown { display:flex; flex-wrap:wrap; gap:6px; margin-top:9px; }
+.rm-fee-line { display:inline-flex; align-items:center; gap:6px; min-height:30px; padding:6px 9px; border:1px solid var(--border); border-radius:9px; background:var(--bg2); color:var(--text2); font:800 .67rem 'DM Mono',monospace; }
+.rm-fee-line strong { color:var(--green); font-weight:900; }
+.rm-fee-line.legacy { color:var(--text3); font-family:'DM Sans',sans-serif; }
+.rm-live-action { min-width:210px; text-align:right; }
+.rm-live-action .btn { width:100%; justify-content:center; min-height:46px; }
+.rm-live-hint { margin-top:6px; color:var(--text3); font-size:.65rem; line-height:1.35; }
+.rm-panel { border:1px solid var(--border); border-radius:16px; background:var(--surface); box-shadow:var(--shadow); overflow:hidden; }
+.rm-panel-top { display:flex; align-items:center; justify-content:space-between; gap:12px; padding:14px; border-bottom:1px solid var(--border); }
+.rm-tabs { display:flex; gap:5px; padding:4px; overflow-x:auto; border:1px solid var(--border); border-radius:12px; background:var(--bg2); scrollbar-width:thin; }
+.rm-tab { min-height:36px; padding:7px 12px; border:0; border-radius:8px; background:transparent; color:var(--text2); cursor:pointer; font:900 .73rem 'DM Sans',sans-serif; white-space:nowrap; }
+.rm-tab.active { background:var(--surface); color:var(--green); box-shadow:var(--shadow); }
+.rm-tab-count { display:inline-grid; place-items:center; min-width:19px; min-height:19px; margin-left:4px; padding:0 5px; border-radius:999px; background:var(--input); font-size:.62rem; }
+.rm-toolbar { display:grid; grid-template-columns:minmax(220px,1fr) 190px; gap:9px; padding:12px 14px; border-bottom:1px solid var(--border); background:var(--surface); }
+.rm-search-wrap { position:relative; min-width:0; }
+.rm-search-wrap::before { content:'\2315'; position:absolute; left:12px; top:50%; transform:translateY(-50%); color:var(--text3); }
+.rm-search, .rm-filter { width:100%; min-height:44px; border:1px solid var(--border); border-radius:11px; background:var(--bg2); color:var(--text); font:inherit; font-size:.82rem; outline:none; }
+.rm-search { padding:9px 12px 9px 36px; }
+.rm-filter { padding:9px 11px; }
+.rm-search:focus, .rm-filter:focus { border-color:var(--green); box-shadow:0 0 0 3px rgba(var(--green-rgb),.11); }
+.rm-list-meta { padding:10px 14px 0; color:var(--text3); font-size:.7rem; font-weight:800; }
+.rm-record-list { display:grid; gap:10px; padding:10px 14px 15px; }
+.rm-record {
+  display:grid; gap:11px; padding:14px; border:1px solid var(--border); border-radius:14px;
+  background:var(--card); box-shadow:0 7px 20px rgba(0,0,0,.035);
 }
-.remit-empty strong { display:block; color:var(--text); margin-bottom:4px; }
-.remit-card {
-  display:grid; grid-template-columns:minmax(190px,1.4fr) repeat(4,minmax(92px,.8fr)) auto;
-  gap:10px; align-items:center; padding:13px 14px; background:var(--surface);
-  border:1px solid var(--border); border-radius:12px; box-shadow:var(--shadow);
-}
-.remit-card.is-overdue { border-color:rgba(229,57,53,.32); box-shadow:0 8px 24px rgba(229,57,53,.08); }
-.remit-card-main { min-width:0; }
-.remit-card-period { font-weight:900; color:var(--text); }
-.remit-card-meta { font-size:.72rem; color:var(--text3); margin-top:3px; line-height:1.35; }
-.remit-card-field { min-width:0; }
-.remit-card-label { font-size:.62rem; color:var(--text3); text-transform:uppercase; letter-spacing:.55px; font-weight:900; margin-bottom:3px; }
-.remit-card-value { font-size:.86rem; color:var(--text); font-weight:800; }
-.remit-card-value.amount { color:var(--yellow); font-size:1rem; }
-.remit-card-action { display:flex; justify-content:flex-end; }
-.remit-modal { max-width:620px; }
-.remit-modal .m-body { padding:18px; }
-.remit-pay-hero {
-  display:grid; grid-template-columns:1fr auto; gap:12px; align-items:center;
-  padding:14px; border:1px solid rgba(var(--yellow-rgb),.28); border-radius:14px;
-  background:linear-gradient(135deg,rgba(var(--yellow-rgb),.12),rgba(var(--yellow-rgb),.035));
-  margin-bottom:14px;
-}
-.remit-pay-label { font-size:.68rem; color:var(--text3); text-transform:uppercase; letter-spacing:.7px; font-weight:900; }
-.remit-pay-period { font-size:.92rem; color:var(--text); font-weight:800; margin-top:4px; }
-.remit-pay-amount { color:var(--yellow); font-size:1.65rem; font-weight:900; white-space:nowrap; }
-.remit-steps { display:grid; gap:12px; }
-.remit-step {
-  border:1px solid var(--border); border-radius:14px; background:var(--surface);
-  padding:14px; box-shadow:var(--shadow);
-}
-.remit-step-title { display:flex; align-items:center; gap:8px; font-weight:900; color:var(--text); margin-bottom:10px; }
-.remit-step-num {
-  width:22px; height:22px; border-radius:50%; background:var(--green); color:#fff;
-  display:inline-flex; align-items:center; justify-content:center; font-size:.72rem; font-weight:900;
-}
-.remit-account-grid { display:grid; gap:8px; }
-.remit-account-row {
-  display:grid; grid-template-columns:100px 1fr auto; gap:8px; align-items:center;
-  padding:9px 0; border-bottom:1px solid var(--border);
-}
-.remit-account-row:last-child { border-bottom:none; }
-.remit-account-label { font-size:.72rem; color:var(--text3); font-weight:800; }
-.remit-account-value { min-width:0; color:var(--text); font-weight:800; overflow-wrap:anywhere; }
-.remit-copy { padding:4px 9px !important; font-size:.72rem !important; }
-.remit-qr { text-align:center; margin-top:10px; padding-top:10px; border-top:1px solid var(--border); }
-.remit-qr img { width:150px; height:150px; object-fit:contain; border-radius:10px; border:1px solid var(--border); background:#fff; padding:6px; }
-.remit-tip { font-size:.72rem; color:var(--text3); margin-top:8px; line-height:1.45; }
-.remit-proof-grid { display:grid; grid-template-columns:1fr; gap:10px; }
-.remit-upload {
-  display:flex; align-items:center; justify-content:center; gap:8px; min-height:44px;
-  padding:11px 13px; background:var(--input); border:1.5px dashed var(--border);
-  border-radius:10px; cursor:pointer; font-size:.84rem; color:var(--text2); font-weight:800;
-}
-.remit-upload:hover { border-color:var(--yellow); color:var(--yellow); }
-.remit-proof-preview { display:none; width:100%; max-height:180px; object-fit:contain; border-radius:10px; border:1px solid var(--border); background:#fff; }
+.rm-record.overdue, .rm-record.rejected { border-color:rgba(200,61,38,.38); }
+.rm-record.under-review { border-color:rgba(var(--yellow-rgb),.4); }
+.rm-record-head { display:grid; grid-template-columns:minmax(0,1fr) auto; gap:12px; align-items:start; }
+.rm-ref { color:var(--green); font:800 .78rem 'DM Mono',monospace; overflow-wrap:anywhere; }
+.rm-period { margin-top:4px; color:var(--text); font-size:.9rem; font-weight:900; }
+.rm-record-sub { margin-top:3px; color:var(--text3); font-size:.7rem; line-height:1.4; }
+.rm-status { display:inline-flex; align-items:center; min-height:27px; padding:4px 9px; border:1px solid var(--border); border-radius:999px; font-size:.62rem; font-weight:900; text-transform:uppercase; letter-spacing:.45px; white-space:nowrap; }
+.rm-status.awaiting-payment { color:var(--yellow); background:var(--yellow-bg); border-color:rgba(var(--yellow-rgb),.28); }
+.rm-status.under-review { color:#407cb4; background:rgba(64,124,180,.11); border-color:rgba(64,124,180,.28); }
+.rm-status.settled { color:var(--green); background:var(--green-bg); border-color:rgba(var(--green-rgb),.25); }
+.rm-status.overdue, .rm-status.rejected, .rm-status.cancelled { color:var(--red); background:var(--red-bg); border-color:rgba(200,61,38,.25); }
+.rm-status.accumulating { color:var(--text2); background:var(--bg2); }
+.rm-record-grid { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:7px; }
+.rm-field { min-width:0; padding:9px 10px; border:1px solid var(--border); border-radius:10px; background:var(--bg2); }
+.rm-field-label { color:var(--text3); font-size:.58rem; font-weight:900; text-transform:uppercase; letter-spacing:.55px; }
+.rm-field-value { margin-top:4px; color:var(--text); font-size:.78rem; font-weight:850; overflow-wrap:anywhere; }
+.rm-field-value.money { color:var(--yellow); font:900 .9rem 'DM Mono',monospace; }
+.rm-field-value.formula { color:var(--green); font-family:'DM Mono',monospace; font-size:.7rem; line-height:1.45; }
+.rm-record-foot { display:flex; align-items:center; justify-content:space-between; gap:9px; flex-wrap:wrap; }
+.rm-record-note { color:var(--text3); font-size:.68rem; line-height:1.4; }
+.rm-actions { display:flex; gap:7px; flex-wrap:wrap; justify-content:flex-end; }
+.rm-actions .btn { min-height:40px; justify-content:center; }
+.rm-empty, .rm-error, .rm-loading { min-height:190px; display:grid; place-items:center; padding:28px; text-align:center; color:var(--text3); line-height:1.5; border:1px dashed var(--border); border-radius:13px; background:var(--bg2); }
+.rm-empty strong, .rm-error strong { display:block; margin-bottom:5px; color:var(--text); }
+.rm-spinner { width:30px; height:30px; margin:0 auto 10px; border:3px solid var(--border); border-top-color:var(--green); border-radius:50%; animation:rmSpin .75s linear infinite; }
+@keyframes rmSpin { to { transform:rotate(360deg); } }
+.rm-modal { width:min(700px,calc(100vw - 32px)); max-width:700px; max-height:min(94dvh,920px); overflow:hidden; display:flex; flex-direction:column; border-radius:20px; }
+.rm-modal.wide { width:min(960px,calc(100vw - 32px)); max-width:960px; }
+.rm-modal .m-hd { flex:0 0 auto; padding:15px 18px; }
+.rm-modal .m-hd > div { min-width:0; }
+.rm-modal .m-hd h2 { margin:0; font-size:1.08rem; letter-spacing:.35px; }
+.rm-modal-sub { margin-top:3px; color:var(--text3); font-size:.7rem; font-weight:700; }
+.rm-modal .m-body { min-height:0; padding:16px 18px; overflow-y:auto; overscroll-behavior:contain; }
+.rm-modal .m-foot { flex:0 0 auto; padding:13px 18px calc(13px + env(safe-area-inset-bottom)); }
+.rm-hero { display:grid; grid-template-columns:minmax(0,1fr) auto; gap:12px; align-items:center; margin-bottom:13px; padding:14px; border:1px solid rgba(var(--yellow-rgb),.28); border-radius:14px; background:linear-gradient(135deg,rgba(var(--yellow-rgb),.11),rgba(var(--green-rgb),.04)); }
+.rm-hero-label { color:var(--text3); font-size:.63rem; font-weight:900; text-transform:uppercase; letter-spacing:.7px; }
+.rm-hero-title { margin-top:4px; color:var(--text); font-size:.88rem; font-weight:900; line-height:1.35; }
+.rm-hero-amount { color:var(--yellow); font:900 1.75rem/1 'Bebas Neue',sans-serif; white-space:nowrap; }
+.rm-info-note { display:flex; gap:9px; align-items:flex-start; margin-bottom:13px; padding:11px 12px; border:1px solid rgba(var(--green-rgb),.2); border-radius:11px; background:rgba(var(--green-rgb),.06); color:var(--text2); font-size:.75rem; line-height:1.45; }
+.rm-step { margin-bottom:12px; padding:13px; border:1px solid var(--border); border-radius:13px; background:var(--surface); }
+.rm-step-title { display:flex; align-items:center; gap:8px; margin-bottom:10px; color:var(--text); font-size:.82rem; font-weight:900; }
+.rm-step-num { width:23px; height:23px; flex:0 0 23px; display:grid; place-items:center; border-radius:50%; background:var(--green); color:#fff; font-size:.68rem; }
+.rm-account-row { display:grid; grid-template-columns:100px minmax(0,1fr) auto; gap:8px; align-items:center; min-height:44px; padding:7px 0; border-bottom:1px solid var(--border); }
+.rm-account-row:last-child { border-bottom:0; }
+.rm-account-label { color:var(--text3); font-size:.69rem; font-weight:800; }
+.rm-account-value { color:var(--text); font:800 .8rem 'DM Mono',monospace; overflow-wrap:anywhere; }
+.rm-copy { min-height:36px !important; padding:6px 10px !important; }
+.rm-qr { margin-top:10px; padding-top:10px; text-align:center; border-top:1px solid var(--border); }
+.rm-qr img { width:148px; height:148px; object-fit:contain; border:1px solid var(--border); border-radius:11px; background:#fff; padding:6px; }
+.rm-form-grid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:10px; }
+.rm-form-grid .full { grid-column:1 / -1; }
+.rm-upload { display:flex; align-items:center; justify-content:center; gap:8px; min-height:48px; padding:11px 13px; border:1.5px dashed var(--border); border-radius:11px; background:var(--input); color:var(--text2); cursor:pointer; font-size:.82rem; font-weight:900; }
+.rm-upload:hover { border-color:var(--green); color:var(--green); }
+.rm-proof-preview { display:none; width:100%; max-height:260px; margin-top:9px; object-fit:contain; border:1px solid var(--border); border-radius:11px; background:#fff; }
+.rm-review-grid { display:grid; grid-template-columns:minmax(0,1fr) minmax(240px,.8fr); gap:14px; }
+.rm-review-receipt { min-height:240px; display:grid; place-items:center; padding:10px; border:1px solid var(--border); border-radius:13px; background:var(--bg2); }
+.rm-review-receipt img { width:100%; max-height:420px; object-fit:contain; border-radius:9px; background:#fff; }
+.rm-detail-grid { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:8px; margin-bottom:12px; }
+.rm-detail-section { margin-top:12px; }
+.rm-detail-title { margin-bottom:8px; color:var(--text); font-size:.78rem; font-weight:900; text-transform:uppercase; letter-spacing:.55px; }
+.rm-audit-list { display:grid; gap:1px; overflow:hidden; border:1px solid var(--border); border-radius:12px; background:var(--border); }
+.rm-audit-row { display:grid; grid-template-columns:150px minmax(0,1fr); gap:10px; padding:9px 11px; background:var(--surface); font-size:.74rem; }
+.rm-audit-row span:first-child { color:var(--text3); }
+.rm-audit-row span:last-child { color:var(--text); text-align:right; overflow-wrap:anywhere; }
+.rm-booking-list { display:grid; gap:7px; }
+.rm-booking { display:grid; grid-template-columns:minmax(0,1.3fr) minmax(110px,.7fr) auto; gap:10px; align-items:center; padding:10px 11px; border:1px solid var(--border); border-radius:11px; background:var(--bg2); }
+.rm-booking strong { display:block; color:var(--text); font-size:.78rem; overflow-wrap:anywhere; }
+.rm-booking span { display:block; margin-top:2px; color:var(--text3); font-size:.66rem; line-height:1.35; }
+.rm-booking-fee { color:var(--green); font:900 .78rem 'DM Mono',monospace; white-space:nowrap; }
+.rm-modal :is(button,input,select,textarea,a):focus-visible, #sec-remittances :is(button,input,select,a):focus-visible { outline:3px solid rgba(var(--green-rgb),.3); outline-offset:2px; }
 @media(max-width:900px) {
-  .remit-card { grid-template-columns:1fr 1fr; }
-  .remit-card-main, .remit-card-action { grid-column:1 / -1; }
-  .remit-card-action { justify-content:stretch; }
-  .remit-card-action .btn { width:100%; justify-content:center; }
+  .rm-stat-grid { grid-template-columns:repeat(2,minmax(0,1fr)); }
+  .rm-stat-grid .rm-stat:last-child { grid-column:1 / -1; }
+  .rm-record-grid { grid-template-columns:repeat(2,minmax(0,1fr)); }
+  .rm-calc-strip { grid-template-columns:repeat(2,minmax(0,1fr)); }
+  .rm-calc-strip .wide { grid-column:1 / -1; }
+  .rm-review-grid { grid-template-columns:1fr; }
 }
-@media(max-width:560px) {
-  .remit-head { align-items:flex-start; }
-  .remit-card { grid-template-columns:1fr; }
-  .remit-pay-hero { grid-template-columns:1fr; }
-  .remit-pay-amount { font-size:1.45rem; }
-  .remit-account-row { grid-template-columns:1fr; gap:4px; }
-  .remit-copy { width:100%; justify-content:center; }
+@media(max-width:760px) {
+  .rm-page-head { align-items:stretch; flex-direction:column; padding:15px; }
+  .rm-head-actions { justify-content:stretch; }
+  .rm-head-actions .btn { flex:1; justify-content:center; }
+  .rm-cycle-banner, .rm-live-card { align-items:stretch; flex-direction:column; }
+  .rm-live-card { grid-template-columns:1fr; }
+  .rm-live-action { min-width:0; text-align:left; }
+  .rm-panel-top { align-items:stretch; flex-direction:column; }
+  .rm-toolbar { grid-template-columns:1fr; }
+  .rm-detail-grid { grid-template-columns:repeat(2,minmax(0,1fr)); }
+}
+@media(max-width:520px) {
+  #rmPrepareModal.overlay, #rmPayModal.overlay, #rmReviewModal.overlay, #rmDetailModal.overlay, #rmCancelModal.overlay { align-items:flex-end; padding:0; overflow:hidden; }
+  .rm-modal, .rm-modal.wide { width:100%; max-width:none; max-height:94dvh; border-radius:20px 20px 0 0; border-bottom:0; }
+  .rm-modal .m-hd { padding:12px 14px; }
+  .rm-modal .m-body { padding:13px 14px 18px; }
+  .rm-modal .m-foot { padding:11px 14px calc(11px + env(safe-area-inset-bottom)); }
+  .rm-stat-grid { gap:8px; }
+  .rm-stat { min-height:90px; padding:11px; }
+  .rm-stat-value { font-size:1.32rem; }
+  .rm-stat-value.money { font-size:1.1rem; }
+  .rm-cycle-banner { align-items:flex-start; }
+  .rm-cycle-banner .rm-pill { align-self:flex-start; }
+  .rm-live-card { padding:14px; }
+  .rm-live-amount { font-size:2.15rem; }
+  .rm-record-head, .rm-hero { grid-template-columns:1fr; }
+  .rm-record-grid, .rm-detail-grid, .rm-form-grid { grid-template-columns:1fr; }
+  .rm-calc-strip { grid-template-columns:1fr; }
+  .rm-calc-strip .wide { grid-column:auto; }
+  .rm-fee-line { width:100%; justify-content:space-between; align-items:flex-start; }
+  .rm-form-grid .full { grid-column:auto; }
+  .rm-record-foot { align-items:stretch; flex-direction:column; }
+  .rm-actions { display:grid; grid-template-columns:1fr; width:100%; }
+  .rm-actions .btn { width:100%; }
+  .rm-account-row { grid-template-columns:1fr; gap:4px; padding:9px 0; }
+  .rm-account-row .rm-copy { width:100%; justify-content:center; }
+  .rm-audit-row { grid-template-columns:1fr; gap:3px; }
+  .rm-audit-row span:last-child { text-align:left; }
+  .rm-booking { grid-template-columns:1fr auto; }
+  .rm-booking > div:nth-child(2) { grid-column:1 / -1; }
+}
+@media(prefers-reduced-motion:reduce) {
+  .rm-spinner { animation:none; }
+  .rm-record, .rm-tab, .rm-modal { transition:none; animation:none; }
 }
 .btn-icon {
   width: 36px; height: 36px;
@@ -942,7 +1042,6 @@ tr:hover td { background: var(--bg2); }
   .tbl-scroll td code { word-break: break-all; white-space: normal; }
   /* Remittance panel header controls go full-width and stack */
   .bill-controls { width: 100%; }
-  .bill-controls #billWeekMode { flex: 1 1 100%; width: 100% !important; }
   .bill-controls .btn { flex: 1 1 auto; justify-content: center; }
   .filters:not(#tableView .filters) { flex-direction: column; }
   .filters:not(#tableView .filters) input, .filters:not(#tableView .filters) select { width: 100%; }
@@ -1738,9 +1837,16 @@ tr:hover td { background: var(--bg2); }
       <div class="nav-item" data-s="maintenance" data-perm="maintenance" onclick="goto('maintenance')"><span>&#128295;</span> Maintenance</div>
       <div class="nav-item" data-s="payments" data-perm="payments" onclick="goto('payments')"><span>&#128179;</span> Payments</div>
     </div>
+    <div class="sb-section" data-perm="remittances">
+      <div class="nav-grp">Finance</div>
+      <div class="nav-item" data-s="remittances" data-perm="remittances" onclick="goto('remittances')"><span>&#129534;</span> Remittances</div>
+    </div>
     <div class="sb-section" data-perm="accounts">
       <div class="nav-grp">Admin Only</div>
       <div class="nav-item" data-s="accounts" data-perm="accounts" onclick="goto('accounts')"><span>&#128101;</span> Accounts</div>
+    </div>
+    <div class="sb-section" data-perm="owner_only">
+      <div class="nav-grp">System Owner</div>
       <div class="nav-item" data-s="deleted" data-perm="owner_only" onclick="goto('deleted')"><span>&#128465;</span> Deleted Bookings</div>
     </div>
     <div class="sb-foot">
@@ -2133,6 +2239,113 @@ tr:hover td { background: var(--bg2); }
       </div>
     </div>
 
+    <!-- BOOKING FEE REMITTANCES (system owner + court owner) -->
+    <div id="sec-remittances" class="adm-sec">
+      <div class="rm-page-head">
+        <div class="rm-page-copy">
+          <div class="rm-kicker">People &amp; Finance</div>
+          <h2>BOOKING FEE REMITTANCES</h2>
+          <p id="rmPageCopy">Track the running booking-fee balance, exact payment cutoffs, submitted proof, and permanent settlement history.</p>
+        </div>
+        <div class="rm-head-actions">
+          <button class="btn btn-g" id="rmRefreshBtn" type="button" onclick="renderRemittances({announce:true})">&#8635; Refresh</button>
+        </div>
+      </div>
+
+      <div class="rm-cycle-banner">
+        <div class="rm-cycle-main">
+          <div class="rm-cycle-icon" aria-hidden="true">14</div>
+          <div>
+            <div class="rm-cycle-title" id="rmCycleTitle">Remittance is scheduled every 14th</div>
+            <div class="rm-cycle-copy" id="rmCycleCopy">The exact cutoff is frozen when the court owner prepares payment. New bookings after that cutoff start the next cycle.</div>
+          </div>
+        </div>
+        <span class="rm-pill" id="rmNextDuePill">Next due: &mdash;</span>
+      </div>
+
+      <div class="rm-stat-grid" aria-label="Remittance summary">
+        <div class="rm-stat">
+          <div class="rm-stat-label">Current Accumulated</div>
+          <div class="rm-stat-value money" id="rmLiveStat">&#8369;0.00</div>
+          <div class="rm-stat-note" id="rmLiveStatNote">Unsettled booking fees</div>
+        </div>
+        <div class="rm-stat">
+          <div class="rm-stat-label">Reservations</div>
+          <div class="rm-stat-value" id="rmReservationStat">0</div>
+          <div class="rm-stat-note" id="rmReservationStatNote">Unique confirmed reservations</div>
+        </div>
+        <div class="rm-stat">
+          <div class="rm-stat-label">Billable Court-Hours</div>
+          <div class="rm-stat-value" id="rmHoursStat">0</div>
+          <div class="rm-stat-note" id="rmHoursStatNote">Per-hour fee units</div>
+        </div>
+        <div class="rm-stat warn">
+          <div class="rm-stat-label">Under Review</div>
+          <div class="rm-stat-value" id="rmReviewStat">&#8369;0.00</div>
+          <div class="rm-stat-note" id="rmReviewStatNote">No payment proof waiting</div>
+        </div>
+        <div class="rm-stat">
+          <div class="rm-stat-label">Settled Total</div>
+          <div class="rm-stat-value money" id="rmSettledStat">&#8369;0.00</div>
+          <div class="rm-stat-note" id="rmSettledStatNote">Permanent remittance history</div>
+        </div>
+      </div>
+
+      <section class="rm-live-card" aria-labelledby="rmLiveTitle">
+        <div>
+          <div class="rm-live-kicker" id="rmLiveTitle">Live accumulated balance</div>
+          <div class="rm-live-amount" id="rmLiveAmount" aria-live="polite">&#8369;0.00</div>
+          <div class="rm-live-meta">
+            <span id="rmLivePeriod">Accumulation start: &mdash;</span>
+            <span id="rmLiveAsOf">Updated: &mdash;</span>
+          </div>
+          <div class="rm-calc-strip" aria-label="Live booking-fee calculation">
+            <div class="rm-calc-metric"><div class="rm-calc-label">Reservations</div><div class="rm-calc-value" id="rmLiveReservations">0</div></div>
+            <div class="rm-calc-metric"><div class="rm-calc-label">Court Bookings</div><div class="rm-calc-value" id="rmLiveBookings">0</div></div>
+            <div class="rm-calc-metric"><div class="rm-calc-label">Billable Court-Hours</div><div class="rm-calc-value hours" id="rmLiveHours">0</div></div>
+            <div class="rm-calc-metric wide"><div class="rm-calc-label">Fee Calculation</div><div class="rm-calc-value formula" id="rmLiveFormula">No eligible fee yet</div></div>
+          </div>
+          <div class="rm-fee-breakdown" id="rmLiveFeeBreakdown" aria-label="Fee rate breakdown"></div>
+          <div class="rm-live-note" id="rmLiveNote">One reservation may contain several court bookings. Billable court-hours come from the immutable fee snapshot; court rental revenue and the customer's 50% court downpayment remain separate.</div>
+        </div>
+        <div class="rm-live-action" id="rmLiveAction">
+          <button class="btn btn-p rm-action" id="rmPrepareBtn" type="button" onclick="openRemittancePrepare()" hidden>Prepare Remittance</button>
+          <div class="rm-live-hint" id="rmPrepareHint">Available to the court owner when a balance can be frozen.</div>
+        </div>
+      </section>
+
+      <section class="rm-panel" aria-label="Remittance records">
+        <div class="rm-panel-top">
+          <div class="rm-tabs" id="rmTabs" role="tablist" aria-label="Remittance record filters">
+            <button class="rm-tab active" id="rmActiveTab" type="button" role="tab" aria-selected="true" aria-controls="rmRecordList" onclick="setRemittanceTab('active')">Active <span class="rm-tab-count" id="rmActiveCount">0</span></button>
+            <button class="rm-tab" id="rmHistoryTab" type="button" role="tab" aria-selected="false" aria-controls="rmRecordList" onclick="setRemittanceTab('history')">History <span class="rm-tab-count" id="rmHistoryCount">0</span></button>
+          </div>
+          <span class="rm-pill" id="rmRolePill">Secure ledger</span>
+        </div>
+        <div class="rm-toolbar">
+          <label class="rm-search-wrap">
+            <span class="hidden">Search remittances</span>
+            <input class="rm-search" id="rmSearch" type="search" placeholder="Search reference, payment ref, booking..." oninput="updateRemittanceSearch(this.value)" />
+          </label>
+          <label>
+            <span class="hidden">Filter by status</span>
+            <select class="rm-filter" id="rmStatusFilter" onchange="updateRemittanceStatusFilter(this.value)">
+              <option value="all">All statuses</option>
+              <option value="awaiting-payment">Awaiting payment</option>
+              <option value="under-review">Under review</option>
+              <option value="settled">Settled</option>
+              <option value="overdue">Overdue</option>
+              <option value="rejected">Rejected / cancelled</option>
+            </select>
+          </label>
+        </div>
+        <div class="rm-list-meta" id="rmListMeta" aria-live="polite">Loading remittance records...</div>
+        <div class="rm-record-list" id="rmRecordList" role="tabpanel" aria-live="polite">
+          <div class="rm-loading"><div><div class="rm-spinner" aria-hidden="true"></div>Loading secure remittance ledger...</div></div>
+        </div>
+      </section>
+    </div>
+
     <!-- BLOCKED -->
     <div id="sec-blocked" class="adm-sec">
       <div class="toolbar"><h2>🎾 OPEN PLAY</h2></div>
@@ -2487,7 +2700,7 @@ tr:hover td { background: var(--bg2); }
       <!-- BOOKING FEE — System Owner only -->
       <div class="panel" data-perm="owner_only" style="max-width:680px;margin-bottom:20px;border:2px solid var(--green);">
         <h4>💰 Booking Fee <span style="font-size:.72rem;background:var(--green-bg);color:var(--green);padding:2px 8px;border-radius:8px;margin-left:8px;font-family:'DM Mono',monospace;letter-spacing:1px">SYSTEM OWNER</span></h4>
-        <p style="color:var(--muted);font-size:.84rem;margin:8px 0 12px">Player-paid booking fee added at checkout as your system revenue. Choose how the fee is charged; court owners collect it with each booking and remit it monthly.</p>
+        <p style="color:var(--muted);font-size:.84rem;margin:8px 0 12px">Player-paid booking fee added at checkout as your system revenue. Court owners collect it with each eligible booking and remit the accumulated balance on the 14th using an exact payment-time cutoff.</p>
         <div class="fg" style="margin-bottom:16px">
           <label class="fl">Charging Method</label>
           <div style="display:grid;gap:8px">
@@ -2509,35 +2722,6 @@ tr:hover td { background: var(--bg2); }
           <button class="btn btn-s btn-sm" onclick="saveMaintRate()" style="margin-bottom:1px">💾 Save Rate</button>
         </div>
         <div id="maintRateSummary" style="margin-top:12px;padding:10px 14px;background:var(--input);border:1px solid var(--border);border-radius:8px;font-size:.84rem;color:var(--muted);display:none"></div>
-      </div>
-
-      <!-- COURT OWNER BOOKING FEE REMITTANCE — visible to court_owner only -->
-      <div class="panel remit-panel" data-perm="court_owner_only">
-        <div class="remit-head">
-          <h4 class="remit-title">🧾 My Booking Fee Remittance <span class="remit-role">COURT OWNER</span></h4>
-          <button class="btn btn-g btn-sm" onclick="renderMyBilling()">🔄 Refresh</button>
-        </div>
-        <div class="remit-summary-grid">
-          <div class="remit-metric">
-            <div class="remit-metric-label">Open Statements</div>
-            <div id="myBillOpenCount" class="remit-metric-value">0</div>
-          </div>
-          <div class="remit-metric">
-            <div class="remit-metric-label">Total to Remit</div>
-            <div id="myBillOutstanding" class="remit-metric-value amount">₱0.00</div>
-          </div>
-          <div class="remit-metric">
-            <div class="remit-metric-label">Next Due</div>
-            <div id="myBillNextDue" class="remit-metric-value">—</div>
-          </div>
-        </div>
-        <div id="myBillBody" class="remit-list">
-          <div class="remit-empty">
-            <strong>No remittance statement has been issued yet.</strong>
-            Statements appear here after the System Owner generates them.
-          </div>
-        </div>
-        <div class="remit-help">Booking fees are grouped by the month the customer made the booking, not the court play date. When a statement appears, click <strong>Remit Now</strong>, send payment to the shown GCash account, then submit the transaction ID and receipt screenshot for verification.</div>
       </div>
 
       <!-- BOOKING FEE REMITTANCE — System Owner only (where court owners send fees) -->
@@ -2582,8 +2766,8 @@ tr:hover td { background: var(--bg2); }
         <div class="fg" style="margin-bottom:14px">
           <label class="fl">Payment Acceptance Mode</label>
           <select class="fi" id="paymentAcceptanceModeSelect" style="font-size:.84rem" onchange="savePaymentSettings()">
-            <option value="both">Accept Both (50% Downpayment & Full Payment)</option>
-            <option value="downpayment_only">Downpayment Only (50%)</option>
+            <option value="both">Accept Downpayment (Full Fee + 50% Court) or Full Payment</option>
+            <option value="downpayment_only">Downpayment Only (Full Fee + 50% Court)</option>
             <option value="full_payment_only">Full Payment Only (100%)</option>
           </select>
           <div style="font-size:.72rem;color:var(--muted);margin-top:4px">Court players will only see the selected payment option(s) during booking.</div>
@@ -2734,56 +2918,6 @@ tr:hover td { background: var(--bg2); }
         </div>
       </div>
 
-      <!-- BOOKING-DATE BOOKING FEE REMITTANCE (owner only) -->
-      <div class="panel" data-perm="owner_only" style="max-width:980px;margin-bottom:20px;border:1.5px solid rgba(var(--green-rgb),.35);background:rgba(var(--green-rgb),.04)">
-        <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;margin-bottom:14px">
-          <h4 style="margin:0;color:var(--green)">🧾 Booking Fee Remittance by Booking Date</h4>
-          <div class="bill-controls" style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
-            <label style="font-size:.78rem;color:var(--text3)">Booking Month:</label>
-            <select class="fi" id="billWeekMode" style="padding:5px 10px;font-size:.82rem;width:auto">
-              <option value="1" selected>Previous Month</option>
-              <option value="0">Current Month</option>
-            </select>
-            <button class="btn btn-p btn-sm" onclick="generateWeeklyStatement()">➕ Generate Statement</button>
-            <button class="btn btn-g btn-sm" onclick="renderWeeklyBilling()">🔄 Refresh</button>
-          </div>
-        </div>
-
-        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:10px;margin-bottom:12px">
-          <div style="background:var(--input);border:1px solid var(--border);border-radius:9px;padding:10px 12px;text-align:center">
-            <div style="font-size:.7rem;color:var(--text3);text-transform:uppercase;letter-spacing:.6px">Open Statements</div>
-            <div id="billOpenCount" style="font-size:1.25rem;font-weight:800;color:var(--text);margin-top:4px">0</div>
-          </div>
-          <div style="background:var(--input);border:1px solid var(--border);border-radius:9px;padding:10px 12px;text-align:center">
-            <div style="font-size:.7rem;color:var(--text3);text-transform:uppercase;letter-spacing:.6px">Total to Remit</div>
-            <div id="billOutstanding" style="font-size:1.25rem;font-weight:800;color:var(--yellow);margin-top:4px">₱0.00</div>
-          </div>
-          <div style="background:var(--input);border:1px solid var(--border);border-radius:9px;padding:10px 12px;text-align:center">
-            <div style="font-size:.7rem;color:var(--text3);text-transform:uppercase;letter-spacing:.6px">Last Generated</div>
-            <div id="billLastGen" style="font-size:.88rem;font-weight:700;color:var(--text);margin-top:4px">—</div>
-          </div>
-        </div>
-
-        <div class="tbl-scroll" style="max-height:360px;overflow:auto;border:1px solid var(--border);border-radius:9px;background:var(--card)">
-          <table>
-            <thead>
-              <tr>
-                <th>Booking Period</th>
-                <th>Court Owner</th>
-                <th>Bookings</th>
-                <th>Booking Fee</th>
-                <th>Amount to Remit</th>
-                <th>Status</th>
-                <th>Due Date</th>
-                <th>Remittance Ref</th>
-                <th>Actions</th>
-              </tr>
-            </thead>
-            <tbody id="billBody"><tr><td colspan="9" style="text-align:center;color:var(--muted);padding:22px">No statements generated yet. Choose a booking month and click Generate Statement.</td></tr></tbody>
-          </table>
-        </div>
-        <div style="margin-top:10px;font-size:.76rem;color:var(--text3)">Statements are generated from the month the booking was made, not the future court play date. Only <strong>confirmed</strong> and <strong>completed</strong> bookings are included. Once generated, use <strong>Mark Received</strong> after verifying GCash remittance proof.</div>
-      </div>
     </div>
 
     <!-- MAINTENANCE -->
@@ -3030,7 +3164,7 @@ tr:hover td { background: var(--bg2); }
       <div style="margin-top:12px">
         <label class="fl">Downpayment</label>
         <div style="display:flex;gap:8px;margin-top:6px">
-          <button type="button" class="btn btn-sm" id="nbDp50Btn" style="flex:1;padding:10px;font-weight:700;border:2px solid var(--green);background:var(--green);color:#fff" onclick="nbSetDp(false)">50% — <span id="nbDp50Amt">₱0</span></button>
+          <button type="button" class="btn btn-sm" id="nbDp50Btn" style="flex:1;padding:10px;font-weight:700;border:2px solid var(--green);background:var(--green);color:#fff" onclick="nbSetDp(false)">Full Fee + 50% Court — <span id="nbDp50Amt">₱0</span></button>
           <button type="button" class="btn btn-sm" id="nbDp100Btn" style="flex:1;padding:10px;font-weight:700;border:2px solid var(--border);background:transparent;color:var(--text2)" onclick="nbSetDp(true)">100% — <span id="nbDp100Amt">₱0</span></button>
         </div>
       </div>
@@ -3105,91 +3239,133 @@ tr:hover td { background: var(--bg2); }
   </div>
 </div>
 
-<!-- REMIT NOW MODAL — court_owner submits booking fee remittance -->
-<div class="overlay" id="payBillingModal">
-  <div class="modal remit-modal">
-    <div class="m-hd"><h2>💸 Remit Booking Fee</h2><button class="m-x" onclick="closeModal('payBillingModal')">✕</button></div>
+<!-- PREPARE REMITTANCE — freezes an exact server-side cutoff -->
+<div class="overlay" id="rmPrepareModal" aria-hidden="true">
+  <div class="modal rm-modal" role="dialog" aria-modal="true" aria-labelledby="rmPrepareTitle" tabindex="-1" onkeydown="remittanceModalKeydown(event)">
+    <div class="m-hd">
+      <div><h2 id="rmPrepareTitle">PREPARE REMITTANCE</h2><div class="rm-modal-sub">Freeze the current accumulated booking fees</div></div>
+      <button class="m-x" type="button" aria-label="Close prepare remittance" onclick="closeRemittanceModal('rmPrepareModal')">&#10005;</button>
+    </div>
     <div class="m-body">
-      <input type="hidden" id="pbStatementId" />
-      <div class="remit-pay-hero">
-        <div>
-          <div class="remit-pay-label">Statement</div>
-          <div id="pbWeekLabel" class="remit-pay-period">—</div>
-        </div>
-        <div>
-          <div class="remit-pay-label">Amount to Remit</div>
-          <div id="pbAmount" class="remit-pay-amount">₱0.00</div>
-        </div>
+      <div class="rm-hero">
+        <div><div class="rm-hero-label">Current accumulated balance</div><div class="rm-hero-title" id="rmPrepareCoverage">From the first unsettled eligible booking through the exact preparation time</div></div>
+        <div class="rm-hero-amount" id="rmPrepareAmount">&#8369;0.00</div>
       </div>
-
-      <div class="remit-steps">
-        <section class="remit-step">
-          <div class="remit-step-title"><span class="remit-step-num">1</span> Send payment via GCash</div>
-          <div class="remit-account-grid">
-            <div class="remit-account-row">
-              <div class="remit-account-label">Number</div>
-              <code id="pbPlatformNum" class="remit-account-value">—</code>
-              <button class="btn btn-sm remit-copy" onclick="pbCopy('pbPlatformNum')">Copy</button>
-            </div>
-            <div class="remit-account-row">
-              <div class="remit-account-label">Account Name</div>
-              <code id="pbPlatformName" class="remit-account-value">—</code>
-              <button class="btn btn-sm remit-copy" onclick="pbCopy('pbPlatformName')">Copy</button>
-            </div>
-            <div class="remit-account-row">
-              <div class="remit-account-label">Reference Note</div>
-              <code id="pbRefNote" class="remit-account-value">—</code>
-              <button class="btn btn-sm remit-copy" onclick="pbCopy('pbRefNote')">Copy</button>
-            </div>
-          </div>
-          <div id="pbQrWrap" class="remit-qr" style="display:none">
-            <div class="remit-account-label" style="margin-bottom:6px">Scan to remit</div>
-            <img id="pbQrImg" src="" alt="Remittance GCash QR" />
-          </div>
-          <div class="remit-tip">Tip: paste the reference note in your GCash transfer message so we can match it faster.</div>
-        </section>
-
-        <section class="remit-step">
-          <div class="remit-step-title"><span class="remit-step-num">2</span> Submit payment proof</div>
-          <div class="remit-proof-grid">
-            <div class="fg">
-              <label class="fl">GCash Transaction ID <span style="color:#e53935">*</span></label>
-              <input type="text" class="fi" id="pbTxnId" placeholder="e.g. 1234567890123" />
-            </div>
-            <div class="fg">
-              <label class="fl">Note (optional)</label>
-              <textarea class="fi" id="pbNote" rows="2" placeholder="e.g. remitted via GCash today" style="resize:none"></textarea>
-            </div>
-            <div class="fg" style="margin:0">
-              <label class="fl">Receipt Screenshot <span style="color:#e53935">*</span></label>
-              <label class="remit-upload">
-                📷 Upload receipt screenshot
-                <input type="file" accept="image/*" id="pbProofFile" style="display:none" onchange="pbHandleProofUpload(event)" />
-              </label>
-              <img id="pbProofPreview" class="remit-proof-preview" src="" alt="Remittance receipt preview" />
-            </div>
-          </div>
-        </section>
+      <div class="rm-info-note"><span aria-hidden="true">&#9432;</span><span><strong>The database will set the exact cutoff.</strong> Included bookings are frozen so they cannot be counted twice. Any eligible booking at or after that cutoff automatically starts the next remittance cycle.</span></div>
+      <div class="rm-detail-grid">
+        <div class="rm-field"><div class="rm-field-label">Reservations</div><div class="rm-field-value" id="rmPrepareReservations">0</div></div>
+        <div class="rm-field"><div class="rm-field-label">Court Bookings</div><div class="rm-field-value" id="rmPrepareBookings">0</div></div>
+        <div class="rm-field"><div class="rm-field-label">Billable Court-Hours</div><div class="rm-field-value" id="rmPrepareHours">0</div></div>
+        <div class="rm-field"><div class="rm-field-label">Next payment date</div><div class="rm-field-value" id="rmPrepareNextDue">&mdash;</div></div>
+        <div class="rm-field"><div class="rm-field-label">Timezone</div><div class="rm-field-value">Asia/Manila (PHT)</div></div>
       </div>
+      <div class="rm-detail-title" style="margin-top:4px">Fee calculation</div>
+      <div class="rm-fee-breakdown" id="rmPrepareFeeBreakdown"></div>
     </div>
     <div class="m-foot">
-      <button class="btn btn-g" onclick="closeModal('payBillingModal')">Cancel</button>
-      <button class="btn btn-p" onclick="submitMyPayment()">✅ Submit Remittance Proof</button>
+      <button class="btn btn-g" type="button" onclick="closeRemittanceModal('rmPrepareModal')">Not Yet</button>
+      <button class="btn btn-p" id="rmPrepareConfirmBtn" type="button" onclick="prepareRemittanceNow()">Freeze Balance &amp; Continue</button>
     </div>
   </div>
 </div>
 
-<div class="overlay" id="billProofModal">
-  <div class="modal" style="max-width:560px">
-    <div class="m-hd"><h2>📎 Remittance Receipt</h2><button class="m-x" onclick="closeModal('billProofModal')">✕</button></div>
+<!-- COURT OWNER PAYMENT + PROOF -->
+<div class="overlay" id="rmPayModal" aria-hidden="true">
+  <form class="modal rm-modal" role="dialog" aria-modal="true" aria-labelledby="rmPayTitle" tabindex="-1" onkeydown="remittanceModalKeydown(event)" onsubmit="submitRemittancePayment(event)">
+    <div class="m-hd">
+      <div><h2 id="rmPayTitle">REMIT BOOKING FEES</h2><div class="rm-modal-sub" id="rmPayRefLabel">Remittance &mdash;</div></div>
+      <button class="m-x" type="button" aria-label="Close remit booking fees" onclick="closeRemittanceModal('rmPayModal')">&#10005;</button>
+    </div>
     <div class="m-body">
-      <div id="billProofMeta" style="font-size:.82rem;color:var(--muted);margin-bottom:12px"></div>
-      <img id="billProofImg" src="" alt="Remittance receipt" style="width:100%;max-height:70vh;object-fit:contain;border-radius:8px;border:1px solid var(--border);background:#fff" />
+      <input type="hidden" id="rmPayId" />
+      <div class="rm-hero">
+        <div><div class="rm-hero-label">Frozen coverage</div><div class="rm-hero-title" id="rmPayCoverage">&mdash;</div></div>
+        <div class="rm-hero-amount" id="rmPayHeroAmount">&#8369;0.00</div>
+      </div>
+      <div class="rm-fee-breakdown" id="rmPayFeeBreakdown" aria-label="Frozen fee calculation"></div>
+      <section class="rm-step">
+        <div class="rm-step-title"><span class="rm-step-num">1</span> Send payment to the system owner</div>
+        <div class="rm-account-row"><div class="rm-account-label">GCash number</div><code class="rm-account-value" id="rmPayAccountNumber">&mdash;</code><button class="btn btn-g btn-sm rm-copy" type="button" onclick="copyRemittanceValue('rmPayAccountNumber')">Copy</button></div>
+        <div class="rm-account-row"><div class="rm-account-label">Account name</div><code class="rm-account-value" id="rmPayAccountName">&mdash;</code><button class="btn btn-g btn-sm rm-copy" type="button" onclick="copyRemittanceValue('rmPayAccountName')">Copy</button></div>
+        <div class="rm-account-row"><div class="rm-account-label">Reference note</div><code class="rm-account-value" id="rmPayReferenceNote">&mdash;</code><button class="btn btn-g btn-sm rm-copy" type="button" onclick="copyRemittanceValue('rmPayReferenceNote')">Copy</button></div>
+        <div class="rm-qr" id="rmPayQrWrap" hidden><div class="rm-account-label" style="margin-bottom:7px">Scan to remit</div><img id="rmPayQr" src="" alt="System owner remittance GCash QR code" /></div>
+      </section>
+      <section class="rm-step">
+        <div class="rm-step-title"><span class="rm-step-num">2</span> Submit proof of remittance</div>
+        <div class="rm-form-grid">
+          <div class="fg" style="margin:0"><label class="fl" for="rmPayAmount">Amount Remitted <span style="color:var(--red)">*</span></label><input class="fi" id="rmPayAmount" type="number" inputmode="decimal" min="0.01" step="0.01" required /></div>
+          <div class="fg" style="margin:0"><label class="fl" for="rmPaymentRef">GCash Transaction ID <span style="color:var(--red)">*</span></label><input class="fi" id="rmPaymentRef" type="text" autocomplete="off" maxlength="100" placeholder="Enter transaction reference" required /></div>
+          <div class="fg full" style="margin:0"><label class="fl" for="rmPaymentNote">Note <span style="color:var(--text3);font-weight:500;text-transform:none">(optional)</span></label><textarea class="fi" id="rmPaymentNote" rows="2" maxlength="500" placeholder="Add a short note for the system owner" style="resize:vertical"></textarea></div>
+          <div class="fg full" style="margin:0">
+            <label class="fl" for="rmPaymentProof">Proof of Remittance <span style="color:var(--red)">*</span></label>
+            <label class="rm-upload" id="rmPaymentProofLabel" for="rmPaymentProof">&#128247; Choose receipt screenshot</label>
+            <input id="rmPaymentProof" type="file" accept="image/jpeg,image/png,image/webp,image/heic,image/heif,.jpg,.jpeg,.png,.webp,.heic,.heif" style="position:absolute;opacity:0;pointer-events:none" onchange="handleRemittanceProof(event)" />
+            <img class="rm-proof-preview" id="rmPaymentProofPreview" src="" alt="Selected remittance receipt preview" />
+          </div>
+        </div>
+      </section>
+      <div class="rm-info-note"><span aria-hidden="true">&#128274;</span><span>Your frozen balance stays separate while proof is reviewed. New bookings continue accumulating for the next 14th.</span></div>
     </div>
     <div class="m-foot">
-      <button class="btn btn-g" onclick="closeModal('billProofModal')">Close</button>
+      <button class="btn btn-g" type="button" onclick="closeRemittanceModal('rmPayModal')">Save for Later</button>
+      <button class="btn btn-p" id="rmPaymentSubmitBtn" type="submit">Submit Proof</button>
+    </div>
+  </form>
+</div>
+
+<!-- SYSTEM OWNER PAYMENT REVIEW -->
+<div class="overlay" id="rmReviewModal" aria-hidden="true">
+  <div class="modal rm-modal wide" role="dialog" aria-modal="true" aria-labelledby="rmReviewTitle" tabindex="-1" onkeydown="remittanceModalKeydown(event)">
+    <div class="m-hd">
+      <div><h2 id="rmReviewTitle">VERIFY REMITTANCE</h2><div class="rm-modal-sub" id="rmReviewRefLabel">Review submitted proof before settlement</div></div>
+      <button class="m-x" type="button" aria-label="Close remittance review" onclick="closeRemittanceModal('rmReviewModal')">&#10005;</button>
+    </div>
+    <div class="m-body">
+      <input type="hidden" id="rmReviewPaymentId" />
+      <input type="hidden" id="rmReviewRemittanceId" />
+      <div class="rm-review-grid">
+        <div class="rm-review-receipt" id="rmReviewReceiptWrap"><span style="color:var(--text3);font-size:.8rem">No proof image available</span></div>
+        <div>
+          <div class="rm-hero" style="grid-template-columns:1fr">
+            <div><div class="rm-hero-label">Amount expected</div><div class="rm-hero-amount" id="rmReviewExpected">&#8369;0.00</div></div>
+            <div><div class="rm-hero-label">Submitted payment</div><div class="rm-hero-title" id="rmReviewSubmitted">&mdash;</div></div>
+          </div>
+          <div class="rm-audit-list" id="rmReviewAudit"></div>
+          <div class="fg" style="margin-top:12px"><label class="fl" for="rmAmountAccepted">Amount Accepted</label><input class="fi" id="rmAmountAccepted" type="number" inputmode="decimal" min="0" step="0.01" /></div>
+          <div class="fg"><label class="fl" for="rmReviewNote">Verification Note</label><textarea class="fi" id="rmReviewNote" rows="3" maxlength="500" placeholder="Required when rejecting; optional when settling" style="resize:vertical"></textarea></div>
+        </div>
+      </div>
+    </div>
+    <div class="m-foot">
+      <button class="btn btn-d" id="rmRejectBtn" type="button" onclick="reviewRemittancePayment(false)">Reject Proof</button>
+      <button class="btn btn-p" id="rmApproveBtn" type="button" onclick="reviewRemittancePayment(true)">Confirm as Settled</button>
     </div>
   </div>
+</div>
+
+<!-- PERMANENT REMITTANCE RECORD DETAIL -->
+<div class="overlay" id="rmDetailModal" aria-hidden="true">
+  <div class="modal rm-modal wide" role="dialog" aria-modal="true" aria-labelledby="rmDetailTitle" tabindex="-1" onkeydown="remittanceModalKeydown(event)">
+    <div class="m-hd">
+      <div><h2 id="rmDetailTitle">REMITTANCE RECORD</h2><div class="rm-modal-sub" id="rmDetailSubtitle">Permanent settlement and booking audit</div></div>
+      <button class="m-x" type="button" aria-label="Close remittance record" onclick="closeRemittanceModal('rmDetailModal')">&#10005;</button>
+    </div>
+    <div class="m-body" id="rmDetailBody"></div>
+    <div class="m-foot" id="rmDetailActions"><button class="btn btn-g" type="button" onclick="closeRemittanceModal('rmDetailModal')">Close</button></div>
+  </div>
+</div>
+
+<!-- CANCEL AN UNPAID FROZEN REMITTANCE -->
+<div class="overlay" id="rmCancelModal" aria-hidden="true">
+  <form class="modal rm-modal" role="dialog" aria-modal="true" aria-labelledby="rmCancelTitle" tabindex="-1" onkeydown="remittanceModalKeydown(event)" onsubmit="submitRemittanceCancellation(event)">
+    <div class="m-hd"><div><h2 id="rmCancelTitle">CANCEL PREPARED REMITTANCE</h2><div class="rm-modal-sub">Return its bookings to the live accumulated balance</div></div><button class="m-x" type="button" aria-label="Close cancel remittance" onclick="closeRemittanceModal('rmCancelModal')">&#10005;</button></div>
+    <div class="m-body">
+      <input type="hidden" id="rmCancelId" />
+      <div class="rm-info-note" style="border-color:rgba(200,61,38,.25);background:var(--red-bg)"><span aria-hidden="true">&#9888;</span><span>This does not delete the record. The frozen booking fees become eligible again, and the cancellation remains in the audit history.</span></div>
+      <div class="fg"><label class="fl" for="rmCancelReason">Reason <span style="color:var(--red)">*</span></label><textarea class="fi" id="rmCancelReason" rows="3" maxlength="500" placeholder="Explain why this prepared remittance is being cancelled" required style="resize:vertical"></textarea></div>
+    </div>
+    <div class="m-foot"><button class="btn btn-g" type="button" onclick="closeRemittanceModal('rmCancelModal')">Keep Remittance</button><button class="btn btn-d" id="rmCancelConfirmBtn" type="submit">Cancel &amp; Return Balance</button></div>
+  </form>
 </div>
 
 <script>
@@ -3822,9 +3998,9 @@ let sess;
 /* ==============================================
    NAVIGATION
    ============================================== */
-const titles={dash:'Dashboard',bookings:'Bookings',deleted:'Deleted Bookings',payreview:'Payment Review',reports:'Reports',courts:'Courts',accounts:'Accounts',blocked:'Open Play',hosts:'Host Center',gamemgr:'Game Manager',maintenance:'Maintenance',payments:'Payments'};
-const SECTION_PERM={dash:'dashboard',bookings:'bookings',deleted:'owner_only',payreview:'payment_review',reports:'reports',courts:'courts',accounts:'accounts',blocked:'open_play',hosts:'host_open_play',gamemgr:'open_play',maintenance:'maintenance',payments:'payments'};
-const SECTION_LOADERS={dash:renderDash,bookings:renderBookings,deleted:renderDeletedBookings,payreview:renderPaymentReview,reports:renderReport,courts:renderCourts,accounts:renderAccounts,blocked:renderBlocked,hosts:renderHostCenter,gamemgr:renderGameManager,maintenance:renderMaintenance,payments:renderPaymentSettings};
+const titles={dash:'Dashboard',bookings:'Bookings',deleted:'Deleted Bookings',payreview:'Payment Review',reports:'Reports',courts:'Courts',accounts:'Accounts',remittances:'Remittances',blocked:'Open Play',hosts:'Host Center',gamemgr:'Game Manager',maintenance:'Maintenance',payments:'Payments'};
+const SECTION_PERM={dash:'dashboard',bookings:'bookings',deleted:'owner_only',payreview:'payment_review',reports:'reports',courts:'courts',accounts:'accounts',remittances:'remittances',blocked:'open_play',hosts:'host_open_play',gamemgr:'open_play',maintenance:'maintenance',payments:'payments'};
+const SECTION_LOADERS={dash:renderDash,bookings:renderBookings,deleted:renderDeletedBookings,payreview:renderPaymentReview,reports:renderReport,courts:renderCourts,accounts:renderAccounts,remittances:renderRemittances,blocked:renderBlocked,hosts:renderHostCenter,gamemgr:renderGameManager,maintenance:renderMaintenance,payments:renderPaymentSettings};
 let _curSection=null;
 async function goto(s){
   // Block navigation to sections the current role can't access
@@ -3873,6 +4049,9 @@ function startAdminRealtime(){
     .on('postgres_changes',{event:'*',schema:'public',table:'open_play_game_players'},rerender)
     .on('postgres_changes',{event:'*',schema:'public',table:'open_play_game_rounds'},rerender)
     .on('postgres_changes',{event:'*',schema:'public',table:'weekly_fees'},rerender)
+    .on('postgres_changes',{event:'*',schema:'public',table:'booking_fee_remittances'},rerender)
+    .on('postgres_changes',{event:'*',schema:'public',table:'booking_fee_remittance_items'},rerender)
+    .on('postgres_changes',{event:'*',schema:'public',table:'booking_fee_remittance_payments'},rerender)
     .on('postgres_changes',{event:'*',schema:'public',table:'accounts'},rerender)
     .subscribe();
 }
@@ -5343,7 +5522,7 @@ function nbUpdateTotal() {
   const courtTotal = court ? _nbSelSlots.reduce((s, h) => s + _nbGetRateForHour(court, h), 0) : 0;
   const bookingFee = court && hrs ? _nbBookingFeeForHours(hrs) : 0;
   const total = courtTotal + bookingFee;
-  const half = Math.round(total / 2);
+  const half = Math.round((courtTotal * 0.5 + bookingFee) * 100) / 100;
 
   $('nbDp50Amt').textContent = fmt(half);
   $('nbDp100Amt').textContent = fmt(total);
@@ -5382,7 +5561,7 @@ async function saveNewBooking() {
   const courtTotal = court_ ? _nbSelSlots.reduce((s, h) => s + _nbGetRateForHour(court_, h), 0) : 0;
   const bookingFee = court_ && _nbSelSlots.length ? _nbBookingFeeForHours(_nbSelSlots.length) : 0;
   const total = courtTotal + bookingFee;
-  const dpAmount = _nbDpFull ? total : Math.round(total / 2);
+  const dpAmount = _nbDpFull ? total : Math.round((courtTotal * 0.5 + bookingFee) * 100) / 100;
   const payStatus = _nbDpFull ? 'paid' : 'downpayment_paid';
 
   // Validation
@@ -5742,7 +5921,7 @@ function nbToggleSlot(courtId, hour) {
 function nbUpdateTotal() {
   const groups = nbGroupsWithFees();
   const total = groups.reduce((sum, group) => sum + group.total, 0);
-  const half = Math.round(total / 2);
+  const half = Math.round(groups.reduce((sum, group) => sum + (group.courtFee * 0.5) + group.bookingFee, 0) * 100) / 100;
 
   if ($('nbDp50Amt')) $('nbDp50Amt').textContent = fmt(half);
   if ($('nbDp100Amt')) $('nbDp100Amt').textContent = fmt(total);
@@ -5799,7 +5978,7 @@ async function saveNewBooking() {
   const status = $('nbStatus').value;
   const groups = nbGroupsWithFees();
   const total = groups.reduce((sum, group) => sum + group.total, 0);
-  const downpayment = _nbDpFull ? total : Math.round(total / 2);
+  const downpayment = _nbDpFull ? total : Math.round(groups.reduce((sum, group) => sum + (group.courtFee * 0.5) + group.bookingFee, 0) * 100) / 100;
   const payStatus = _nbDpFull ? 'paid' : 'downpayment_paid';
 
   if (!name || name.length < 2) { toast('Enter a valid customer name.', 'err'); return; }
@@ -5830,7 +6009,7 @@ async function saveNewBooking() {
       total: group.total,
       paymentMethod: method,
       gcashRef,
-      downpayment: _nbDpFull ? group.total : Math.round(group.total / 2),
+      downpayment: _nbDpFull ? group.total : Math.round((group.courtFee * 0.5 + group.bookingFee) * 100) / 100,
       paymentStatus: payStatus,
       paymentFlow: method,
       status,
@@ -6660,455 +6839,951 @@ async function renderPaymentSettings() {
   }
 
   renderIntegrationStatus().catch(() => {});
-  populateBillWeekOptions();
-  await renderWeeklyBilling();
-  await renderMyBilling();
 }
-function _weekBounds(mode = 1) {
-  // mode = integer months ago (0 = current, 1 = previous, 2 = two months ago, ...).
-  // Legacy strings 'current'/'last' still supported.
-  let monthsAgo = mode === 'current' ? 0 : mode === 'last' ? 1 : Number(mode);
-  if (!Number.isFinite(monthsAgo) || monthsAgo < 0) monthsAgo = 1;
-  const now = new Date();
-  const start = new Date(now.getFullYear(), now.getMonth() - monthsAgo, 1);
-  start.setHours(0, 0, 0, 0);
-  const end = new Date(start.getFullYear(), start.getMonth() + 1, 0);
-  end.setHours(23, 59, 59, 999);
-
-  const toDate = d => `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
-  return { startDate: toDate(start), endDate: toDate(end), start, end };
-}
-
-// Populate the "Booking Month" dropdown with recent calendar months.
-function populateBillWeekOptions(monthsBack = 12) {
-  const sel = $('billWeekMode');
-  if (!sel) return;
-  const prev = sel.value;
-  const opts = [];
-  for (let m = 0; m <= monthsBack; m++) {
-    const { startDate, endDate } = _weekBounds(m);
-    const label = m === 0 ? `Current Month (${_dateLabel(startDate)} - ${_dateLabel(endDate)})`
-                : m === 1 ? `Previous Month (${_dateLabel(startDate)} - ${_dateLabel(endDate)})`
-                : `${m} Months Ago (${_dateLabel(startDate)} - ${_dateLabel(endDate)})`;
-    opts.push(`<option value="${m}"${String(m) === prev ? ' selected' : ''}>${label}</option>`);
-  }
-  sel.innerHTML = opts.join('');
-  if (!prev) sel.value = '1'; // default to previous month
-}
-
-function _dateLabel(ds) {
-  if (!ds) return '—';
-  return new Date(ds + 'T00:00:00').toLocaleDateString('en-PH', { month: 'short', day: 'numeric', year: 'numeric' });
-}
-
-function _billStatusBadge(status) {
-  const s = (status || 'draft').toLowerCase();
-  if (s === 'paid') return '<span class="bdg bdg-c">Received</span>';
-  if (s === 'overdue') return '<span class="bdg bdg-x">Overdue</span>';
-  if (s === 'submitted') return '<span class="bdg bdg-p" style="background:rgba(255,160,0,.18);color:#ffa000;border:1px solid rgba(255,160,0,.4)">Proof Submitted</span>';
-  if (s === 'sent') return '<span class="bdg bdg-p">To Remit</span>';
-  return '<span class="bdg bdg-d">Draft</span>';
-}
-
-function selectRemittanceCourtOwner(accounts = []) {
-  const owners = accounts.filter(a => a.role === 'court_owner');
-  if (!owners.length) return accounts.find(a => a.role === 'owner') || accounts[0] || null;
-  return [...owners].sort((a, b) => {
-    const aEmail = String(a.email || '').toLowerCase();
-    const bEmail = String(b.email || '').toLowerCase();
-    const aProd = aEmail.endsWith('@pickleblisscourt.com') ? 1 : 0;
-    const bProd = bEmail.endsWith('@pickleblisscourt.com') ? 1 : 0;
-    if (aProd !== bProd) return bProd - aProd;
-    const aLocal = aEmail.endsWith('.local') ? 1 : 0;
-    const bLocal = bEmail.endsWith('.local') ? 1 : 0;
-    if (aLocal !== bLocal) return aLocal - bLocal;
-    return String(b.createdAt || '').localeCompare(String(a.createdAt || ''));
-  })[0];
-}
-
-async function viewBillingProof(id) {
-  const all = await DB.getWeeklyFees();
-  const r = all.find(x => x.id === id);
-  if (!r || !r.submitted_proof_url) { toast('No receipt attached.', 'err'); return; }
-  $('billProofImg').src = r.submitted_proof_url;
-  const ref = r.submitted_ref ? ` • Txn: ${r.submitted_ref}` : '';
-  const when = r.submitted_at ? ` • ${new Date(r.submitted_at).toLocaleString('en-PH')}` : '';
-  $('billProofMeta').textContent = `${r.court_owner_email || 'Court Owner'}${ref}${when}`;
-  $('billProofModal').classList.add('show');
-}
-
-async function renderWeeklyBilling() {
-  const body = $('billBody');
-  if (!body || !Auth.can('owner_only', sess.role)) return;
-
-  const [rows, accounts, settings, bookings, courts] = await Promise.all([
-    DB.getWeeklyFees(),
-    DB.getAccounts(),
-    DB.getSettings(),
-    DB.getBookings(),
-    DB.getCourts(),
-  ]);
-  const feeCfg = getPlatformFeeConfig(settings);
-  const ownerById = {};
-  accounts.forEach(a => { ownerById[a.id] = a; });
-
-  const openRows = rows.filter(r => (r.status || 'draft') !== 'paid');
-  const outstanding = openRows.reduce((sum, r) => sum + (Number(r.amount_due) || 0), 0);
-  $('billOpenCount').textContent = openRows.length;
-  $('billOutstanding').textContent = fmt(outstanding);
-  $('billLastGen').textContent = rows[0]?.generated_at ? new Date(rows[0].generated_at).toLocaleString('en-PH') : '—';
-
-  if (!rows.length) {
-    body.innerHTML = '<tr><td colspan="9" style="text-align:center;color:var(--muted);padding:22px">No statements generated yet. Choose a booking month and click Generate Statement.</td></tr>';
-    return;
-  }
-
-  body.innerHTML = rows.map(r => {
-    const owner = ownerById[r.court_owner_user_id];
-    const ownerName = 'All Court Owners';
-    const ownerMeta = owner?.email || r.court_owner_email || 'Shared venue statement';
-    const dueLabel = r.due_at ? new Date(r.due_at).toLocaleDateString('en-PH', { month: 'short', day: 'numeric', year: 'numeric' }) : '—';
-    const status = (r.status || 'draft').toLowerCase();
-    const refDisplay = status === 'paid' ? (r.paid_ref || '—')
-                     : status === 'submitted' ? (r.submitted_ref || '—')
-                     : '—';
-    const period = `${_dateLabel(r.week_start)} – ${_dateLabel(r.week_end)}`;
-    const canMarkPaid = status !== 'paid';
-    const canMarkOverdue = ['draft', 'sent'].includes(status);
-    const courtBreakdown = renderBillingCourtBreakdown(r, bookings, courts, feeCfg);
-    const proofBtn = (status === 'submitted' && r.submitted_proof_url)
-      ? `<button class="btn btn-sm" style="background:rgba(91,140,210,.12);color:#5b8cd2;border:1px solid rgba(91,140,210,.3)" onclick="viewBillingProof('${jsArg(r.id)}')">📎 Receipt</button>`
-      : '';
-
-    return `<tr>
-      <td data-label="Booking Period">${period}</td>
-      <td data-label="Court Owner"><div style="font-weight:700">${esc(ownerName)}</div><div style="font-size:.72rem;color:var(--muted)">${esc(ownerMeta)}</div></td>
-      <td data-label="Bookings">${r.bookings_count}</td>
-      <td data-label="Booking Fee">${platformFeeLabel({ amount: Number(r.fee_per_booking) || 0, type: feeCfg.type }, { short: true })}</td>
-      <td data-label="Amount to Remit"><strong style="color:var(--yellow)">${fmt(r.amount_due)}</strong>${courtBreakdown}</td>
-      <td data-label="Status">${_billStatusBadge(r.status)}</td>
-      <td data-label="Due Date">${dueLabel}</td>
-      <td data-label="Remittance Ref"><code style="font-size:.74rem;color:var(--text)">${esc(refDisplay)}</code></td>
-      <td data-label="Actions">
-        <div style="display:flex;gap:5px;flex-wrap:wrap">
-          ${proofBtn}
-          ${canMarkPaid ? `<button class="btn btn-sm" style="background:rgba(var(--green-rgb),.12);color:var(--green);border:1px solid rgba(var(--green-rgb),.3)" onclick="markWeeklyFeePaid('${jsArg(r.id)}', '${jsArg(r.submitted_ref || '')}')">✅ Mark Received</button>` : ''}
-          ${canMarkOverdue ? `<button class="btn btn-sm" style="background:rgba(229,57,53,.12);color:#e53935;border:1px solid rgba(229,57,53,.3)" onclick="markWeeklyFeeOverdue('${jsArg(r.id)}')">⚠️ Overdue</button>` : ''}
-        </div>
-      </td>
-    </tr>`;
-  }).join('');
-}
-
-async function generateWeeklyStatement() {
-  if (!Auth.can('owner_only', sess.role)) { toast('Only system owner can generate statements.', 'err'); return; }
-
-  const mode = $('billWeekMode')?.value || 'last';
-  const { startDate, endDate, end } = _weekBounds(mode);
-
-  try {
-    const [accounts, bookings, existingStatements, settings] = await Promise.all([
-      DB.getAccounts(),
-      DB.getBookings(),
-      DB.getWeeklyFees(),
-      DB.getSettings(),
-    ]);
-
-    const courtOwner = selectRemittanceCourtOwner(accounts);
-    if (!courtOwner) { toast('No court owner account found.', 'err'); return; }
-
-    const feeCfg = getPlatformFeeConfig(settings);
-    const feePerBooking = feeCfg.amount;
-
-    // One statement per booking month for the venue. If an older statement was
-    // generated under a placeholder/local court-owner account, reassign it to
-    // the selected production court owner so it appears in their dashboard.
-    const exactExisting = (existingStatements || []).find(r =>
-      r.court_owner_user_id === courtOwner.id &&
-      r.week_start === startDate && r.week_end === endDate
-    );
-    const periodExisting = (existingStatements || []).find(r =>
-      r.week_start === startDate && r.week_end === endDate
-    );
-    const existing = exactExisting || periodExisting;
-
-    // Fee applies only to online platform bookings. The remittance month is based
-    // on when the booking was made, not the future court reservation date.
-    const eligible = bookings.filter(b =>
-      isPlatformBillableBooking(b) &&
-      bookingRevenueDate(b) >= startDate && bookingRevenueDate(b) <= endDate &&
-      (!b.weeklyFeeId || (existing && String(b.weeklyFeeId) === String(existing.id)))
-    );
-    const eligibleGroups = groupBookings(eligible);
-    const billedRefs = eligibleGroups.flatMap(g => g.refs || [g.ref]).filter(Boolean);
-    const bookingsCount = eligibleGroups.length;
-    const amountDue = eligibleGroups.reduce((sum, g) => {
-      return sum + (feeCfg.type === 'flat'
-        ? feeCfg.amount
-        : (g.items || [g]).reduce((s, b) => s + calcPlatformFeeForBooking(b, feeCfg), 0));
-    }, 0);
-
-    const due = new Date(end);
-    due.setDate(end.getDate() + 5); // five days after month end
-    due.setHours(17, 0, 0, 0);
-
-    console.log('[billGenerate] mode=', mode, 'month=', startDate, 'to', endDate, 'owner=', courtOwner.email, 'eligible=', bookingsCount, existing ? '(regenerate)' : '(new)');
-
-    let weeklyFeeId;
-    if (existing) {
-      if ((existing.status || '').toLowerCase() === 'paid') {
-        toast('This booking month is already marked received and cannot be regenerated.', 'err');
-        return;
-      }
-      await DB.updateWeeklyFee(existing.id, {
-        courtOwnerUserId: courtOwner.id,
-        courtOwnerEmail: courtOwner.email,
-        bookingsCount,
-        amountDue,
-        feePerBooking,
-        billedRefs,
-        generatedAt: new Date().toISOString(),
-      });
-      weeklyFeeId = existing.id;
-    } else {
-      const saved = await DB.saveWeeklyFee({
-        courtOwnerUserId: courtOwner.id,
-        courtOwnerEmail: courtOwner.email,
-        weekStart: startDate,
-        weekEnd: endDate,
-        bookingsCount,
-        feePerBooking,
-        amountDue,
-        billedRefs,
-        status: 'sent',
-        generatedAt: new Date().toISOString(),
-        sentAt: new Date().toISOString(),
-        dueAt: due.toISOString(),
-      });
-      weeklyFeeId = saved?.id;
-    }
-
-    // Stamp each billed booking so it is auditable and never billed twice.
-    // Older databases may still run the double-booking trigger on metadata-only
-    // updates; do not report the saved statement as failed if only this audit
-    // stamp is blocked.
-    let auditStampFailed = false;
-    if (weeklyFeeId && billedRefs.length) {
-      try {
-        await DB.markBookingsBilled(billedRefs, weeklyFeeId);
-      } catch (stampErr) {
-        auditStampFailed = true;
-        console.warn('[billGenerate] statement saved but booking audit stamp failed:', stampErr);
-      }
-    }
-
-    toast(`Booking-date remittance statement ${existing ? 'updated' : 'generated'}: ${platformFeeFormulaText(eligibleGroups, feeCfg)} = ${fmt(amountDue)}`);
-    if (auditStampFailed) {
-      toast('Statement saved. Booking audit stamp was skipped because the database trigger needs the metadata-update migration.', 'inf');
-    }
-    await renderWeeklyBilling();
-  } catch (e) {
-    console.error('[billGenerate] error:', e);
-    toast('Failed to generate booking-date remittance statement: ' + (e?.message || e), 'err');
-  }
-}
-
-async function markWeeklyFeePaid(id, prefillRef = '') {
-  const defaultRef = prefillRef || '';
-  const paidRef = (prompt('Enter remittance reference (GCash Txn ID):', defaultRef) || '').trim();
-  if (!paidRef) { toast('Reference is required to mark as received.', 'err'); return; }
-  const paidNote = (prompt('Optional note (leave blank if none):') || '').trim();
-
-  try {
-    await DB.updateWeeklyFee(id, {
-      status: 'paid',
-      paidAt: new Date().toISOString(),
-      paidRef,
-      paidNote,
-      paidByUserId: sess.id,
-    });
-    toast('Statement marked as received.');
-    await renderWeeklyBilling();
-  } catch (e) {
-    toast('Failed to mark statement as received.', 'err');
-  }
-}
-
-async function markWeeklyFeeOverdue(id) {
-  try {
-    await DB.updateWeeklyFee(id, { status: 'overdue' });
-    toast('Statement marked as overdue.');
-    await renderWeeklyBilling();
-  } catch (e) {
-    toast('Failed to mark statement overdue.', 'err');
-  }
-}
-
 /* ==============================================
-   COURT OWNER — MY REMITTANCE (read-only + Remit Now)
+   BOOKING FEE REMITTANCE LEDGER
+   Exact server-side cutoff, payment proof, review, and permanent history.
    ============================================== */
-async function renderMyBilling() {
-  const body = $('myBillBody');
-  if (!body || !Auth.can('court_owner_only', sess.role)) return;
+let _rmState = {
+  dashboard: null,
+  active: [],
+  history: [],
+  records: new Map(),
+  tab: 'active',
+  status: 'all',
+  query: '',
+  proofData: '',
+  loadSeq: 0,
+  modalFocus: {},
+};
 
-  const [all, settings, bookings, courts] = await Promise.all([
-    DB.getWeeklyFees(),
-    DB.getSettings(),
-    DB.getBookings(),
-    DB.getCourts(),
-  ]);
-  const feeCfg = getPlatformFeeConfig(settings);
-  const mine = all;
-
-  const open = mine.filter(r => !['paid'].includes((r.status || 'draft').toLowerCase()));
-  const outstanding = open.reduce((s, r) => s + (Number(r.amount_due) || 0), 0);
-  const nextDue = open
-    .filter(r => r.due_at)
-    .sort((a, b) => new Date(a.due_at) - new Date(b.due_at))[0];
-
-  $('myBillOpenCount').textContent = open.length;
-  $('myBillOutstanding').textContent = fmt(outstanding);
-  $('myBillNextDue').textContent = nextDue?.due_at
-    ? new Date(nextDue.due_at).toLocaleDateString('en-PH', { month: 'short', day: 'numeric', year: 'numeric' })
-    : '—';
-
-  if (!mine.length) {
-    body.innerHTML = `<div class="remit-empty">
-      <strong>No remittance statement has been issued yet.</strong>
-      Statements appear here after the System Owner generates them for a booking month.
-    </div>`;
-    return;
+function rmPick(value, ...keys) {
+  if (!value || typeof value !== 'object') return undefined;
+  for (const key of keys) {
+    if (value[key] !== undefined && value[key] !== null) return value[key];
   }
+  return undefined;
+}
 
-  body.innerHTML = mine.map(r => {
-    const status = (r.status || 'draft').toLowerCase();
-    const period = `${_dateLabel(r.week_start)} – ${_dateLabel(r.week_end)}`;
-    const dueLabel = r.due_at ? new Date(r.due_at).toLocaleDateString('en-PH', { month: 'short', day: 'numeric', year: 'numeric' }) : '—';
-    const canPay = ['sent', 'overdue'].includes(status);
-    const bookingsCount = Number(r.bookings_count) || 0;
-    const courtBreakdown = renderBillingCourtBreakdown(r, bookings, courts, feeCfg);
-    const submittedMeta = status === 'submitted'
-      ? `<div class="remit-card-meta">Submitted ref: <code>${esc(r.submitted_ref || '—')}</code></div>`
-      : '';
-    const action = canPay
-      ? `<button class="btn btn-p btn-sm" onclick="openPayBilling('${jsArg(r.id)}')">💸 Remit Now</button>`
-      : status === 'submitted'
-        ? `<span style="font-size:.76rem;color:var(--muted);font-weight:800">Awaiting verification</span>`
-        : status === 'paid'
-          ? `<span style="font-size:.76rem;color:var(--green);font-weight:900">✓ Received</span>`
-          : `<span style="font-size:.76rem;color:var(--muted)">—</span>`;
+function rmNumber(value, fallback = 0) {
+  const n = Number(value);
+  return Number.isFinite(n) ? n : fallback;
+}
 
-    return `<article class="remit-card ${status === 'overdue' ? 'is-overdue' : ''}">
-      <div class="remit-card-main">
-        <div class="remit-card-label">Booking Period</div>
-        <div class="remit-card-period">${period}</div>
-        <div class="remit-card-meta">${bookingsCount} booking transaction${bookingsCount !== 1 ? 's' : ''} included</div>
-        ${submittedMeta}
-        ${courtBreakdown}
-      </div>
-      <div class="remit-card-field">
-        <div class="remit-card-label">Booking Fee</div>
-        <div class="remit-card-value">${platformFeeLabel({ amount: Number(r.fee_per_booking) || 0, type: feeCfg.type }, { short: true })}</div>
-      </div>
-      <div class="remit-card-field">
-        <div class="remit-card-label">Amount</div>
-        <div class="remit-card-value amount">${fmt(r.amount_due)}</div>
-      </div>
-      <div class="remit-card-field">
-        <div class="remit-card-label">Status</div>
-        <div class="remit-card-value">${_billStatusBadge(r.status)}</div>
-      </div>
-      <div class="remit-card-field">
-        <div class="remit-card-label">Due Date</div>
-        <div class="remit-card-value">${dueLabel}</div>
-      </div>
-      <div class="remit-card-action">${action}</div>
-    </article>`;
+function rmRows(value) {
+  if (Array.isArray(value)) return value.filter(Boolean);
+  if (!value || typeof value !== 'object') return [];
+  for (const key of ['rows','items','records','remittances','data']) {
+    if (Array.isArray(value[key])) return value[key].filter(Boolean);
+  }
+  if (rmPick(value, 'id', 'remittance_id', 'remittanceId')) return [value];
+  return Object.values(value).filter(Array.isArray).flat().filter(Boolean);
+}
+
+function rmRecordId(record) {
+  return String(rmPick(record, 'id', 'remittance_id', 'remittanceId') || '');
+}
+
+function rmRecordRef(record) {
+  return String(rmPick(record, 'reference', 'remittance_ref', 'remittanceRef', 'ref', 'code') || rmRecordId(record) || 'Pending reference');
+}
+
+function rmRecordPayment(record) {
+  const direct = rmPick(record, 'latest_payment', 'latestPayment', 'payment', 'submitted_payment', 'submittedPayment');
+  if (direct && typeof direct === 'object') return direct;
+  const payments = rmRows(rmPick(record, 'payments', 'remittance_payments', 'remittancePayments'));
+  return payments.length ? payments[payments.length - 1] : {};
+}
+
+function rmPaymentId(record) {
+  const payment = rmRecordPayment(record);
+  return String(rmPick(payment, 'id', 'payment_id', 'paymentId') || rmPick(record, 'payment_id', 'paymentId', 'latest_payment_id', 'latestPaymentId') || '');
+}
+
+function rmBookingItems(record) {
+  const raw = rmPick(record, 'booking_items', 'bookingItems', 'bookings', 'included_bookings', 'includedBookings', 'items');
+  if (Array.isArray(raw)) return raw;
+  if (raw && Array.isArray(raw.rows)) return raw.rows;
+  const refs = rmPick(record, 'billed_refs', 'billedRefs', 'booking_refs', 'bookingRefs');
+  if (Array.isArray(refs)) return refs.map(ref => ({ ref }));
+  if (typeof refs === 'string' && refs.trim()) {
+    try {
+      const parsed = JSON.parse(refs);
+      if (Array.isArray(parsed)) return parsed.map(ref => typeof ref === 'object' ? ref : ({ ref }));
+    } catch (_) {}
+    return refs.split(',').map(ref => ({ ref: ref.trim() })).filter(item => item.ref);
+  }
+  return [];
+}
+
+function rmAmountDue(record) {
+  return Math.max(0, rmNumber(rmPick(record, 'amount_due', 'amountDue', 'total_amount', 'totalAmount', 'amount', 'balance', 'accumulated_amount', 'accumulatedAmount')));
+}
+
+function rmAmountSettled(record) {
+  return Math.max(0, rmNumber(rmPick(record, 'amount_settled', 'amountSettled', 'settled_amount', 'settledAmount')));
+}
+
+function rmAmountRemaining(record) {
+  const explicit = rmPick(record, 'remaining_balance', 'remainingBalance', 'amount_remaining', 'amountRemaining');
+  if (explicit !== undefined) return Math.max(0, rmNumber(explicit));
+  return Math.max(0, rmAmountDue(record) - rmAmountSettled(record));
+}
+
+function rmPaymentAmount(record) {
+  const payment = rmRecordPayment(record);
+  return Math.max(0, rmNumber(rmPick(payment, 'amount', 'amount_submitted', 'amountSubmitted', 'submitted_amount', 'submittedAmount', 'amount_paid', 'amountPaid') ?? rmPick(record, 'submitted_amount', 'submittedAmount', 'amount_remitted', 'amountRemitted')));
+}
+
+function rmAcceptedAmount(record) {
+  const payment = rmRecordPayment(record);
+  return Math.max(0, rmNumber(rmPick(payment, 'amount_accepted', 'amountAccepted', 'accepted_amount', 'acceptedAmount') ?? rmPick(record, 'amount_accepted', 'amountAccepted', 'paid_amount', 'paidAmount')));
+}
+
+function rmBookingCount(record) {
+  const explicit = rmPick(record, 'booking_rows_count', 'bookingRowsCount', 'bookings_count', 'bookingsCount', 'booking_count', 'bookingCount', 'eligible_bookings', 'eligibleBookings');
+  if (explicit !== undefined) return Math.max(0, Math.trunc(rmNumber(explicit)));
+  return rmBookingItems(record).length;
+}
+
+function rmReservationCount(record) {
+  const explicit = rmPick(record, 'reservations_count', 'reservationsCount', 'reservation_count', 'reservationCount', 'booking_groups_count', 'bookingGroupsCount');
+  if (explicit !== undefined && explicit !== null) return Math.max(0, Math.trunc(rmNumber(explicit)));
+  if (record?.is_legacy || record?.legacy_weekly_fee_id) return null;
+  const items = rmBookingItems(record);
+  if (items.length) {
+    const refs = new Set(items.map(item => {
+      const groupRef = String(rmPick(item, 'booking_group_ref', 'bookingGroupRef') || '').trim();
+      const bookingRef = String(rmPick(item, 'booking_ref', 'bookingRef', 'ref') || '').trim();
+      return groupRef ? `g:${groupRef}` : bookingRef ? `b:${bookingRef}` : '';
+    }).filter(Boolean));
+    if (refs.size) return refs.size;
+  }
+  return null;
+}
+
+function rmBillableHours(record) {
+  const explicit = rmPick(record, 'total_billable_hours', 'totalBillableHours', 'billable_court_hours', 'billableCourtHours', 'billable_hours', 'billableHours', 'court_hours', 'courtHours');
+  if (explicit !== undefined && explicit !== null && explicit !== '') return Math.max(0, rmNumber(explicit));
+  if (record?.is_legacy || record?.legacy_weekly_fee_id) return null;
+  const items = rmBookingItems(record);
+  if (items.length) {
+    return items.reduce((sum, item) => {
+      const type = String(rmPick(item, 'fee_type', 'feeType') || '').toLowerCase();
+      return type === 'per_hour' ? sum + Math.max(0, rmNumber(rmPick(item, 'fee_units', 'feeUnits', 'billable_hours', 'billableHours'))) : sum;
+    }, 0);
+  }
+  return null;
+}
+
+function rmFlatBookingCount(record) {
+  const explicit = rmPick(record, 'flat_booking_rows_count', 'flatBookingRowsCount', 'flat_fee_booking_count', 'flatFeeBookingCount');
+  if (explicit !== undefined && explicit !== null && explicit !== '') return Math.max(0, Math.trunc(rmNumber(explicit)));
+  if (record?.is_legacy || record?.legacy_weekly_fee_id) return null;
+  const items = rmBookingItems(record);
+  if (!items.length) return null;
+  return items.filter(item => String(rmPick(item, 'fee_type', 'feeType') || '').toLowerCase() === 'flat').length;
+}
+
+function rmMetricNumber(value, maximumFractionDigits = 2) {
+  if (value === null || value === undefined || value === '') return 'Not recorded';
+  return new Intl.NumberFormat('en-PH', { maximumFractionDigits, minimumFractionDigits:0 }).format(Math.max(0, rmNumber(value)));
+}
+
+function rmFeeBreakdown(record) {
+  let raw = rmPick(record, 'fee_breakdown', 'feeBreakdown', 'rate_type_breakdown', 'rateTypeBreakdown', 'rate_breakdown', 'rateBreakdown');
+  if (typeof raw === 'string' && raw.trim()) {
+    try { raw = JSON.parse(raw); } catch (_) { raw = []; }
+  }
+  if (Array.isArray(raw) && raw.length) return raw;
+  const items = rmBookingItems(record);
+  if (!items.length) return [];
+  const grouped = new Map();
+  items.forEach(item => {
+    const type = String(rmPick(item, 'fee_type', 'feeType') || '').toLowerCase();
+    if (!['per_hour','flat'].includes(type)) return;
+    const rate = Math.max(0, rmNumber(rmPick(item, 'fee_rate', 'feeRate')));
+    const key = `${type}|${rate.toFixed(2)}`;
+    const row = grouped.get(key) || { fee_type:type, fee_rate:rate, fee_units:0, booking_rows_count:0, amount:0 };
+    row.fee_units += Math.max(0, rmNumber(rmPick(item, 'fee_units', 'feeUnits')));
+    row.booking_rows_count += 1;
+    row.amount += Math.max(0, rmNumber(rmPick(item, 'fee_amount', 'feeAmount', 'booking_fee', 'bookingFee', 'amount')));
+    grouped.set(key, row);
+  });
+  return [...grouped.values()];
+}
+
+function rmFeeBreakdownText(record) {
+  const rows = rmFeeBreakdown(record);
+  if (!rows.length) return (record?.is_legacy || record?.legacy_weekly_fee_id) ? 'Not recorded in the legacy ledger' : 'Fee breakdown unavailable';
+  return rows.map(row => {
+    const type = String(rmPick(row, 'fee_type', 'feeType') || '').toLowerCase();
+    const rate = Math.max(0, rmNumber(rmPick(row, 'fee_rate', 'feeRate')));
+    const amount = Math.max(0, rmNumber(rmPick(row, 'amount', 'fee_amount', 'feeAmount', 'total_amount', 'totalAmount')));
+    const units = Math.max(0, rmNumber(rmPick(row, 'fee_units', 'feeUnits', 'total_billable_hours', 'totalBillableHours')));
+    const courtBookings = Math.max(0, Math.trunc(rmNumber(rmPick(row, 'booking_rows_count', 'bookingRowsCount', 'bookings_count', 'bookingsCount', 'booking_count', 'bookingCount', 'item_count', 'itemCount'))));
+    return type === 'flat'
+      ? `${fmt(rate)} flat × ${rmMetricNumber(courtBookings, 0)} court booking${courtBookings === 1 ? '' : 's'} = ${fmt(amount)}`
+      : `${fmt(rate)}/hr × ${rmMetricNumber(units)} court-hr${units === 1 ? '' : 's'} = ${fmt(amount)}`;
+  }).join(' + ');
+}
+
+function rmFeeBreakdownHtml(record) {
+  const rows = rmFeeBreakdown(record);
+  if (!rows.length) return `<span class="rm-fee-line legacy">${esc((record?.is_legacy || record?.legacy_weekly_fee_id) ? 'Calculation not recorded in the legacy ledger' : 'Fee calculation unavailable')}</span>`;
+  return rows.map(row => {
+    const type = String(rmPick(row, 'fee_type', 'feeType') || '').toLowerCase();
+    const rate = Math.max(0, rmNumber(rmPick(row, 'fee_rate', 'feeRate')));
+    const amount = Math.max(0, rmNumber(rmPick(row, 'amount', 'fee_amount', 'feeAmount', 'total_amount', 'totalAmount')));
+    const units = Math.max(0, rmNumber(rmPick(row, 'fee_units', 'feeUnits', 'total_billable_hours', 'totalBillableHours')));
+    const courtBookings = Math.max(0, Math.trunc(rmNumber(rmPick(row, 'booking_rows_count', 'bookingRowsCount', 'bookings_count', 'bookingsCount', 'booking_count', 'bookingCount', 'item_count', 'itemCount'))));
+    const equation = type === 'flat'
+      ? `${fmt(rate)} flat × ${rmMetricNumber(courtBookings, 0)} court booking${courtBookings === 1 ? '' : 's'}`
+      : `${fmt(rate)}/hr × ${rmMetricNumber(units)} court-hr${units === 1 ? '' : 's'}`;
+    return `<span class="rm-fee-line">${esc(equation)} <strong>= ${fmt(amount)}</strong></span>`;
   }).join('');
 }
 
-let _payBillingProofData = '';
-async function openPayBilling(id) {
-  const all = await DB.getWeeklyFees();
-  const r = all.find(x => x.id === id);
-  if (!r) { toast('Statement not found.', 'err'); return; }
-
-  const settings = await DB.getSettings();
-  const platformNum = settings.platform_gcash_number || '';
-  const platformName = settings.platform_gcash_name || '';
-  if (!platformNum) {
-    toast('Remittance GCash account not configured. Contact System Owner.', 'err');
-    return;
-  }
-
-  const refNote = `MO-${String(r.week_start || '').slice(0, 7)}`;
-  $('pbStatementId').value = id;
-  $('pbWeekLabel').textContent = `${_dateLabel(r.week_start)} – ${_dateLabel(r.week_end)} • ${r.bookings_count} bookings`;
-  $('pbAmount').textContent = fmt(r.amount_due);
-  $('pbPlatformNum').textContent = platformNum;
-  $('pbPlatformName').textContent = platformName || '(name not set)';
-  $('pbRefNote').textContent = refNote;
-  const platformQr = settings.platform_gcash_qr || '';
-  if (platformQr) { $('pbQrImg').src = platformQr; $('pbQrWrap').style.display = ''; }
-  else { $('pbQrImg').src = ''; $('pbQrWrap').style.display = 'none'; }
-  $('pbTxnId').value = '';
-  $('pbNote').value = '';
-  $('pbProofPreview').src = '';
-  $('pbProofPreview').style.display = 'none';
-  if ($('pbProofFile')) $('pbProofFile').value = '';
-  _payBillingProofData = '';
-
-  $('payBillingModal').classList.add('show');
+function rmStatusKey(record) {
+  const payment = rmRecordPayment(record);
+  const raw = String(rmPick(record, 'status', 'remittance_status', 'remittanceStatus') || rmPick(payment, 'status', 'payment_status', 'paymentStatus') || 'accumulating')
+    .toLowerCase().trim().replace(/[\s_]+/g, '-');
+  if (['paid','settled','approved','complete','completed','received'].includes(raw)) return 'settled';
+  if (['rejected','declined','payment-rejected'].includes(raw)) return 'rejected';
+  if (['cancelled','canceled','void'].includes(raw)) return 'cancelled';
+  if (['submitted','under-review','payment-submitted','proof-submitted','verifying','pending-review','awaiting-review'].includes(raw)) return 'under-review';
+  if ([true, 1, '1', 'true', 't'].includes(rmPick(record, 'is_overdue', 'isOverdue'))) return 'overdue';
+  if (['prepared','sent','ready','awaiting-payment','pending-payment','open','partially-settled'].includes(raw)) return 'awaiting-payment';
+  if (['overdue','past-due'].includes(raw)) return 'overdue';
+  return 'accumulating';
 }
 
-function pbCopy(elId) {
-  const el = $(elId);
-  if (!el) return;
-  const text = el.textContent || '';
-  if (!text || text === '—') return;
-  navigator.clipboard?.writeText(text).then(
-    () => toast(`Copied: ${text}`),
-    () => toast('Could not copy. Long-press to copy manually.', 'err')
-  );
+function rmStatusLabel(key) {
+  return {
+    'awaiting-payment':'Awaiting Payment',
+    'under-review':'Under Review',
+    settled:'Settled',
+    overdue:'Overdue',
+    rejected:'Rejected',
+    cancelled:'Cancelled',
+    accumulating:'Accumulating',
+  }[key] || 'Accumulating';
 }
 
-function pbHandleProofUpload(e) {
-  const file = e.target.files[0];
-  if (!file) return;
-  if (file.size > 4 * 1024 * 1024) {
-    toast('Image too large (max 4MB).', 'err');
-    e.target.value = '';
+function rmDateTime(value, fallback = '—') {
+  if (!value) return fallback;
+  const raw = String(value);
+  const date = new Date(/^\d{4}-\d{2}-\d{2}$/.test(raw) ? `${raw}T00:00:00+08:00` : raw);
+  if (Number.isNaN(date.getTime())) return fallback;
+  return `${new Intl.DateTimeFormat('en-PH', {
+    timeZone:'Asia/Manila', month:'short', day:'numeric', year:'numeric', hour:'numeric', minute:'2-digit', hour12:true,
+  }).format(date)} PHT`;
+}
+
+function rmDateOnly(value, fallback = '—') {
+  if (!value) return fallback;
+  const raw = String(value);
+  const date = new Date(/^\d{4}-\d{2}-\d{2}$/.test(raw) ? `${raw}T00:00:00+08:00` : raw);
+  if (Number.isNaN(date.getTime())) return fallback;
+  return new Intl.DateTimeFormat('en-PH', { timeZone:'Asia/Manila', month:'short', day:'numeric', year:'numeric' }).format(date);
+}
+
+function rmPhDateKey(value) {
+  const date = value ? new Date(value) : new Date();
+  if (Number.isNaN(date.getTime())) return '';
+  const parts = new Intl.DateTimeFormat('en-CA', { timeZone:'Asia/Manila', year:'numeric', month:'2-digit', day:'2-digit' }).formatToParts(date);
+  const get = type => parts.find(part => part.type === type)?.value || '';
+  return `${get('year')}-${get('month')}-${get('day')}`;
+}
+
+function rmPeriodStart(record) {
+  return rmPick(record, 'coverage_start_at', 'coverageStartAt', 'period_start_at', 'periodStartAt', 'accumulation_start_at', 'accumulationStartAt', 'started_at', 'startedAt', 'start_at', 'startAt');
+}
+
+function rmCutoff(record) {
+  return rmPick(record, 'cutoff_at', 'cutoffAt', 'period_end_at', 'periodEndAt', 'prepared_at', 'preparedAt', 'frozen_at', 'frozenAt');
+}
+
+function rmCoverageLabel(record, { live = false } = {}) {
+  const start = rmPeriodStart(record);
+  const end = live ? rmPick(_rmState.dashboard, 'server_now', 'serverNow') : rmCutoff(record);
+  if (!start && !end) return live ? 'Current live accumulation' : 'Coverage unavailable';
+  if (!start) return live ? `Through ${rmDateTime(end)}` : `Cutoff ${rmDateTime(end)}`;
+  return `${rmDateTime(start)} – ${end ? rmDateTime(end) : 'now'}`;
+}
+
+function rmProofUrl(record) {
+  const payment = rmRecordPayment(record);
+  const value = String(rmPick(payment, 'proof_url', 'proofUrl', 'receipt_url', 'receiptUrl', 'submitted_proof_url', 'submittedProofUrl') || rmPick(record, 'proof_url', 'proofUrl', 'submitted_proof_url', 'submittedProofUrl') || '');
+  return /^(https?:|data:image\/|blob:)/i.test(value) ? value : '';
+}
+
+function rmProofPath(record) {
+  const payment = rmRecordPayment(record);
+  return String(rmPick(payment, 'proof_path', 'proofPath') || rmPick(record, 'proof_path', 'proofPath') || '');
+}
+
+function rmPaymentRef(record) {
+  const payment = rmRecordPayment(record);
+  return String(rmPick(payment, 'payment_reference', 'paymentReference', 'payment_ref', 'paymentRef', 'transaction_ref', 'transactionRef', 'reference', 'submitted_ref', 'submittedRef') || rmPick(record, 'payment_reference', 'paymentReference', 'payment_ref', 'paymentRef', 'submitted_ref', 'submittedRef', 'paid_ref', 'paidRef') || '');
+}
+
+function rmSubmittedAt(record) {
+  const payment = rmRecordPayment(record);
+  return rmPick(payment, 'submitted_at', 'submittedAt', 'created_at', 'createdAt') || rmPick(record, 'submitted_at', 'submittedAt');
+}
+
+function rmSettledAt(record) {
+  const payment = rmRecordPayment(record);
+  return rmPick(record, 'settled_at', 'settledAt', 'paid_at', 'paidAt', 'reviewed_at', 'reviewedAt') || rmPick(payment, 'reviewed_at', 'reviewedAt', 'settled_at', 'settledAt');
+}
+
+function rmCanPrepareInfo(dashboard) {
+  const raw = rmPick(dashboard, 'can_prepare', 'canPrepare');
+  if (raw && typeof raw === 'object') {
+    return {
+      allowed: !!rmPick(raw, 'allowed', 'can_prepare', 'canPrepare', 'ok'),
+      reason: String(rmPick(raw, 'reason', 'message', 'label') || ''),
+    };
+  }
+  return { allowed: !!raw, reason: String(rmPick(dashboard, 'prepare_reason', 'prepareReason') || '') };
+}
+
+function rmDashboardRole() {
+  return String(rmPick(_rmState.dashboard, 'role', 'account_role', 'accountRole') || sess?.role || '');
+}
+
+function rmRecordSearchText(record) {
+  return [
+    rmRecordRef(record), rmPaymentRef(record), rmStatusLabel(rmStatusKey(record)),
+    rmPick(record, 'court_owner_name', 'courtOwnerName', 'court_owner_email', 'courtOwnerEmail', 'venue_name', 'venueName'),
+    ...rmBookingItems(record).flatMap(item => [
+      rmPick(item, 'ref', 'booking_ref', 'bookingRef'), rmPick(item, 'full_name', 'fullName', 'customer_name', 'customerName'), rmPick(item, 'court_name', 'courtName'),
+    ]),
+  ].filter(Boolean).join(' ').toLowerCase();
+}
+
+function rmRecordById(id) {
+  return _rmState.records.get(String(id || '')) || null;
+}
+
+async function rmLoadRecordDetail(id) {
+  const key = String(id || '');
+  const summary = rmRecordById(key) || {};
+  if (summary.is_legacy || summary.legacy_weekly_fee_id) return summary;
+  if (typeof DB.getBookingFeeRemittanceDetail !== 'function') return summary;
+  const response = await DB.getBookingFeeRemittanceDetail(key);
+  const payload = response?.data && typeof response.data === 'object' ? response.data : (response || {});
+  const remittance = rmPick(payload, 'remittance', 'record') || (rmRecordId(payload) ? payload : {});
+  const items = rmRows(rmPick(payload, 'items', 'booking_items', 'bookingItems', 'bookings'));
+  const payments = rmRows(rmPick(payload, 'payments', 'remittance_payments', 'remittancePayments'));
+  const events = rmRows(rmPick(payload, 'events', 'remittance_events', 'remittanceEvents', 'audit_events', 'auditEvents'));
+  const latestPayment = rmPick(payload, 'latest_payment', 'latestPayment') || payments[payments.length - 1];
+  const merged = { ...summary, ...remittance };
+  if (items.length) merged.booking_items = items;
+  if (payments.length) merged.payments = payments;
+  if (latestPayment) merged.latest_payment = latestPayment;
+  if (events.length) merged.events = events;
+  _rmState.records.set(rmRecordId(merged) || key, merged);
+  return merged;
+}
+
+async function rmResolvedProofUrl(record) {
+  const direct = rmProofUrl(record);
+  if (direct) return direct;
+  const path = rmProofPath(record);
+  if (!path || typeof DB.getBookingFeeRemittanceProofUrl !== 'function') return '';
+  try {
+    const response = await DB.getBookingFeeRemittanceProofUrl(path);
+    const payload = response?.data !== undefined ? response.data : response;
+    const value = typeof payload === 'string' ? payload : rmPick(payload, 'signed_url', 'signedUrl', 'url', 'proof_url', 'proofUrl');
+    return /^(https?:|data:image\/|blob:)/i.test(String(value || '')) ? String(value) : '';
+  } catch (error) {
+    console.warn('[rmResolvedProofUrl]', error);
+    return '';
+  }
+}
+
+function rmSetBusy(button, busy, busyLabel = 'Working...') {
+  if (!button) return;
+  if (busy) {
+    button.dataset.idleLabel = button.textContent;
+    button.disabled = true;
+    button.textContent = busyLabel;
+  } else {
+    button.disabled = false;
+    if (button.dataset.idleLabel) button.textContent = button.dataset.idleLabel;
+  }
+}
+
+function rmRecordCard(record) {
+  const id = rmRecordId(record);
+  const ref = rmRecordRef(record);
+  const status = rmStatusKey(record);
+  const role = rmDashboardRole();
+  const paymentRef = rmPaymentRef(record);
+  const amount = rmAmountDue(record);
+  const bookingCount = rmBookingCount(record);
+  const reservationCount = rmReservationCount(record);
+  const billableHours = rmBillableHours(record);
+  const flatBookings = rmFlatBookingCount(record);
+  const hoursLabel = billableHours === null ? 'Not recorded' : (billableHours === 0 && flatBookings > 0) ? 'N/A - flat fee' : `${rmMetricNumber(billableHours)} hr${billableHours === 1 ? '' : 's'}`;
+  const cutoff = rmCutoff(record);
+  const submitted = rmSubmittedAt(record);
+  const ownerMeta = String(rmPick(record, 'court_owner_name', 'courtOwnerName', 'court_owner_email', 'courtOwnerEmail', 'venue_name', 'venueName') || 'Pickle Bliss Court venue ledger');
+  const actions = [
+    `<button class="btn btn-g btn-sm" type="button" onclick="openRemittanceDetails('${jsArg(id)}')">View Details</button>`,
+  ];
+  if (role === 'court_owner' && ['awaiting-payment','overdue','rejected'].includes(status)) {
+    actions.push(`<button class="btn btn-p btn-sm" type="button" onclick="openRemittancePayment('${jsArg(id)}')">Remit Now</button>`);
+    if (['awaiting-payment','rejected'].includes(status) && rmAmountSettled(record) === 0) actions.push(`<button class="btn btn-d btn-sm" type="button" onclick="openRemittanceCancellation('${jsArg(id)}')">Cancel</button>`);
+  }
+  if (role === 'owner' && status === 'under-review') {
+    actions.push(`<button class="btn btn-p btn-sm" type="button" onclick="openRemittanceReview('${jsArg(id)}')">Review Proof</button>`);
+  }
+  return `<article class="rm-record ${status}">
+    <div class="rm-record-head">
+      <div><div class="rm-ref">${esc(ref)}</div><div class="rm-period">${esc(rmCoverageLabel(record))}</div><div class="rm-record-sub">${esc(ownerMeta)}</div></div>
+      <span class="rm-status ${status}">${esc(rmStatusLabel(status))}</span>
+    </div>
+    <div class="rm-record-grid">
+      <div class="rm-field"><div class="rm-field-label">Amount</div><div class="rm-field-value money">${fmt(amount)}</div></div>
+      <div class="rm-field"><div class="rm-field-label">Reservations</div><div class="rm-field-value">${reservationCount === null ? 'Not recorded' : rmMetricNumber(reservationCount, 0)}</div></div>
+      <div class="rm-field"><div class="rm-field-label">Court Bookings</div><div class="rm-field-value">${rmMetricNumber(bookingCount, 0)}</div></div>
+      <div class="rm-field"><div class="rm-field-label">Billable Court-Hours</div><div class="rm-field-value">${esc(hoursLabel)}</div></div>
+      <div class="rm-field"><div class="rm-field-label">Exact Cutoff</div><div class="rm-field-value">${esc(rmDateTime(cutoff))}</div></div>
+      <div class="rm-field"><div class="rm-field-label">Payment Ref</div><div class="rm-field-value">${esc(paymentRef || '—')}</div></div>
+    </div>
+    <div class="rm-fee-breakdown" aria-label="Frozen fee calculation">${rmFeeBreakdownHtml(record)}</div>
+    <div class="rm-record-foot"><div class="rm-record-note">${submitted ? `Proof submitted ${esc(rmDateTime(submitted))}` : 'Permanent booking references are retained for audit and duplicate protection.'}</div><div class="rm-actions">${actions.join('')}</div></div>
+  </article>`;
+}
+
+function renderRemittanceRecords() {
+  const source = _rmState.tab === 'history' ? _rmState.history : _rmState.active;
+  const query = String(_rmState.query || '').trim().toLowerCase();
+  const status = _rmState.status;
+  const visible = source.filter(record => {
+    const key = rmStatusKey(record);
+    const statusMatch = status === 'all' || key === status || (status === 'rejected' && ['rejected','cancelled'].includes(key));
+    return statusMatch && (!query || rmRecordSearchText(record).includes(query));
+  });
+  $('rmListMeta').textContent = `${visible.length} of ${source.length} record${source.length === 1 ? '' : 's'} shown`;
+  $('rmRecordList').innerHTML = visible.length
+    ? visible.map(rmRecordCard).join('')
+    : `<div class="rm-empty"><div><strong>Nothing to show</strong>${query ? 'No remittance matches your search.' : _rmState.tab === 'history' ? 'Settled and closed remittances will remain here permanently.' : 'No prepared or submitted remittance is active right now.'}</div></div>`;
+}
+
+function setRemittanceTab(tab) {
+  _rmState.tab = tab === 'history' ? 'history' : 'active';
+  const active = _rmState.tab === 'active';
+  $('rmActiveTab').classList.toggle('active', active);
+  $('rmHistoryTab').classList.toggle('active', !active);
+  $('rmActiveTab').setAttribute('aria-selected', active ? 'true' : 'false');
+  $('rmHistoryTab').setAttribute('aria-selected', active ? 'false' : 'true');
+  $('rmActiveTab').tabIndex = active ? 0 : -1;
+  $('rmHistoryTab').tabIndex = active ? -1 : 0;
+  renderRemittanceRecords();
+}
+
+function updateRemittanceSearch(value) {
+  _rmState.query = String(value || '');
+  renderRemittanceRecords();
+}
+
+function updateRemittanceStatusFilter(value) {
+  _rmState.status = String(value || 'all');
+  renderRemittanceRecords();
+}
+
+async function renderRemittances({ announce = false } = {}) {
+  if (!Auth.can('remittances', sess.role)) { toast('You do not have access to remittances.', 'err'); return; }
+  const list = $('rmRecordList');
+  const requestId = ++_rmState.loadSeq;
+  if (announce || !_rmState.dashboard) {
+    list.innerHTML = '<div class="rm-loading"><div><div class="rm-spinner" aria-hidden="true"></div>Loading secure remittance ledger...</div></div>';
+    $('rmListMeta').textContent = 'Loading remittance records...';
+  }
+  try {
+    if (typeof DB.getBookingFeeRemittanceDashboard !== 'function') throw new Error('The remittance service is not available yet. Please refresh after deployment completes.');
+    const response = await DB.getBookingFeeRemittanceDashboard();
+    if (requestId !== _rmState.loadSeq) return;
+    const dashboard = response?.data && !response.live ? response.data : (response || {});
+    const active = rmRows(rmPick(dashboard, 'active', 'active_remittances', 'activeRemittances', 'open_remittances', 'openRemittances'));
+    const history = rmRows(rmPick(dashboard, 'history', 'remittance_history', 'remittanceHistory', 'last_settled', 'lastSettled'));
+    _rmState.dashboard = dashboard;
+    _rmState.active = active;
+    _rmState.history = history;
+    _rmState.records = new Map([...active, ...history].map(record => [rmRecordId(record), record]).filter(([id]) => id));
+
+    const role = rmDashboardRole();
+    const live = rmPick(dashboard, 'live', 'current', 'accumulated', 'live_balance', 'liveBalance') || {};
+    const liveAmount = rmAmountDue(live);
+    const liveBookings = rmBookingCount(live);
+    const liveReservations = rmReservationCount(live);
+    const liveHours = rmBillableHours(live);
+    const liveFlatBookings = rmFlatBookingCount(live);
+    const liveBreakdown = rmFeeBreakdown(live);
+    const flatOnly = liveHours === 0 && liveFlatBookings > 0 && liveBreakdown.every(row => String(rmPick(row, 'fee_type', 'feeType') || '').toLowerCase() === 'flat');
+    const serverNow = rmPick(dashboard, 'server_now', 'serverNow') || new Date().toISOString();
+    const nextDue = rmPick(dashboard, 'next_due_on', 'nextDueOn', 'next_due_at', 'nextDueAt');
+    const reviewRows = active.filter(record => rmStatusKey(record) === 'under-review');
+    const reviewAmount = reviewRows.reduce((sum, record) => sum + (rmPaymentAmount(record) || rmAmountDue(record)), 0);
+    const settledRows = history.filter(record => rmStatusKey(record) === 'settled');
+    const dashboardSettled = rmPick(dashboard, 'settled_total', 'settledTotal');
+    const settledAmount = dashboardSettled !== undefined
+      ? Math.max(0, rmNumber(dashboardSettled))
+      : settledRows.reduce((sum, record) => sum + (rmAmountSettled(record) || rmAcceptedAmount(record) || rmAmountDue(record)), 0);
+    const canPrepare = rmCanPrepareInfo(dashboard);
+    const canOwnerOverride = role === 'owner' && !!rmPick(dashboard, 'can_owner_override', 'canOwnerOverride');
+
+    $('rmPageCopy').textContent = role === 'owner'
+      ? 'Monitor the venue’s live booking-fee balance, verify submitted proof, and inspect every permanent settlement record.'
+      : 'See the venue’s live booking-fee balance, prepare an exact cutoff, submit proof, and keep every settlement record.';
+    $('rmRolePill').textContent = role === 'owner' ? 'System Owner · Verification' : 'Court Owner · Remittance';
+    $('rmLiveStat').textContent = fmt(liveAmount);
+    $('rmLiveStatNote').textContent = liveAmount > 0 ? 'Available for the next cutoff' : 'No unsettled booking fees';
+    $('rmReservationStat').textContent = liveReservations === null ? '\u2014' : rmMetricNumber(liveReservations, 0);
+    $('rmReservationStatNote').textContent = `${rmMetricNumber(liveBookings, 0)} court booking${liveBookings === 1 ? '' : 's'} in the fee ledger`;
+    $('rmHoursStat').textContent = liveHours === null ? '\u2014' : flatOnly ? 'N/A' : rmMetricNumber(liveHours);
+    $('rmHoursStatNote').textContent = liveHours === null ? 'Not recorded for legacy data' : flatOnly ? 'Flat-fee bookings only' : `${liveFlatBookings > 0 ? `${liveFlatBookings} flat court booking${liveFlatBookings === 1 ? '' : 's'} kept separate` : 'Per-hour fee units'}`;
+    $('rmReviewStat').textContent = fmt(reviewAmount);
+    $('rmReviewStatNote').textContent = reviewRows.length ? `${reviewRows.length} payment proof${reviewRows.length === 1 ? '' : 's'} waiting` : 'No payment proof waiting';
+    $('rmSettledStat').textContent = fmt(settledAmount);
+    $('rmSettledStatNote').textContent = `${settledRows.length} settled remittance${settledRows.length === 1 ? '' : 's'}`;
+    $('rmLiveAmount').textContent = fmt(liveAmount);
+    $('rmLiveReservations').textContent = liveReservations === null ? 'Not recorded' : `${rmMetricNumber(liveReservations, 0)} unique`;
+    $('rmLiveBookings').textContent = `${rmMetricNumber(liveBookings, 0)} fee line${liveBookings === 1 ? '' : 's'}`;
+    $('rmLiveHours').textContent = liveHours === null ? 'Not recorded' : flatOnly ? 'Not applicable' : `${rmMetricNumber(liveHours)} hr${liveHours === 1 ? '' : 's'}`;
+    $('rmLiveFormula').textContent = rmFeeBreakdownText(live);
+    $('rmLiveFeeBreakdown').innerHTML = liveBreakdown.length > 1 ? rmFeeBreakdownHtml(live) : '';
+    $('rmLiveFeeBreakdown').hidden = liveBreakdown.length <= 1;
+    $('rmLivePeriod').textContent = rmPeriodStart(live) ? `Accumulating since ${rmDateTime(rmPeriodStart(live))}` : 'Starts with the first eligible booking';
+    $('rmLiveAsOf').textContent = `Updated ${rmDateTime(serverNow)}`;
+    $('rmActiveCount').textContent = String(active.length);
+    $('rmHistoryCount').textContent = String(history.length);
+
+    const nextDueLabel = rmDateOnly(nextDue);
+    const dueKey = nextDue ? String(nextDue).slice(0, 10) : '';
+    const todayKey = rmPhDateKey(serverNow);
+    const duePrefix = dueKey && dueKey < todayKey ? 'Overdue since' : dueKey === todayKey ? 'Due today' : 'Next due';
+    $('rmNextDuePill').textContent = `${duePrefix}: ${nextDueLabel}`;
+    $('rmCycleTitle').textContent = dueKey === todayKey ? 'Today is remittance day' : dueKey && dueKey < todayKey ? 'The remittance date has passed' : 'Remittance is scheduled every 14th';
+    $('rmCycleCopy').textContent = role === 'owner'
+      ? 'Court owners freeze the exact balance when they prepare payment. You verify the submitted proof before it becomes settled.'
+      : 'Your balance keeps accumulating until you prepare payment. The database freezes the exact cutoff at that moment.';
+
+    const prepareBtn = $('rmPrepareBtn');
+    const liveAction = $('rmLiveAction');
+    const canOpenPrepare = role === 'court_owner' ? canPrepare.allowed : canOwnerOverride;
+    liveAction.hidden = !['owner', 'court_owner'].includes(role);
+    prepareBtn.hidden = !['owner', 'court_owner'].includes(role);
+    prepareBtn.disabled = !canOpenPrepare || liveAmount <= 0;
+    prepareBtn.textContent = liveAmount > 0
+      ? `${role === 'owner' ? 'Prepare Override' : 'Prepare'} ${fmt(liveAmount)}`
+      : 'Prepare Remittance';
+    $('rmPrepareHint').textContent = role === 'owner'
+      ? (liveAmount <= 0
+        ? 'An override becomes available when an eligible fee is present.'
+        : 'Exceptional cutoff only. A reason is required and permanently audited.')
+      : (canPrepare.reason || (liveAmount <= 0 ? 'The button activates when an eligible fee is available.' : canPrepare.allowed ? 'The exact cutoff is created only after confirmation.' : `Next scheduled payment: ${nextDueLabel}`));
+
+    renderRemittanceRecords();
+    if (announce) {
+      toast('Remittance ledger refreshed.', 'inf');
+      requestAnimationFrame(() => $('rmRefreshBtn')?.focus());
+    }
+  } catch (error) {
+    if (requestId !== _rmState.loadSeq) return;
+    console.error('[renderRemittances]', error);
+    $('rmListMeta').textContent = 'Remittance ledger unavailable';
+    list.innerHTML = `<div class="rm-error"><div><strong>Could not load remittances</strong>${esc(error?.message || 'Please check your connection and try again.')}<div style="margin-top:14px"><button class="btn btn-p" type="button" onclick="renderRemittances({announce:true})">Try Again</button></div></div></div>`;
+  }
+}
+
+function openRemittanceModal(id, focusSelector = null) {
+  const overlay = $(id);
+  if (!overlay) return;
+  _rmState.modalFocus[id] = document.activeElement;
+  overlay.classList.add('show');
+  overlay.setAttribute('aria-hidden', 'false');
+  overlay.inert = false;
+  requestAnimationFrame(() => (focusSelector ? overlay.querySelector(focusSelector) : overlay.querySelector('[role="dialog"]'))?.focus());
+}
+
+function closeRemittanceModal(id, { restoreFocus = true } = {}) {
+  const overlay = $(id);
+  if (!overlay) return;
+  overlay.classList.remove('show');
+  overlay.setAttribute('aria-hidden', 'true');
+  const previous = _rmState.modalFocus[id];
+  if (restoreFocus && previous && typeof previous.focus === 'function' && document.contains(previous)) requestAnimationFrame(() => previous.focus());
+}
+
+function remittanceModalKeydown(event) {
+  const overlay = event.currentTarget.closest('.overlay');
+  if (!overlay?.classList.contains('show')) return;
+  if (event.key === 'Escape') {
+    event.preventDefault();
+    closeRemittanceModal(overlay.id);
     return;
   }
-  const reader = new FileReader();
-  reader.onload = ev => {
-    _payBillingProofData = ev.target.result;
-    $('pbProofPreview').src = _payBillingProofData;
-    $('pbProofPreview').style.display = '';
+  if (event.key !== 'Tab') return;
+  const focusable = [...overlay.querySelectorAll('button:not([disabled]),input:not([disabled]),select:not([disabled]),textarea:not([disabled]),a[href],[tabindex]:not([tabindex="-1"])')].filter(el => el.offsetParent !== null);
+  if (!focusable.length) return;
+  const first = focusable[0], last = focusable[focusable.length - 1];
+  if (event.shiftKey && document.activeElement === first) { event.preventDefault(); last.focus(); }
+  else if (!event.shiftKey && document.activeElement === last) { event.preventDefault(); first.focus(); }
+}
+
+function openRemittancePrepare() {
+  const role = rmDashboardRole();
+  const isOwnerOverride = role === 'owner';
+  if (!['owner', 'court_owner'].includes(role)) { toast('Only a system owner or court owner can prepare remittance.', 'err'); return; }
+  const live = rmPick(_rmState.dashboard, 'live', 'current', 'accumulated', 'live_balance', 'liveBalance') || {};
+  const canPrepare = rmCanPrepareInfo(_rmState.dashboard || {});
+  const canOwnerOverride = isOwnerOverride && !!rmPick(_rmState.dashboard, 'can_owner_override', 'canOwnerOverride');
+  const amount = rmAmountDue(live);
+  if ((isOwnerOverride ? !canOwnerOverride : !canPrepare.allowed) || amount <= 0) {
+    toast(canPrepare.reason || 'There is no eligible balance to prepare.', 'err');
+    return;
+  }
+  $('rmPrepareTitle').textContent = isOwnerOverride ? 'PREPARE EXCEPTIONAL CUTOFF' : 'PREPARE REMITTANCE';
+  $('rmPrepareAmount').textContent = fmt(amount);
+  const reservations = rmReservationCount(live);
+  const courtBookings = rmBookingCount(live);
+  const hours = rmBillableHours(live);
+  const flatBookings = rmFlatBookingCount(live);
+  $('rmPrepareReservations').textContent = reservations === null ? 'Not recorded' : `${rmMetricNumber(reservations, 0)} unique`;
+  $('rmPrepareBookings').textContent = `${rmMetricNumber(courtBookings, 0)} fee line${courtBookings === 1 ? '' : 's'}`;
+  $('rmPrepareHours').textContent = hours === null ? 'Not recorded' : (hours === 0 && flatBookings > 0) ? 'Not applicable - flat fee' : `${rmMetricNumber(hours)} court-hour${hours === 1 ? '' : 's'}`;
+  $('rmPrepareFeeBreakdown').innerHTML = rmFeeBreakdownHtml(live);
+  $('rmPrepareCoverage').textContent = rmCoverageLabel(live, { live:true });
+  $('rmPrepareNextDue').textContent = isOwnerOverride
+    ? rmDateOnly(rmPick(_rmState.dashboard, 'server_now', 'serverNow') || new Date().toISOString())
+    : rmDateOnly(rmPick(_rmState.dashboard, 'next_due_on', 'nextDueOn', 'next_due_at', 'nextDueAt'));
+  openRemittanceModal('rmPrepareModal', '#rmPrepareConfirmBtn');
+}
+
+async function prepareRemittanceNow() {
+  const button = $('rmPrepareConfirmBtn');
+  rmSetBusy(button, true, 'Freezing balance...');
+  try {
+    if (typeof DB.prepareBookingFeeRemittance !== 'function') throw new Error('The prepare-remittance service is unavailable.');
+    const isOwnerOverride = rmDashboardRole() === 'owner';
+    let overrideReason = null;
+    let overrideDueOn = null;
+    if (isOwnerOverride) {
+      overrideReason = (prompt(
+        'Enter the reason for preparing this remittance outside the regular 14th cutoff:',
+        'Exceptional Pickle Bliss booking-fee settlement'
+      ) || '').trim();
+      if (overrideReason.length < 3) throw new Error('A clear override reason is required.');
+      const serverNow = rmPick(_rmState.dashboard, 'server_now', 'serverNow') || new Date().toISOString();
+      overrideDueOn = rmPhDateKey(serverNow);
+    }
+    const result = await DB.prepareBookingFeeRemittance({
+      ownerOverride: isOwnerOverride,
+      overrideDueOn,
+      overrideReason,
+    });
+    const prepared = result?.remittance || result?.data?.remittance || result?.data || result;
+    const preparedId = rmRecordId(prepared);
+    closeRemittanceModal('rmPrepareModal');
+    toast(isOwnerOverride
+      ? 'Exceptional cutoff recorded. The court owner can now remit the frozen amount.'
+      : 'Balance frozen at the exact server time. New bookings now belong to the next cycle.');
+    await renderRemittances();
+    const fallback = _rmState.active.find(record => rmStatusKey(record) === 'awaiting-payment');
+    const id = preparedId || rmRecordId(fallback);
+    if (id && !isOwnerOverride) await openRemittancePayment(id);
+  } catch (error) {
+    console.error('[prepareRemittanceNow]', error);
+    toast(error?.message || 'Could not prepare remittance.', 'err');
+  } finally {
+    rmSetBusy(button, false);
+  }
+}
+
+async function openRemittancePayment(id) {
+  if (rmDashboardRole() !== 'court_owner') { toast('Only a court owner can submit remittance.', 'err'); return; }
+  const record = rmRecordById(id);
+  if (!record) { toast('Remittance record not found. Please refresh.', 'err'); return; }
+  try {
+    const settings = await DB.getSettings();
+    const accountNumber = String(settings.platform_gcash_number || '');
+    const accountName = String(settings.platform_gcash_name || '');
+    if (!accountNumber) { toast('The system owner has not configured a remittance GCash account yet.', 'err'); return; }
+    const reference = rmRecordRef(record);
+    const amount = rmAmountRemaining(record);
+    $('rmPayId').value = rmRecordId(record);
+    $('rmPayRefLabel').textContent = reference;
+    $('rmPayCoverage').textContent = rmCoverageLabel(record);
+    $('rmPayHeroAmount').textContent = fmt(amount);
+    $('rmPayFeeBreakdown').innerHTML = rmFeeBreakdownHtml(record);
+    $('rmPayAccountNumber').textContent = accountNumber;
+    $('rmPayAccountName').textContent = accountName || 'System owner';
+    $('rmPayReferenceNote').textContent = reference;
+    $('rmPayAmount').value = amount.toFixed(2);
+    $('rmPaymentRef').value = '';
+    $('rmPaymentNote').value = '';
+    $('rmPaymentProof').value = '';
+    $('rmPaymentProofLabel').textContent = '📷 Choose receipt screenshot';
+    $('rmPaymentProofPreview').src = '';
+    $('rmPaymentProofPreview').style.display = 'none';
+    _rmState.proofData = '';
+    const qr = String(settings.platform_gcash_qr || '');
+    $('rmPayQrWrap').hidden = !qr;
+    $('rmPayQr').src = qr || '';
+    openRemittanceModal('rmPayModal', '#rmPaymentRef');
+  } catch (error) {
+    toast(error?.message || 'Could not open remittance payment.', 'err');
+  }
+}
+
+function copyRemittanceValue(id) {
+  const value = String($(id)?.textContent || '').trim();
+  if (!value || value === '—') return;
+  const fallback = () => {
+    const input = document.createElement('textarea');
+    input.value = value; input.style.position = 'fixed'; input.style.opacity = '0';
+    document.body.appendChild(input); input.select(); document.execCommand('copy'); input.remove();
   };
+  if (navigator.clipboard?.writeText) navigator.clipboard.writeText(value).catch(fallback);
+  else fallback();
+  toast('Copied to clipboard.', 'inf');
+}
+
+function handleRemittanceProof(event) {
+  const file = event.target.files?.[0];
+  if (!file) return;
+  const extension = String(file.name || '').split('.').pop().toLowerCase();
+  const mimeByExtension = { jpg:'image/jpeg', jpeg:'image/jpeg', png:'image/png', webp:'image/webp', heic:'image/heic', heif:'image/heif' };
+  const allowedMimes = new Set(Object.values(mimeByExtension));
+  const detectedMime = String(file.type || '').toLowerCase();
+  const normalizedMime = allowedMimes.has(detectedMime) ? detectedMime : mimeByExtension[extension];
+  if (!normalizedMime) { toast('Receipt must be a JPG, PNG, WebP, HEIC, or HEIF image.', 'err'); event.target.value = ''; return; }
+  if (file.size > 5 * 1024 * 1024) { toast('Receipt image is too large (maximum 5 MB).', 'err'); event.target.value = ''; return; }
+  const reader = new FileReader();
+  reader.onload = () => {
+    _rmState.proofData = String(reader.result || '').replace(/^data:[^;]*;base64,/i, `data:${normalizedMime};base64,`);
+    $('rmPaymentProofPreview').src = _rmState.proofData;
+    $('rmPaymentProofPreview').style.display = 'block';
+    $('rmPaymentProofLabel').textContent = `✓ ${file.name}`;
+  };
+  reader.onerror = () => toast('Could not read that receipt image.', 'err');
   reader.readAsDataURL(file);
 }
 
-async function submitMyPayment() {
-  const id = $('pbStatementId').value;
-  const txnId = ($('pbTxnId').value || '').trim();
-  const note = ($('pbNote').value || '').trim();
-  if (!id) return;
-  if (!txnId) { toast('GCash Transaction ID is required.', 'err'); return; }
-  if (!_payBillingProofData) { toast('Remittance receipt screenshot is required.', 'err'); return; }
-
+async function submitRemittancePayment(event) {
+  event?.preventDefault();
+  const id = $('rmPayId').value;
+  const paymentRef = $('rmPaymentRef').value.trim();
+  const note = $('rmPaymentNote').value.trim();
+  const amount = rmNumber($('rmPayAmount').value);
+  if (!id) { toast('Remittance record is missing. Please refresh.', 'err'); return; }
+  if (amount <= 0) { toast('Enter the amount remitted.', 'err'); $('rmPayAmount').focus(); return; }
+  if (!paymentRef) { toast('Enter the GCash transaction ID.', 'err'); $('rmPaymentRef').focus(); return; }
+  if (!_rmState.proofData) { toast('Upload the remittance receipt screenshot.', 'err'); $('rmPaymentProof').focus(); return; }
+  const button = $('rmPaymentSubmitBtn');
+  rmSetBusy(button, true, 'Submitting proof...');
   try {
-    await DB.submitWeeklyFeePayment(id, {
-      submittedRef: txnId,
-      submittedNote: note,
-      submittedProofUrl: _payBillingProofData || null,
-    });
-    closeModal('payBillingModal');
-    toast('✅ Remittance proof submitted. Waiting for verification.');
-    await renderMyBilling();
-  } catch (e) {
-    console.error('[submitMyPayment]', e);
-    toast('Failed to submit: ' + (e?.message || e), 'err');
+    if (typeof DB.submitBookingFeeRemittance !== 'function') throw new Error('The payment-submission service is unavailable.');
+    await DB.submitBookingFeeRemittance(id, { paymentRef, note, proofUrl:_rmState.proofData, amount });
+    closeRemittanceModal('rmPayModal');
+    toast('Remittance proof submitted. It is now waiting for system-owner verification.');
+    await renderRemittances();
+  } catch (error) {
+    console.error('[submitRemittancePayment]', error);
+    toast(error?.message || 'Could not submit remittance proof.', 'err');
+  } finally {
+    rmSetBusy(button, false);
+  }
+}
+
+async function openRemittanceReview(id) {
+  if (rmDashboardRole() !== 'owner') { toast('Only the system owner can verify remittance.', 'err'); return; }
+  let record = rmRecordById(id);
+  if (!record) { toast('Remittance record not found. Please refresh.', 'err'); return; }
+  try {
+    record = await rmLoadRecordDetail(id);
+  } catch (error) {
+    console.error('[openRemittanceReview]', error);
+    toast(error?.message || 'Could not load the remittance audit details.', 'err');
+    return;
+  }
+  const paymentId = rmPaymentId(record);
+  if (!paymentId) { toast('The submitted payment record is unavailable.', 'err'); return; }
+  const expected = rmAmountRemaining(record);
+  const submitted = rmPaymentAmount(record);
+  const proof = await rmResolvedProofUrl(record);
+  $('rmReviewPaymentId').value = paymentId;
+  $('rmReviewRemittanceId').value = rmRecordId(record);
+  $('rmReviewRefLabel').textContent = `${rmRecordRef(record)} · ${rmCoverageLabel(record)}`;
+  $('rmReviewExpected').textContent = fmt(expected);
+  $('rmReviewSubmitted').textContent = `${fmt(submitted)} · Ref ${rmPaymentRef(record) || 'not recorded'}`;
+  $('rmAmountAccepted').value = (submitted || expected).toFixed(2);
+  $('rmReviewNote').value = '';
+  $('rmReviewReceiptWrap').innerHTML = proof
+    ? `<a href="${esc(proof)}" target="_blank" rel="noopener" aria-label="Open full remittance receipt"><img src="${esc(proof)}" alt="Submitted proof of remittance" /></a>`
+    : '<span style="color:var(--text3);font-size:.8rem">No proof image available</span>';
+  const payment = rmRecordPayment(record);
+  const submittedBy = String(rmPick(payment, 'submitted_by_name', 'submittedByName', 'submitted_by_email', 'submittedByEmail') || rmPick(record, 'court_owner_name', 'courtOwnerName', 'court_owner_email', 'courtOwnerEmail') || 'Court owner');
+  $('rmReviewAudit').innerHTML = [
+    ['Submitted by', submittedBy],
+    ['Submitted at', rmDateTime(rmSubmittedAt(record))],
+    ['Payment reference', rmPaymentRef(record) || '—'],
+    ['Exact cutoff', rmDateTime(rmCutoff(record))],
+    ['Reservations', rmReservationCount(record) === null ? 'Not recorded' : rmMetricNumber(rmReservationCount(record), 0)],
+    ['Court bookings', rmMetricNumber(rmBookingCount(record), 0)],
+    ['Billable court-hours', rmBillableHours(record) === null ? 'Not recorded' : (rmBillableHours(record) === 0 && rmFlatBookingCount(record) > 0) ? 'Not applicable - flat fee' : rmMetricNumber(rmBillableHours(record))],
+    ['Fee calculation', rmFeeBreakdownText(record)],
+  ].map(([label, value]) => `<div class="rm-audit-row"><span>${esc(label)}</span><span>${esc(value)}</span></div>`).join('');
+  openRemittanceModal('rmReviewModal', '#rmAmountAccepted');
+}
+
+async function reviewRemittancePayment(approve) {
+  const paymentId = $('rmReviewPaymentId').value;
+  const note = $('rmReviewNote').value.trim();
+  const amountAccepted = rmNumber($('rmAmountAccepted').value);
+  if (!paymentId) { toast('Payment record is missing. Please refresh.', 'err'); return; }
+  if (!approve && !note) { toast('Enter a reason before rejecting proof.', 'err'); $('rmReviewNote').focus(); return; }
+  if (approve && amountAccepted <= 0) { toast('Enter the amount accepted.', 'err'); $('rmAmountAccepted').focus(); return; }
+  const approveButton = $('rmApproveBtn');
+  const rejectButton = $('rmRejectBtn');
+  rmSetBusy(approve ? approveButton : rejectButton, true, approve ? 'Settling...' : 'Rejecting...');
+  approveButton.disabled = true; rejectButton.disabled = true;
+  try {
+    if (typeof DB.reviewBookingFeeRemittancePayment !== 'function') throw new Error('The remittance-review service is unavailable.');
+    const result = await DB.reviewBookingFeeRemittancePayment(paymentId, { approve:!!approve, note, amountAccepted:approve ? amountAccepted : 0 });
+    const reviewedRecord = result?.remittance || result?.data?.remittance || result?.data || result;
+    const settled = String(reviewedRecord?.status || '').toLowerCase() === 'settled';
+    closeRemittanceModal('rmReviewModal');
+    toast(approve
+      ? (settled ? 'Remittance confirmed as settled. The permanent record is now in History.' : 'Payment accepted. The unpaid remainder stays active for the court owner to remit.')
+      : 'Proof rejected. The court owner can review the reason and resubmit.');
+    await renderRemittances();
+  } catch (error) {
+    console.error('[reviewRemittancePayment]', error);
+    toast(error?.message || 'Could not review remittance proof.', 'err');
+  } finally {
+    rmSetBusy(approveButton, false); rmSetBusy(rejectButton, false);
+    approveButton.disabled = false; rejectButton.disabled = false;
+  }
+}
+
+function rmBookingCard(item) {
+  const ref = String(rmPick(item, 'ref', 'booking_ref', 'bookingRef') || 'Booking');
+  const groupRef = String(rmPick(item, 'booking_group_ref', 'bookingGroupRef') || '').trim();
+  const customer = String(rmPick(item, 'full_name', 'fullName', 'customer_name', 'customerName') || '').trim();
+  const court = String(rmPick(item, 'court_name', 'courtName') || 'Court not recorded');
+  const bookedAt = rmPick(item, 'booking_created_at', 'bookingCreatedAt', 'booked_at', 'bookedAt', 'created_at', 'createdAt', 'confirmed_at', 'confirmedAt');
+  const earnedAt = rmPick(item, 'fee_earned_at', 'feeEarnedAt');
+  const type = String(rmPick(item, 'fee_type', 'feeType') || '').toLowerCase();
+  const hasFeeBasis = ['per_hour','flat'].includes(type);
+  const units = Math.max(0, rmNumber(rmPick(item, 'fee_units', 'feeUnits', 'duration', 'hours', 'billable_hours', 'billableHours')));
+  const rate = Math.max(0, rmNumber(rmPick(item, 'fee_rate', 'feeRate')));
+  const fee = Math.max(0, rmNumber(rmPick(item, 'booking_fee', 'bookingFee', 'fee_amount', 'feeAmount', 'platform_fee', 'platformFee', 'amount')));
+  const formula = !hasFeeBasis
+    ? 'Legacy calculation not recorded'
+    : type === 'flat'
+      ? `Flat court-booking fee \u00d7 ${fmt(rate)}`
+      : `${rmMetricNumber(units)} court-hr${units === 1 ? '' : 's'} \u00d7 ${fmt(rate)}/hr`;
+  return `<div class="rm-booking"><div><strong>${esc(ref)}${customer ? ` · ${esc(customer)}` : ''}</strong><span>${groupRef ? `Reservation ${esc(groupRef)} · ` : ''}${esc(court)}</span></div><div><strong>${esc(formula)}</strong><span>${earnedAt ? `Fee earned ${esc(rmDateTime(earnedAt))}` : (bookedAt ? esc(rmDateTime(bookedAt)) : 'Reference retained for audit')}</span></div><div class="rm-booking-fee">${hasFeeBasis ? fmt(fee) : '\u2014'}</div></div>`;
+}
+
+async function openRemittanceDetails(id) {
+  let record = rmRecordById(id);
+  if (!record) { toast('Remittance record not found. Please refresh.', 'err'); return; }
+  try {
+    record = await rmLoadRecordDetail(id);
+  } catch (error) {
+    console.error('[openRemittanceDetails]', error);
+    toast(error?.message || 'Could not load the remittance audit details.', 'err');
+    return;
+  }
+  const status = rmStatusKey(record);
+  const payment = rmRecordPayment(record);
+  const proof = await rmResolvedProofUrl(record);
+  const bookingItems = rmBookingItems(record);
+  const reservationCount = rmReservationCount(record);
+  const bookingRows = rmBookingCount(record);
+  const billableHours = rmBillableHours(record);
+  const flatBookingCount = rmFlatBookingCount(record);
+  const billableHoursLabel = billableHours === null ? 'Not recorded' : (billableHours === 0 && flatBookingCount > 0) ? 'Not applicable - flat fee' : `${rmMetricNumber(billableHours)} hr${billableHours === 1 ? '' : 's'}`;
+  const remainingLabel = status === 'cancelled' ? 'Released back to live balance' : fmt(rmAmountRemaining(record));
+  const eventItems = rmRows(rmPick(record, 'events', 'remittance_events', 'remittanceEvents', 'audit_events', 'auditEvents'));
+  const note = String(rmPick(payment, 'note', 'submitted_note', 'submittedNote', 'review_note', 'reviewNote') || rmPick(record, 'note', 'paid_note', 'paidNote', 'review_note', 'reviewNote') || '—');
+  const verifiedBy = String(rmPick(record, 'settled_by_name', 'settledByName', 'verified_by_name', 'verifiedByName', 'paid_by_name', 'paidByName', 'paid_by_user_id', 'paidByUserId') || rmPick(payment, 'reviewed_by_name', 'reviewedByName', 'reviewed_by', 'reviewedBy') || '—');
+  $('rmDetailTitle').textContent = rmRecordRef(record);
+  $('rmDetailSubtitle').textContent = `${rmStatusLabel(status)} · permanent remittance audit`;
+  const audit = [
+    ['Accumulation started', rmDateTime(rmPeriodStart(record))],
+    ['Exact cutoff', rmDateTime(rmCutoff(record))],
+    ['Prepared at', rmDateTime(rmPick(record, 'prepared_at', 'preparedAt', 'generated_at', 'generatedAt'))],
+    ['Proof submitted', rmDateTime(rmSubmittedAt(record))],
+    ['Settled at', rmDateTime(rmSettledAt(record))],
+    ['Verified by', verifiedBy],
+    ['Payment reference', rmPaymentRef(record) || '—'],
+    ['Recorded note', note],
+  ];
+  $('rmDetailBody').innerHTML = `
+    <div class="rm-hero"><div><div class="rm-hero-label">Coverage</div><div class="rm-hero-title">${esc(rmCoverageLabel(record))}</div></div><div><span class="rm-status ${status}">${esc(rmStatusLabel(status))}</span><div class="rm-hero-amount" style="margin-top:8px">${fmt(rmAmountDue(record))}</div></div></div>
+    <div class="rm-detail-grid">
+      <div class="rm-field"><div class="rm-field-label">Reservations</div><div class="rm-field-value">${reservationCount === null ? 'Not recorded' : rmMetricNumber(reservationCount, 0)}</div></div>
+      <div class="rm-field"><div class="rm-field-label">Court Bookings</div><div class="rm-field-value">${rmMetricNumber(bookingRows, 0)}</div></div>
+      <div class="rm-field"><div class="rm-field-label">Billable Court-Hours</div><div class="rm-field-value">${esc(billableHoursLabel)}</div></div>
+      <div class="rm-field"><div class="rm-field-label">Latest Amount Submitted</div><div class="rm-field-value money">${fmt(rmPaymentAmount(record))}</div></div>
+      <div class="rm-field"><div class="rm-field-label">Amount Accepted</div><div class="rm-field-value money">${fmt(rmAmountSettled(record) || rmAcceptedAmount(record) || (status === 'settled' ? rmAmountDue(record) : 0))}</div></div>
+      <div class="rm-field"><div class="rm-field-label">Remaining Balance</div><div class="rm-field-value${status === 'cancelled' ? '' : ' money'}">${esc(remainingLabel)}</div></div>
+    </div>
+    <section class="rm-detail-section"><div class="rm-detail-title">Fee calculation</div><div class="rm-fee-breakdown">${rmFeeBreakdownHtml(record)}</div></section>
+    <section class="rm-detail-section"><div class="rm-detail-title">Audit trail</div><div class="rm-audit-list">${audit.map(([label, value]) => `<div class="rm-audit-row"><span>${esc(label)}</span><span>${esc(value)}</span></div>`).join('')}</div></section>
+    ${eventItems.length ? `<section class="rm-detail-section"><div class="rm-detail-title">Recorded activity</div><div class="rm-audit-list">${eventItems.map(event => {
+      const eventLabel = String(rmPick(event, 'event_type', 'eventType', 'action', 'status', 'type') || 'Remittance updated').replace(/[_-]+/g, ' ');
+      const eventAt = rmPick(event, 'created_at', 'createdAt', 'event_at', 'eventAt', 'occurred_at', 'occurredAt');
+      const actor = String(rmPick(event, 'actor_name', 'actorName', 'created_by_name', 'createdByName', 'actor_email', 'actorEmail') || 'System');
+      const eventNote = String(rmPick(event, 'note', 'reason', 'message', 'details') || '');
+      return `<div class="rm-audit-row"><span>${esc(eventLabel)}</span><span>${esc(rmDateTime(eventAt))} · ${esc(actor)}${eventNote ? `<br><small>${esc(eventNote)}</small>` : ''}</span></div>`;
+    }).join('')}</div></section>` : ''}
+    ${proof ? `<section class="rm-detail-section"><div class="rm-detail-title">Proof of remittance</div><a href="${esc(proof)}" target="_blank" rel="noopener"><img class="rm-proof-preview" style="display:block;max-height:320px" src="${esc(proof)}" alt="Proof of remittance for ${esc(rmRecordRef(record))}" /></a></section>` : ''}
+    <section class="rm-detail-section"><div class="rm-detail-title">Included court bookings</div><div class="rm-booking-list">${bookingItems.length ? bookingItems.map(rmBookingCard).join('') : '<div class="rm-empty" style="min-height:110px"><div>Individual booking details are not available for this legacy record.</div></div>'}</div></section>`;
+  const actions = [`<button class="btn btn-g" type="button" onclick="closeRemittanceModal('rmDetailModal')">Close</button>`];
+  if (rmDashboardRole() === 'court_owner' && ['awaiting-payment','overdue','rejected'].includes(status)) actions.push(`<button class="btn btn-p" type="button" onclick="closeRemittanceModal('rmDetailModal',{restoreFocus:false});openRemittancePayment('${jsArg(rmRecordId(record))}')">Remit Now</button>`);
+  if (rmDashboardRole() === 'court_owner' && ['awaiting-payment','rejected'].includes(status) && rmAmountSettled(record) === 0) actions.unshift(`<button class="btn btn-d" type="button" onclick="closeRemittanceModal('rmDetailModal',{restoreFocus:false});openRemittanceCancellation('${jsArg(rmRecordId(record))}')">Cancel Prepared Record</button>`);
+  if (rmDashboardRole() === 'owner' && status === 'under-review') actions.push(`<button class="btn btn-p" type="button" onclick="closeRemittanceModal('rmDetailModal',{restoreFocus:false});openRemittanceReview('${jsArg(rmRecordId(record))}')">Review Proof</button>`);
+  $('rmDetailActions').innerHTML = actions.join('');
+  openRemittanceModal('rmDetailModal');
+}
+
+function openRemittanceCancellation(id) {
+  if (rmDashboardRole() !== 'court_owner') { toast('Only a court owner can cancel a prepared remittance.', 'err'); return; }
+  const record = rmRecordById(id);
+  if (!record || !['awaiting-payment','rejected'].includes(rmStatusKey(record)) || rmAmountSettled(record) > 0) { toast('Only a fully unpaid prepared or rejected remittance can be cancelled.', 'err'); return; }
+  $('rmCancelId').value = rmRecordId(record);
+  $('rmCancelReason').value = '';
+  $('rmCancelTitle').textContent = `CANCEL ${rmRecordRef(record)}`;
+  openRemittanceModal('rmCancelModal', '#rmCancelReason');
+}
+
+async function submitRemittanceCancellation(event) {
+  event?.preventDefault();
+  const id = $('rmCancelId').value;
+  const reason = $('rmCancelReason').value.trim();
+  if (!id || !reason) { toast('Enter a cancellation reason.', 'err'); $('rmCancelReason').focus(); return; }
+  const button = $('rmCancelConfirmBtn');
+  rmSetBusy(button, true, 'Returning balance...');
+  try {
+    if (typeof DB.cancelBookingFeeRemittance !== 'function') throw new Error('The cancellation service is unavailable.');
+    await DB.cancelBookingFeeRemittance(id, reason);
+    closeRemittanceModal('rmCancelModal');
+    toast('Prepared remittance cancelled. Its booking fees are back in the live accumulated balance.', 'inf');
+    await renderRemittances();
+  } catch (error) {
+    console.error('[submitRemittanceCancellation]', error);
+    toast(error?.message || 'Could not cancel prepared remittance.', 'err');
+  } finally {
+    rmSetBusy(button, false);
   }
 }
 
@@ -8962,7 +9637,12 @@ document.addEventListener('DOMContentLoaded', async ()=>{
   applyRoleVisibility(role);
 
   // Modal close on overlay click
-  document.querySelectorAll('.overlay').forEach(ov=>ov.addEventListener('click',e=>{if(e.target===ov)ov.classList.remove('show');}));
+  document.querySelectorAll('.overlay').forEach(ov=>ov.addEventListener('click',e=>{
+    if(e.target!==ov) return;
+    if(ov.id==='verifyModal') closeVerifyModal();
+    else if(['rmPrepareModal','rmPayModal','rmReviewModal','rmDetailModal','rmCancelModal'].includes(ov.id)) closeRemittanceModal(ov.id);
+    else ov.classList.remove('show');
+  }));
 
   // Land on the first section this role is allowed to see
   const firstAllowed = Auth.can('dashboard', role) ? 'dash'
@@ -9019,7 +9699,7 @@ function applyRoleVisibility(role) {
         <div style="font-size:1.7rem">📋</div>
         <div>
           <div style="font-size:1.05rem;font-weight:800;letter-spacing:.5px;color:var(--text,#e8eaf0)">PLATFORM ACCESS & BOOKING FEE AUTHORIZATION AGREEMENT</div>
-          <div style="font-size:.73rem;color:var(--muted,#7a8a9a);margin-top:2px">Pickle Bliss Court Booking System — Version 11 · Configurable Booking Fee Remittance Terms</div>
+          <div style="font-size:.73rem;color:var(--muted,#7a8a9a);margin-top:2px">Pickle Bliss Court Booking System — Version 12 · Accumulated Booking Fee Remittance Terms</div>
         </div>
       </div>
     </div>
@@ -9043,12 +9723,12 @@ function applyRoleVisibility(role) {
         <li>Platform hosting, security, and technical maintenance</li>
       </ul>
 
-      <h4 style="margin:0 0 8px;color:var(--green);font-size:.85rem;letter-spacing:.6px;text-transform:uppercase">3. Booking Fee &amp; Monthly Remittance</h4>
+      <h4 style="margin:0 0 8px;color:var(--green);font-size:.85rem;letter-spacing:.6px;text-transform:uppercase">3. Booking Fee &amp; Accumulated Remittance</h4>
       <p id="agreeFeeIntro" style="margin:0 0 14px">In consideration of the platform access provided at no setup fee, one-time fee, monthly subscription fee, hidden fee, or other platform charge to the Court Owner, the Court Owner <strong>authorizes</strong> the Platform Provider to add the current System Owner-selected <strong>non-refundable booking fee</strong> to each customer transaction processed through the system. This fee is charged to and paid by the <strong>customer/player</strong>, not the Court Owner, and is separate from the court rental fee.<br><br>The System Owner sets the booking fee amount and charging method. The fee may be charged <strong>per booked hour per confirmed booking transaction</strong> or as a <strong>per confirmed booking transaction fee</strong>, added to the player's checkout, and included in the booking-period remittance statement based on booking date.</p>
       <p id="agreeFeeBillable" style="margin:0 0 14px"><strong>When it applies.</strong> The configured booking fee applies only to a <strong>confirmed booking transaction</strong> made through the platform, meaning a booking that successfully reserved a court slot. Bookings that are cancelled before confirmation, rejected during payment verification, expired, or never held a slot are <strong>not charged</strong>.</p>
       <p id="agreeFeeCollection" style="margin:0 0 14px"><strong>Collection.</strong> The Court Owner collects the configured booking fee from the customer together with the court rental fee at the time of booking, and holds the booking fee on behalf of the Platform Provider until remittance. The booking fee is not a fee charged to the Court Owner and is not part of the Court Owner's court rental revenue.</p>
-      <p id="agreeFeeWeekly" style="margin:0 0 14px"><strong>Monthly remittance.</strong> Remittance is settled <strong>monthly</strong>. Each month the Platform Provider issues a statement covering confirmed booking transactions made during the previous <strong>booking calendar month</strong>, regardless of the future court play date. The amount to remit is calculated using the System Owner-selected booking fee amount and charging method in effect when the statement is generated. Each confirmed booking transaction is included <strong>only once</strong>.</p>
-      <p style="margin:0 0 14px"><strong>Due date &amp; method.</strong> Remittance is due within <strong>five (5) calendar days</strong> of the statement date. The Court Owner remits that amount via <strong>GCash</strong> to the booking fee remittance account shown in the dashboard, then submits the GCash transaction reference and a screenshot of the receipt as remittance proof through the "Remit Now" function.</p>
+      <p id="agreeFeeWeekly" style="margin:0 0 14px"><strong>Accumulated remittance every 14th.</strong> Eligible booking fees accumulate continuously until the Court Owner prepares remittance on the <strong>14th day of the month</strong>. At that moment, the system freezes an exact server-recorded cutoff in Asia/Manila time and creates a permanent snapshot of all eligible, unsettled confirmed booking transactions available before that cutoff. Each booking is included <strong>only once</strong>. Eligible bookings at or after the cutoff begin the next accumulated balance for the following 14th.</p>
+      <p style="margin:0 0 14px"><strong>Due date &amp; method.</strong> The accumulated balance is scheduled for remittance on the <strong>14th of each month</strong>. The Court Owner prepares the exact cutoff, remits the frozen amount via <strong>GCash</strong> to the booking fee remittance account shown in the dashboard, and submits the transaction reference and receipt screenshot. The remittance becomes <strong>Settled</strong> only after the System Owner verifies the proof; its permanent record remains available in Remittance History.</p>
       <p style="margin:0 0 14px"><strong>Non-remittance.</strong> Statements not remitted past the due date are marked <strong>overdue</strong>. The Platform Provider may suspend or restrict the Court Owner's access to the booking system until all outstanding statements are settled. Suspension does not waive any amounts already due.</p>
 
       <h4 style="margin:0 0 8px;color:var(--green);font-size:.85rem;letter-spacing:.6px;text-transform:uppercase">4. Court Owner's Revenue</h4>
@@ -9094,7 +9774,7 @@ function applyRoleVisibility(role) {
         <li>You have read and fully understood all terms of this Agreement.</li>
         <li>You are the authorized Court Owner or duly authorized representative.</li>
         <li id="agreeFeeConfirmCollect">You authorize the platform to collect the System Owner-selected booking fee from customers on confirmed booking transactions.</li>
-        <li id="agreeFeeConfirmRemit">You agree to remit the collected booking fees to the Platform Provider <strong>monthly</strong>, due within five (5) calendar days of each statement.</li>
+        <li id="agreeFeeConfirmRemit">You agree to remit the continuously accumulated booking fees to the Platform Provider on the <strong>14th of each month</strong>, using the exact cutoff recorded when remittance is prepared.</li>
         <li>You agree to honor all platform bookings and not circumvent the booking fee.</li>
         <li>You understand the Platform Provider is the software provider only and does not operate the court.</li>
         <li>This electronic signature has the same legal force as a handwritten signature under RA 8792.</li>
@@ -9140,7 +9820,7 @@ function applyRoleVisibility(role) {
 
 <script>
 /* ── AGREEMENT MODAL ── */
-const AGREEMENT_VERSION = 11;
+const AGREEMENT_VERSION = 12;
 let _agreeDrawing = false, _agreeHasSig = false;
 let _agreePrevX = 0, _agreePrevY = 0;
 
@@ -9161,14 +9841,14 @@ async function updateAgreementFeeCopy() {
     : `total booked hours from confirmed booking transactions × ${fmt(cfg.amount)}`;
   const setHtml = (id, html) => { const el = document.getElementById(id); if (el) el.innerHTML = html; };
 
-  setHtml('agreeFeeIntro', `In consideration of the platform access provided at no setup fee, one-time fee, monthly subscription fee, hidden fee, or other platform charge to the Court Owner, the Court Owner <strong>authorizes</strong> the Platform Provider to add the current System Owner-selected <strong>non-refundable booking fee of ${fee}</strong> to each customer transaction processed through the system. This fee is charged to and paid by the <strong>customer/player</strong>, not the Court Owner, and is separate from the court rental fee.<br><br>The System Owner sets the booking fee amount and charging method. The fee is currently configured as <strong>${feeMethod}</strong> at <strong>${fmt(cfg.amount)}</strong>, added to the player's checkout, and included in the booking-period remittance statement based on booking date.`);
+  setHtml('agreeFeeIntro', `In consideration of the platform access provided at no setup fee, one-time fee, monthly subscription fee, hidden fee, or other platform charge to the Court Owner, the Court Owner <strong>authorizes</strong> the Platform Provider to add the current System Owner-selected <strong>non-refundable booking fee of ${fee}</strong> to each customer transaction processed through the system. This fee is charged to and paid by the <strong>customer/player</strong>, not the Court Owner, and is separate from the court rental fee.<br><br>The System Owner sets the booking fee amount and charging method. The fee is currently configured as <strong>${feeMethod}</strong> at <strong>${fmt(cfg.amount)}</strong>, added to the player's checkout, and recorded in the running remittance ledger when the booking becomes eligible.`);
   setHtml('agreeFeeBillable', `<strong>When it applies.</strong> The configured ${configuredFeeText} applies only to a <strong>confirmed booking transaction</strong> made through the platform, meaning a booking that successfully reserved a court slot. Bookings that are cancelled before confirmation, rejected during payment verification, expired, or never held a slot are <strong>not charged</strong>.`);
   setHtml('agreeFeeCollection', `<strong>Collection.</strong> The Court Owner collects the configured ${configuredFeeText} from the customer together with the court rental fee at the time of booking, and holds the booking fee on behalf of the Platform Provider until remittance. The booking fee is not a fee charged to the Court Owner and is not part of the Court Owner's court rental revenue.`);
-  setHtml('agreeFeeWeekly', `<strong>Monthly remittance.</strong> Remittance is settled <strong>monthly</strong>. Each month the Platform Provider issues a statement covering confirmed booking transactions made during the previous <strong>booking calendar month</strong>, regardless of the future court play date. The amount to remit is calculated as <strong>${formula}</strong>. Each confirmed booking transaction is included <strong>only once</strong>.`);
+  setHtml('agreeFeeWeekly', `<strong>Accumulated remittance every 14th.</strong> Eligible booking fees accumulate continuously until the Court Owner prepares remittance on the <strong>14th day of the month</strong>. The system then freezes the exact Asia/Manila server time and snapshots all eligible, unsettled confirmed booking transactions before that cutoff. At the current configuration, the fee calculation is <strong>${formula}</strong>. Each booking is included <strong>only once</strong>; eligible bookings at or after the cutoff start the next balance for the following 14th.`);
   setHtml('agreeFeeRevenue', `All court rental fees set by the Court Owner (e.g. ₱200/hr, ₱250/hr) belong <strong>exclusively to the Court Owner</strong>. The Platform Provider does not take any share of the court rental revenue. The Court Owner receives 100% of the court rental rate from every confirmed booking. Only the separate configured booking fee of <strong>${fee}</strong> paid by the customer is for the Platform Provider.`);
   setHtml('agreeFeeCircumvention', `The Court Owner agrees <strong>not to direct, encourage, or assist customers to bypass the platform</strong> in order to avoid the configured booking fee of <strong>${fee}</strong>. This includes but is not limited to: advertising a direct booking channel at a lower price for platform-visible slots, accepting bookings verbally or via personal chat for slots available on the platform, waiving or hiding the booking fee outside the system, or instructing customers to "book directly" to avoid the fee.<br><br>Circumvention of the booking fee is a material breach of this Agreement and may result in immediate suspension or termination of platform access.`);
   setHtml('agreeFeeConfirmCollect', `You authorize the platform to collect the System Owner-selected booking fee of <strong>${fee}</strong> from customers on confirmed booking transactions.`);
-  setHtml('agreeFeeConfirmRemit', `You agree to remit the collected booking fees to the Platform Provider <strong>monthly</strong>, due within five (5) calendar days of each statement.`);
+  setHtml('agreeFeeConfirmRemit', `You agree to remit the continuously accumulated booking fees to the Platform Provider on the <strong>14th of each month</strong>, using the exact cutoff recorded when remittance is prepared.`);
   setHtml('agreeFeeCheckboxText', `I have read and fully understood the Platform Access &amp; Booking Fee Authorization Agreement above. I authorize the platform to collect the System Owner-selected <strong>${fee}</strong> booking fee from customers on confirmed booking transactions. I agree to honor all platform bookings and not direct customers to book directly to circumvent this fee. I understand that the Platform Provider is the software provider only and does not operate the court. This electronic signature is legally binding under RA 8792.`);
 }
 
@@ -9276,6 +9956,6 @@ async function checkAgreementGate(session) {
 </script>
 
 <script src="supabase.min.js"></script>
-<script src="supabase-config.js?v=20260708-receipts"></script>
+<script src="supabase-config.js?v=20260730-remittance-v1"></script>
 </body>
 </html>

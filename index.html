@@ -3271,7 +3271,7 @@ body.light #splashScreen { background: #071320; }
               </div>
               <div class="pay-amount-toggle" id="gcPayAmtToggle">
                 <div class="pat-btn on" id="gcPat50" onclick="setPayAmount('half')" style="display:none">
-                  <div>50%</div>
+                  <div>Fee + 50% Court</div>
                   <div class="pat-amt" id="gcPat50Amt"></div>
                 </div>
                 <div class="pat-btn" id="gcPat100" onclick="setPayAmount('full')" style="display:none">
@@ -3319,7 +3319,7 @@ body.light #splashScreen { background: #071320; }
               </div>
               <div class="pay-amount-toggle" id="gtPayAmtToggle">
                 <div class="pat-btn on" id="gtPat50" onclick="setPayAmount('half')" style="display:none">
-                  <div>50%</div>
+                  <div>Fee + 50% Court</div>
                   <div class="pat-amt" id="gtPat50Amt"></div>
                 </div>
                 <div class="pat-btn" id="gtPat100" onclick="setPayAmount('full')" style="display:none">
@@ -3367,7 +3367,7 @@ body.light #splashScreen { background: #071320; }
               </div>
               <div class="pay-amount-toggle" id="pnPayAmtToggle">
                 <div class="pat-btn on" id="pnPat50" onclick="setPayAmount('half')" style="display:none">
-                  <div>50%</div>
+                  <div>Fee + 50% Court</div>
                   <div class="pat-amt" id="pnPat50Amt"></div>
                 </div>
                 <div class="pat-btn" id="pnPat100" onclick="setPayAmount('full')" style="display:none">
@@ -3458,7 +3458,7 @@ body.light #splashScreen { background: #071320; }
           </div>
 
           <div class="down-note" id="downNote" style="margin-top:10px">
-            ⚠️ A <strong>50% downpayment</strong> is required to confirm your booking. Follow the payment instructions above.
+            ⚠️ The <strong>full booking fee plus 50% of the court fee</strong> is required to confirm your booking. Follow the payment instructions above.
           </div>
         </div>
 
@@ -3573,7 +3573,7 @@ body.light #splashScreen { background: #071320; }
       <div class="inv-amt-total">Total Amount</div>
       <div class="inv-amt-val" id="iTot">₱0.00</div>
       <div class="inv-amt-down-wrap">
-        <div class="inv-amt-down-label" id="iDownLabel">50% Downpayment Due</div>
+        <div class="inv-amt-down-label" id="iDownLabel">Booking Fee + 50% Court Fee Due</div>
         <div class="inv-amt-down-val" id="iDown">₱0.00</div>
         <div class="inv-amt-down-note" id="iDownNote">—</div>
       </div>
@@ -3728,6 +3728,11 @@ function normalizePlatformFeeType(type) {
   return ['flat', 'booking', 'per_booking', 'per_transaction'].includes(String(type || '').toLowerCase()) ? 'flat' : 'per_hour';
 }
 function calcSvcFee(hrs) { return _serviceFeeType === 'flat' ? _serviceFeeRate : _serviceFeeRate * hrs; }
+function bookingDownpaymentAmount(courtFee, serviceFee) {
+  const court = Number(courtFee || 0);
+  const fee = Number(serviceFee || 0);
+  return payFull ? court + fee : Math.round(((court * 0.5) + fee) * 100) / 100;
+}
 function bookingFeeDisplay(totalFee, hrs) {
   const fee = Number(totalFee || 0);
   const hours = Number(hrs || 0);
@@ -4179,7 +4184,7 @@ function getCourtRepair(courtName, date) {
   ) || null;
 }
 let cachedBookedSlots = new Set(); // cached after renderSlots() — avoids re-fetching on every click
-let payFull = false; // false = 50% downpayment, true = 100% full payment
+let payFull = false; // false = full booking fee + court downpayment, true = 100% full payment
 let cardSel   = { courtId: null, courtName: '', date: null, slots: [], rate: 0, tiers: [] };
 let cardSelections = {};
 let bookingItems = [];
@@ -6689,8 +6694,8 @@ function updatePriceLegacy() {
   const courtTotal = selSlots.reduce((s, h) => s + getRateForHour(h), 0);
   const svcFee = calcSvcFee(hrs);
   const total = courtTotal + svcFee;
-  const half  = total / 2;
-  const payAmt = payFull ? total : half;
+  const downpayment = bookingDownpaymentAmount(courtTotal, svcFee);
+  const payAmt = payFull ? total : downpayment;
   const selectedRates = [...new Set(selSlots.map(h => getRateForHour(h)))].sort((a, b) => a - b);
   const rateLabel = selectedRates.length === 1
     ? `${fmt(selectedRates[0])}/hr`
@@ -6706,11 +6711,11 @@ function updatePriceLegacy() {
   if ($('pDown')) $('pDown').textContent = fmt(payAmt);
 
   // Update toggle button amount labels
-  if ($('gcPat50Amt'))  $('gcPat50Amt').textContent  = fmt(half);
+  if ($('gcPat50Amt'))  $('gcPat50Amt').textContent  = fmt(downpayment);
   if ($('gcPat100Amt')) $('gcPat100Amt').textContent = fmt(total);
-  if ($('gtPat50Amt'))  $('gtPat50Amt').textContent  = fmt(half);
+  if ($('gtPat50Amt'))  $('gtPat50Amt').textContent  = fmt(downpayment);
   if ($('gtPat100Amt')) $('gtPat100Amt').textContent = fmt(total);
-  if ($('pnPat50Amt'))  $('pnPat50Amt').textContent  = fmt(half);
+  if ($('pnPat50Amt'))  $('pnPat50Amt').textContent  = fmt(downpayment);
   if ($('pnPat100Amt')) $('pnPat100Amt').textContent = fmt(total);
 
   // Update payment amount display in QR boxes
@@ -6721,12 +6726,12 @@ function updatePriceLegacy() {
   if ($('bStepPayAmt')) $('bStepPayAmt').textContent = fmt(payAmt);
 
   // Update price breakdown label and down note
-  if ($('pDownLabel')) $('pDownLabel').textContent = payFull ? 'Full Payment' : '50% Downpayment';
+  if ($('pDownLabel')) $('pDownLabel').textContent = payFull ? 'Full Payment' : 'Booking Fee + 50% Court Fee';
   if ($('downNote')) {
     $('downNote').style.display = payFull ? 'none' : '';
     $('downNote').innerHTML = payFull
       ? ''
-      : `⚠️ A <strong>50% downpayment</strong> is required to confirm your booking. ${paymentInstructionText()}`;
+      : `⚠️ The <strong>full booking fee plus 50% of the court fee</strong> is required to confirm your booking. ${paymentInstructionText()}`;
   }
 }
 
@@ -6736,8 +6741,8 @@ function updatePrice() {
   const courtTotal = bookingItemsCourtFee(items);
   const svcFee = bookingItemsServiceFee(items);
   const total = bookingItemsTotal(items);
-  const half = total / 2;
-  const payAmt = payFull ? total : half;
+  const downpayment = bookingDownpaymentAmount(courtTotal, svcFee);
+  const payAmt = payFull ? total : downpayment;
 
   if ($('pHrs')) $('pHrs').textContent  = `${hrs} hr${hrs !== 1 ? 's' : ''}`;
   if ($('pRate')) $('pRate').textContent = bookingItemsRateLabel(items);
@@ -6747,11 +6752,11 @@ function updatePrice() {
   if ($('pTot')) $('pTot').textContent  = fmt(total);
   if ($('pDown')) $('pDown').textContent = fmt(payAmt);
 
-  if ($('gcPat50Amt'))  $('gcPat50Amt').textContent  = fmt(half);
+  if ($('gcPat50Amt'))  $('gcPat50Amt').textContent  = fmt(downpayment);
   if ($('gcPat100Amt')) $('gcPat100Amt').textContent = fmt(total);
-  if ($('gtPat50Amt'))  $('gtPat50Amt').textContent  = fmt(half);
+  if ($('gtPat50Amt'))  $('gtPat50Amt').textContent  = fmt(downpayment);
   if ($('gtPat100Amt')) $('gtPat100Amt').textContent = fmt(total);
-  if ($('pnPat50Amt'))  $('pnPat50Amt').textContent  = fmt(half);
+  if ($('pnPat50Amt'))  $('pnPat50Amt').textContent  = fmt(downpayment);
   if ($('pnPat100Amt')) $('pnPat100Amt').textContent = fmt(total);
 
   if ($('gcDownAmt'))   $('gcDownAmt').textContent   = fmt(payAmt);
@@ -6760,12 +6765,12 @@ function updatePrice() {
   if ($('bStepPayAmtMethod')) $('bStepPayAmtMethod').textContent = fmt(payAmt);
   if ($('bStepPayAmt')) $('bStepPayAmt').textContent = fmt(payAmt);
 
-  if ($('pDownLabel')) $('pDownLabel').textContent = payFull ? 'Full Payment' : '50% Downpayment';
+  if ($('pDownLabel')) $('pDownLabel').textContent = payFull ? 'Full Payment' : 'Booking Fee + 50% Court Fee';
   if ($('downNote')) {
     $('downNote').style.display = payFull ? 'none' : '';
     $('downNote').innerHTML = payFull
       ? ''
-      : `A <strong>50% downpayment</strong> is required to confirm your booking. ${paymentInstructionText()}`;
+      : `The <strong>full booking fee plus 50% of the court fee</strong> is required to confirm your booking. ${paymentInstructionText()}`;
   }
 }
 
@@ -7040,6 +7045,8 @@ function updatePaymentAmountUI() {
     if (!toggle) return;
     const btn50 = $(p + 'Pat50');
     const btn100 = $(p + 'Pat100');
+    const dpLabel = btn50?.querySelector('div:first-child');
+    if (dpLabel) dpLabel.textContent = 'Fee + 50% Court';
 
     if (dpOnly) {
       // Only downpayment — hide toggle and label, auto-select 50%
@@ -7144,8 +7151,10 @@ async function submitBookingLegacy(e) {
   const hrs = selSlots.length;
   const startH = Math.min(...selSlots);
   const endH = Math.max(...selSlots) + 1;
-  const total = selSlots.reduce((s, h) => s + getRateForHour(h), 0) + calcSvcFee(selSlots.length);
-  const downpayment = payFull ? total : total / 2;
+  const courtTotal = selSlots.reduce((s, h) => s + getRateForHour(h), 0);
+  const serviceFee = calcSvcFee(selSlots.length);
+  const total = courtTotal + serviceFee;
+  const downpayment = bookingDownpaymentAmount(courtTotal, serviceFee);
 
   // Use the already-reserved ref from proceedToBook so no new INSERT is needed.
   const bookingRef = _reservedRef || genRef();
@@ -7360,7 +7369,10 @@ async function submitBooking(e) {
 
   const createdAt = _reservationStartedAt || new Date().toISOString();
   const groupTotal = bookingItemsTotal(items);
-  const groupDownpayment = payFull ? groupTotal : groupTotal / 2;
+  const groupDownpayment = bookingDownpaymentAmount(
+    bookingItemsCourtFee(items),
+    bookingItemsServiceFee(items)
+  );
   const sharedGroupRef = items.length > 1 ? (items[0].groupRef || genRef() + '-G') : null;
   const heldRefs = new Set(reservedRefs());
   const status = digitalPay ? 'verifying' : 'pending';
@@ -7385,7 +7397,7 @@ async function submitBooking(e) {
     paymentMethod: payMethod,
     gcashRef: gcashRef || null,
     paymentFlow: payMethod,
-    downpayment: payFull ? item.total : item.total / 2,
+    downpayment: bookingDownpaymentAmount(item.courtFee, item.serviceFee),
     paymentStatus,
     status,
     createdAt,
@@ -7674,7 +7686,7 @@ function showInvoice(b) {
   // Amount
   set('iTot', fmt(b.total));
   set('iDown', fmt(b.downpayment));
-  set('iDownLabel', isFullPay ? 'Full Payment' : '50% Downpayment Due');
+  set('iDownLabel', isFullPay ? 'Full Payment' : 'Full Booking Fee + 50% Court Fee Due');
   set('iDownNote', isRejected ? 'Receipt verification failed. The slot has been released.' :
     isFullPay ? 'Fully paid. No balance due on arrival.' :
     b.gcashRef ? `${payLabel} ref submitted. Owner will verify shortly.` :
@@ -7758,7 +7770,7 @@ function showInvoice(b) {
       ['You\'ll receive a confirmation once the owner verifies payment.', '3'],
     ] : b.paymentMethod === 'cash' ? [
       ['Show this booking ref to the front desk.', '1'],
-      [`Pay the ${isFullPay ? 'full amount' : '50% downpayment'} of <strong>${fmt(b.downpayment)}</strong> in cash on arrival.`, '2'],
+      [`Pay the ${isFullPay ? 'full amount' : 'full booking fee plus 50% court fee'} of <strong>${fmt(b.downpayment)}</strong> in cash on arrival.`, '2'],
       ['Your slot will be confirmed after payment.', '3'],
     ] : [
       ['Show this booking ref to the front desk.', '1'],
@@ -8654,7 +8666,7 @@ async function submitOpenPlay() {
 }
 </script>
 <script src="supabase.min.js"></script>
-<script src="supabase-config.js?v=20260708-receipts"></script>
+<script src="supabase-config.js?v=20260730-remittance-v1"></script>
 
 <!-- MOBILE STICKY BOOK NOW BAR -->
 <div id="mobileBookBar" class="mobile-book-bar" style="display:none">

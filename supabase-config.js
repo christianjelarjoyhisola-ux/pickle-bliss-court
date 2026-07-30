@@ -427,6 +427,34 @@ function rowToAccount(r) {
   };
 }
 
+function _remittanceProofUpload(dataUrl) {
+  const match = String(dataUrl || '').match(/^data:(image\/[a-z0-9.+-]+);base64,([a-z0-9+/=\r\n]+)$/i);
+  if (!match) throw new Error('Choose a valid receipt image.');
+  const mimeType = match[1].toLowerCase();
+  const binary = atob(match[2].replace(/\s/g, ''));
+  if (!binary.length) throw new Error('The receipt image is empty.');
+  if (binary.length > 5 * 1024 * 1024) throw new Error('Receipt image must be 5 MB or smaller.');
+  const bytes = new Uint8Array(binary.length);
+  for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
+  const extByType = {
+    'image/jpeg': 'jpg',
+    'image/jpg': 'jpg',
+    'image/png': 'png',
+    'image/webp': 'webp',
+    'image/heic': 'heic',
+    'image/heif': 'heif',
+  };
+  if (!extByType[mimeType]) {
+    throw new Error('Receipt must be a JPG, PNG, WebP, HEIC, or HEIF image.');
+  }
+  return { bytes, mimeType, extension: extByType[mimeType] };
+}
+
+function _remittanceIdempotencyKey(prefix = 'remit') {
+  const random = globalThis.crypto?.randomUUID?.() || `${Date.now()}-${Math.random().toString(36).slice(2)}`;
+  return `${prefix}-${random}`;
+}
+
 function accountToRow(a) {
   return {
     id:         a.id,
@@ -1161,7 +1189,183 @@ window.DB = {
     if (error) throw error;
   },
 
-  // ---- WEEKLY BILLING (system owner) ----
+  // ---- ACCUMULATED BOOKING-FEE REMITTANCE ----
+  // Financial mutations are RPC-only so the cutoff, immutable booking items,
+  // proof attempts, and audit events are committed in one database transaction.
+  async getBookingFeeRemittanceDashboard() {
+    const [dashboardResult, historyResult, legacyResult] = await Promise.all([
+      _sb.rpc('get_booking_fee_remittance_dashboard'),
+      _sb.rpc('get_booking_fee_remittance_history', { p_limit: 100, p_before: null }),
+      _sb.from('weekly_fees')
+        .select('id,court_owner_email,week_start,week_end,bookings_count,fee_per_booking,amount_due,status,billed_refs,generated_at,sent_at,due_at,paid_at,paid_ref,paid_note,paid_by_user_id')
+        .eq('status', 'paid')
+        .order('paid_at', { ascending: false }),
+    ]);
+    if (dashboardResult.error) throw new Error(_extractFnError(dashboardResult.error, 'Could not load remittance dashboard'));
+    if (historyResult.error) throw new Error(_extractFnError(historyResult.error, 'Could not load remittance history'));
+    const dashboard = dashboardResult.data || {};
+    const allHistory = Array.isArray(historyResult.data) ? historyResult.data : [];
+    const active = Array.isArray(dashboard.open_remittances) ? dashboard.open_remittances : [];
+    const legacyPaid = legacyResult.error ? [] : (legacyResult.data || []).map(row => {
+      const refs = Array.isArray(row.billed_refs) ? row.billed_refs : [];
+      const amount = Number(row.amount_due) || 0;
+      return {
+        id: `legacy-${row.id}`,
+        legacy_weekly_fee_id: row.id,
+        is_legacy: true,
+        remittance_ref: `LEGACY-${String(row.week_start || '').replace(/-/g, '')}-${String(row.id || '').slice(0, 6).toUpperCase()}`,
+        status: 'settled',
+        coverage_start_at: row.week_start ? `${row.week_start}T00:00:00+08:00` : null,
+        cutoff_at: row.week_end ? `${row.week_end}T23:59:59+08:00` : null,
+        cycle_due_on: String(row.due_at || row.week_end || '').slice(0, 10) || null,
+        bookings_count: Number(row.bookings_count) || refs.length,
+        amount_due: amount,
+        amount_settled: amount,
+        remaining_balance: 0,
+        prepared_at: row.generated_at || row.sent_at || null,
+        prepared_by_email: row.court_owner_email || null,
+        settled_at: row.paid_at || null,
+        billed_refs: refs,
+        latest_payment: {
+          amount_submitted: amount,
+          amount_accepted: amount,
+          payment_method: 'legacy',
+          payment_reference: row.paid_ref || '',
+          note: row.paid_note || 'Imported from the previous statement ledger.',
+          status: 'accepted',
+          reviewed_at: row.paid_at || null,
+          reviewed_by_user_id: row.paid_by_user_id || null,
+        },
+      };
+    });
+    const history = [
+      ...allHistory.filter(row => ['settled', 'cancelled'].includes(String(row?.status || '').toLowerCase())),
+      ...legacyPaid,
+    ].sort((a, b) => new Date(b.settled_at || b.prepared_at || 0) - new Date(a.settled_at || a.prepared_at || 0));
+    const historySettledTotal = history
+      .filter(row => String(row?.status || '').toLowerCase() === 'settled')
+      .reduce((sum, row) => sum + (Number(row?.amount_settled ?? row?.amount_due) || 0), 0);
+    const legacySettledTotal = legacyPaid.reduce((sum, row) => sum + (Number(row.amount_settled) || 0), 0);
+    const newSettledTotal = dashboard.settled_total == null
+      ? historySettledTotal - legacySettledTotal
+      : (Number(dashboard.settled_total) || 0);
+    return {
+      ...dashboard,
+      live: dashboard.accumulated || {},
+      active,
+      history,
+      settled_total: newSettledTotal + legacySettledTotal,
+    };
+  },
+
+  async getBookingFeeRemittanceHistory({ limit = 30, before = null } = {}) {
+    const { data, error } = await _sb.rpc('get_booking_fee_remittance_history', {
+      p_limit: Math.max(1, Math.min(100, Number(limit) || 30)),
+      p_before: before || null,
+    });
+    if (error) throw new Error(_extractFnError(error, 'Could not load remittance history'));
+    return Array.isArray(data) ? data : (data || []);
+  },
+
+  async getBookingFeeRemittanceDetail(remittanceId) {
+    const { data, error } = await _sb.rpc('get_booking_fee_remittance_detail', {
+      p_remittance_id: remittanceId,
+    });
+    if (error) throw new Error(_extractFnError(error, 'Could not load remittance details'));
+    return data || null;
+  },
+
+  async prepareBookingFeeRemittance({ ownerOverride = false, overrideDueOn = null, overrideReason = null } = {}) {
+    const { data, error } = await _sb.rpc('prepare_booking_fee_remittance', {
+      p_idempotency_key: _remittanceIdempotencyKey('prepare'),
+      p_owner_override: ownerOverride === true,
+      p_override_due_on: overrideDueOn || null,
+      p_override_reason: overrideReason || null,
+    });
+    if (error) throw new Error(_extractFnError(error, 'Could not prepare remittance'));
+    return data || null;
+  },
+
+  async submitBookingFeeRemittance(remittanceId, {
+    amount = null,
+    paymentMethod = 'gcash',
+    paymentRef = '',
+    proofUrl = '',
+    proofData = '',
+    note = '',
+  } = {}) {
+    const image = _remittanceProofUpload(proofData || proofUrl);
+    const { data: authData, error: authError } = await _sb.auth.getUser();
+    if (authError || !authData?.user?.id) throw new Error('Your session expired. Please sign in again.');
+
+    const safeRemittanceId = String(remittanceId || '').replace(/[^a-z0-9-]/gi, '');
+    if (!safeRemittanceId) throw new Error('Remittance record is missing.');
+    const objectName = `${Date.now()}-${_remittanceIdempotencyKey('proof').replace(/[^a-z0-9-]/gi, '')}.${image.extension}`;
+    const proofPath = `${safeRemittanceId}/${authData.user.id}/${objectName}`;
+    const { error: uploadError } = await _sb.storage
+      .from('remittance-proofs')
+      .upload(proofPath, image.bytes, { contentType: image.mimeType, upsert: false });
+    if (uploadError) throw new Error(_extractFnError(uploadError, 'Could not upload remittance receipt'));
+
+    const { data, error } = await _sb.rpc('submit_booking_fee_remittance', {
+      p_remittance_id: remittanceId,
+      p_amount: amount == null ? null : Number(amount),
+      p_payment_method: String(paymentMethod || 'gcash').toLowerCase(),
+      p_payment_reference: String(paymentRef || '').trim(),
+      p_proof_path: proofPath,
+      p_note: String(note || '').trim() || null,
+      p_idempotency_key: _remittanceIdempotencyKey('submit'),
+    });
+    if (error) {
+      throw new Error(_extractFnError(error, 'Could not submit remittance proof'));
+    }
+    return data || null;
+  },
+
+  async getBookingFeeRemittanceProofUrl(proofPath, expiresIn = 300) {
+    const path = String(proofPath || '').trim();
+    if (!path) throw new Error('No remittance receipt is attached.');
+    const { data, error } = await _sb.storage
+      .from('remittance-proofs')
+      .createSignedUrl(path, Math.max(60, Math.min(900, Number(expiresIn) || 300)));
+    if (error || !data?.signedUrl) throw new Error(_extractFnError(error, 'Could not open remittance receipt'));
+    return data.signedUrl;
+  },
+
+  async getBookingFeeRemittanceProofSignedUrl(proofPath, expiresIn = 300) {
+    return this.getBookingFeeRemittanceProofUrl(proofPath, expiresIn);
+  },
+
+  async reviewBookingFeeRemittancePayment(paymentId, {
+    approve = false,
+    decision = null,
+    amountAccepted = null,
+    note = '',
+  } = {}) {
+    const requestedDecision = String(decision || (approve ? 'accept' : 'reject')).toLowerCase();
+    const normalizedDecision = requestedDecision === 'approve' ? 'accept' : requestedDecision;
+    const { data, error } = await _sb.rpc('review_booking_fee_remittance_payment', {
+      p_payment_id: paymentId,
+      p_decision: normalizedDecision,
+      p_amount_accepted: amountAccepted == null ? null : Number(amountAccepted),
+      p_review_note: String(note || '').trim() || null,
+      p_idempotency_key: _remittanceIdempotencyKey('review'),
+    });
+    if (error) throw new Error(_extractFnError(error, 'Could not review remittance payment'));
+    return data || null;
+  },
+
+  async cancelBookingFeeRemittance(remittanceId, reason = '') {
+    const { data, error } = await _sb.rpc('cancel_booking_fee_remittance', {
+      p_remittance_id: remittanceId,
+      p_reason: String(reason || '').trim(),
+      p_idempotency_key: _remittanceIdempotencyKey('cancel'),
+    });
+    if (error) throw new Error(_extractFnError(error, 'Could not cancel remittance'));
+    return data || null;
+  },
+
+  // ---- LEGACY MONTHLY BILLING (read-only compatibility) ----
   async getWeeklyFees() {
     try {
       // Use REST API directly to bypass schema cache
@@ -1936,6 +2140,27 @@ window.DB = {
       else db.agreements.push(row);
       writeDb(db);
     },
+    async getBookingFeeRemittanceDashboard() {
+      const now = new Date();
+      const next = new Date(now.getFullYear(), now.getMonth() + (now.getDate() > 14 ? 1 : 0), 14);
+      return {
+        server_now: now.toISOString(),
+        role: Auth.getSession()?.role || 'court_owner',
+        next_due_on: `${next.getFullYear()}-${String(next.getMonth() + 1).padStart(2, '0')}-14`,
+        can_prepare: false,
+        live: { booking_groups_count: 0, booking_rows_count: 0, total_billable_hours: 0, amount: 0 },
+        active: null,
+        history: [],
+      };
+    },
+    async getBookingFeeRemittanceHistory() { return []; },
+    async getBookingFeeRemittanceDetail() { return null; },
+    async prepareBookingFeeRemittance() { throw new Error('Remittance preparation requires Supabase.'); },
+    async submitBookingFeeRemittance() { throw new Error('Remittance submission requires Supabase.'); },
+    async getBookingFeeRemittanceProofUrl() { throw new Error('No remittance receipt is stored in local data mode.'); },
+    async getBookingFeeRemittanceProofSignedUrl() { throw new Error('No remittance receipt is stored in local data mode.'); },
+    async reviewBookingFeeRemittancePayment() { throw new Error('Remittance review requires Supabase.'); },
+    async cancelBookingFeeRemittance() { throw new Error('Remittance cancellation requires Supabase.'); },
     async getWeeklyFees() { return readDb().weeklyFees; },
     async saveWeeklyFee(statement) {
       const db = readDb();
@@ -1971,8 +2196,8 @@ window.Auth = {
   ROLES: ['owner', 'court_owner', 'staff', 'host'],
   ROLE_LABELS: { owner: 'System Owner', court_owner: 'Court Owner', staff: 'Court Staff', host: 'Open Play Host' },
   ROLE_PERMISSIONS: {
-    owner:       ['dashboard', 'bookings', 'payment_review', 'reports', 'courts', 'open_play', 'host_open_play', 'maintenance', 'payments', 'accounts', 'booking_delete', 'export', 'settings', 'owner_only'],
-    court_owner: ['dashboard', 'bookings', 'payment_review', 'reports', 'courts', 'open_play', 'host_open_play', 'maintenance', 'payments', 'export', 'settings', 'court_owner_only'],
+    owner:       ['dashboard', 'bookings', 'payment_review', 'reports', 'courts', 'open_play', 'host_open_play', 'remittances', 'maintenance', 'payments', 'accounts', 'booking_delete', 'export', 'settings', 'owner_only'],
+    court_owner: ['dashboard', 'bookings', 'payment_review', 'reports', 'courts', 'open_play', 'host_open_play', 'remittances', 'maintenance', 'payments', 'export', 'settings', 'court_owner_only'],
     staff:       ['bookings', 'open_play', 'payment_review'],
     host:        ['host_open_play'],
   },

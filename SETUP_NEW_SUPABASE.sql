@@ -6,6 +6,14 @@
 -- This file is a consolidated baseline of the migration history.
 -- Do not run it as a replacement for migrations on an existing
 -- production database unless you have reviewed the seed/upsert data.
+--
+-- REQUIRED FRESH-INSTALL FOLLOW-UP:
+-- After this baseline succeeds, run these migrations in order:
+--   1. 20260713213000_accumulated_booking_fee_remittances.sql
+--   2. 20260713233000_remittance_late_cycle_due_fix.sql
+--   3. 20260713234500_remittance_audit_metrics.sql
+-- They install the exact-cutoff ledger, private proof storage, security
+-- policies, due-cycle correction, reconciled metrics, and RPCs.
 -- ============================================================
 
 create extension if not exists pgcrypto;
@@ -1251,9 +1259,10 @@ notify pgrst, 'reload schema';
 -- DONE
 --
 -- Next steps:
--- 1. Authentication -> Providers -> Email -> disable Confirm email.
--- 2. Project Settings -> API -> copy Project URL and anon public key.
--- 3. Update .env.local / supabase-config.js for the cloned app.
--- 4. Run create-accounts.js with a service-role key to create dashboard users.
--- 5. Deploy edge functions and configure their required secrets.
+-- 1. Run the three 20260713 remittance migrations listed at the top in order.
+-- 2. Authentication -> Providers -> Email -> disable Confirm email.
+-- 3. Project Settings -> API -> copy Project URL and anon public key.
+-- 4. Update .env.local / supabase-config.js for the cloned app.
+-- 5. Run create-accounts.js with a service-role key to create dashboard users.
+-- 6. Deploy edge functions and configure their required secrets.
 -- ============================================================

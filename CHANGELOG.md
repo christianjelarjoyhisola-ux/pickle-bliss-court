@@ -6,6 +6,34 @@ Types: **Added**, **Changed**, **Fixed**, **Removed**, **Security**, **DB**
 
 ---
 
+## [2026-07-30] - Accumulated Booking Fee Remittances
+
+### Added
+- **Dedicated Remittances workspace** - owners and court owners can view the live accumulated platform-fee balance, prepare an exact-cutoff remittance, upload private payment proof, review partial payments, and inspect permanent settlement history from a responsive mobile-friendly dashboard.
+- **Permanent remittance ledger** - each prepared batch freezes its eligible bookings at the database server timestamp and records immutable line items, payment attempts, review decisions, balances, and audit events.
+- **Reconciled fee metrics** - live balances and frozen permanent records now show unique reservations, individual court-booking rows, billable court-hours, and the exact immutable rate/type calculation behind the remittance amount.
+
+### Changed
+- **Monthly settlement cycle** - platform booking fees now accumulate continuously until the court owner prepares the amount due on the 14th; fees earned after that exact cutoff automatically remain for the next 14th.
+- **Late-cycle protection** - if an owner catches up after a missed remittance cycle, fees earned after that real cutoff wait for the next upcoming 14th instead of becoming immediately overdue.
+- **Legacy statement transition** - unpaid weekly statements are superseded and their bookings return to the live accumulated balance, while previously paid legacy history remains retained.
+- **Downpayment fee allocation** - customer downpayments now include the full platform booking fee plus 50% of the court fee, ensuring the amount held for remittance was actually collected.
+- **Exceptional cutoff** - the System Owner can prepare a reasoned, permanently audited override outside the normal 14th schedule so an authorized next-day settlement can proceed without weakening the regular court-owner rule.
+- **Mixed fee presentation** - remittances containing both per-hour and flat fee snapshots display separate calculation lines instead of assuming one current rate; flat fees are reconciled by court-booking row and per-hour fees by billable court-hours.
+- **Truthful legacy display** - older paid statements keep their known amount and booking-row history, while unavailable reservation, hours, and rate-breakdown fields are shown as legacy data not recorded instead of misleading zero values.
+
+### Security
+- **Server-owned financial records** - database RPCs, role checks, immutable fee snapshots, advisory locking, idempotency, and append-only settlement records prevent client-side amount changes, duplicate cutoffs, and post-settlement tampering.
+- **Private remittance proof storage** - payment screenshots use a restricted private bucket with signed owner/court-owner access and file type and size limits.
+
+### DB
+- **Exact-cutoff remittance migration** - added accumulated booking-fee snapshots, remittance batches and items, payment proof/review records, audit events, legacy weekly-statement reconciliation, and dashboard/history/detail RPCs.
+- **Fresh-install requirement** - documented the three remittance migrations that must run in order after the consolidated Supabase baseline.
+
+**Files affected:** `admin.html`, `index.html`, `supabase-config.js`, `SETUP_NEW_SUPABASE.sql`, `CHANGELOG.md`, `supabase/migrations/20260713213000_accumulated_booking_fee_remittances.sql`, `supabase/migrations/20260713233000_remittance_late_cycle_due_fix.sql`, `supabase/migrations/20260713234500_remittance_audit_metrics.sql`
+
+---
+
 ## [2026-07-01] - Deleted Booking Recovery Archive
 
 ### DB
