@@ -7252,9 +7252,9 @@ function rmRecordCard(record) {
   const actions = [
     `<button class="btn btn-g btn-sm" type="button" onclick="openRemittanceDetails('${jsArg(id)}')">View Details</button>`,
   ];
-  if (role === 'court_owner' && ['awaiting-payment','overdue','rejected'].includes(status)) {
-    actions.push(`<button class="btn btn-p btn-sm" type="button" onclick="openRemittancePayment('${jsArg(id)}')">Remit Now</button>`);
-    if (['awaiting-payment','rejected'].includes(status) && rmAmountSettled(record) === 0) actions.push(`<button class="btn btn-d btn-sm" type="button" onclick="openRemittanceCancellation('${jsArg(id)}')">Cancel</button>`);
+  if (['owner', 'court_owner'].includes(role) && ['awaiting-payment','overdue','rejected'].includes(status)) {
+    actions.push(`<button class="btn btn-p btn-sm" type="button" onclick="openRemittancePayment('${jsArg(id)}')">${role === 'owner' ? 'Record Received Payment' : 'Remit Now'}</button>`);
+    if (role === 'court_owner' && ['awaiting-payment','rejected'].includes(status) && rmAmountSettled(record) === 0) actions.push(`<button class="btn btn-d btn-sm" type="button" onclick="openRemittanceCancellation('${jsArg(id)}')">Cancel</button>`);
   }
   if (role === 'owner' && status === 'under-review') {
     actions.push(`<button class="btn btn-p btn-sm" type="button" onclick="openRemittanceReview('${jsArg(id)}')">Review Proof</button>`);
@@ -7586,22 +7586,24 @@ async function prepareRemittanceNow() {
 }
 
 async function openRemittancePayment(id) {
-  if (rmDashboardRole() !== 'court_owner') { toast('Only a court owner can submit remittance.', 'err'); return; }
+  const role = rmDashboardRole();
+  if (!['owner', 'court_owner'].includes(role)) { toast('Only a system owner or court owner can record remittance proof.', 'err'); return; }
   const record = rmRecordById(id);
   if (!record) { toast('Remittance record not found. Please refresh.', 'err'); return; }
   try {
     const settings = await DB.getSettings();
     const accountNumber = String(settings.platform_gcash_number || '');
     const accountName = String(settings.platform_gcash_name || '');
-    if (!accountNumber) { toast('The system owner has not configured a remittance GCash account yet.', 'err'); return; }
+    if (role === 'court_owner' && !accountNumber) { toast('The system owner has not configured a remittance GCash account yet.', 'err'); return; }
     const reference = rmRecordRef(record);
     const amount = rmAmountRemaining(record);
+    $('rmPayTitle').textContent = role === 'owner' ? 'RECORD RECEIVED PAYMENT' : 'REMIT BOOKING FEES';
     $('rmPayId').value = rmRecordId(record);
     $('rmPayRefLabel').textContent = reference;
     $('rmPayCoverage').textContent = rmCoverageLabel(record);
     $('rmPayHeroAmount').textContent = fmt(amount);
     $('rmPayFeeBreakdown').innerHTML = rmFeeBreakdownHtml(record);
-    $('rmPayAccountNumber').textContent = accountNumber;
+    $('rmPayAccountNumber').textContent = accountNumber || 'Received via Messenger';
     $('rmPayAccountName').textContent = accountName || 'System owner';
     $('rmPayReferenceNote').textContent = reference;
     $('rmPayAmount').value = amount.toFixed(2);
@@ -7671,7 +7673,9 @@ async function submitRemittancePayment(event) {
     if (typeof DB.submitBookingFeeRemittance !== 'function') throw new Error('The payment-submission service is unavailable.');
     await DB.submitBookingFeeRemittance(id, { paymentRef, note, proofUrl:_rmState.proofData, amount });
     closeRemittanceModal('rmPayModal');
-    toast('Remittance proof submitted. It is now waiting for system-owner verification.');
+    toast(rmDashboardRole() === 'owner'
+      ? 'Received payment recorded. Review the proof to settle the remittance.'
+      : 'Remittance proof submitted. It is now waiting for system-owner verification.');
     await renderRemittances();
   } catch (error) {
     console.error('[submitRemittancePayment]', error);
