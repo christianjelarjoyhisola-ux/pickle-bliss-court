@@ -2356,7 +2356,7 @@ body.light #splashScreen { background: #071320; }
 .booking-notice-pop {
   position:fixed;
   inset:0;
-  z-index:999;
+  z-index:1100;
   display:none;
   align-items:center;
   justify-content:center;
@@ -2367,34 +2367,54 @@ body.light #splashScreen { background: #071320; }
 .booking-notice-pop.show { display:flex; animation:bookingNoticeFade .2s ease both; }
 @keyframes bookingNoticeFade { from{opacity:0} to{opacity:1} }
 .booking-notice-card {
-  width:min(520px,100%);
-  max-height:calc(100vh - 24px);
+  width:min(660px,100%);
+  max-height:calc(100vh - 32px);
+  max-height:calc(100dvh - 32px);
   overflow-x:hidden;
   overflow-y:auto;
   border:1px solid rgba(var(--ac),.28);
-  border-radius:20px;
+  border-radius:22px;
   background:var(--card);
   box-shadow:0 28px 80px rgba(0,0,0,.42);
   animation:bookingNoticeIn .28s cubic-bezier(.2,.8,.2,1) both;
 }
 @keyframes bookingNoticeIn { from{opacity:0;transform:translateY(14px) scale(.98)} to{opacity:1;transform:translateY(0) scale(1)} }
 .booking-notice-head {
-  padding:18px 22px 0;
+  padding:24px 26px 0;
   display:flex;
-  align-items:center;
+  align-items:flex-start;
   justify-content:space-between;
-  gap:16px;
+  gap:20px;
 }
 .booking-notice-label {
+  display:inline-flex;
+  align-items:center;
+  min-height:24px;
+  padding:4px 9px;
+  border:1px solid rgba(var(--ac),.22);
+  border-radius:999px;
+  background:rgba(var(--ac),.08);
   color:var(--accent);
-  font-size:.64rem;
+  font-size:.61rem;
   font-weight:900;
-  letter-spacing:1.2px;
+  letter-spacing:1.1px;
   text-transform:uppercase;
 }
+.booking-notice-heading { min-width:0; }
+.booking-notice-heading h2 {
+  margin-top:12px;
+  max-width:520px;
+  font-family:'Outfit',sans-serif;
+  font-size:clamp(1.8rem,4vw,2.35rem);
+  font-weight:900;
+  letter-spacing:-.6px;
+  line-height:1.06;
+}
+.booking-notice-heading h2 span { color:var(--accent); }
 .booking-notice-x {
   width:34px;
   height:34px;
+  flex:0 0 34px;
   display:flex;
   align-items:center;
   justify-content:center;
@@ -2407,35 +2427,25 @@ body.light #splashScreen { background: #071320; }
 }
 .booking-notice-x:hover,
 .booking-notice-x:focus-visible { border-color:var(--accent); color:var(--accent); outline:none; }
-.booking-notice-body { padding:14px 22px 22px; }
-.booking-notice-body h2 {
-  max-width:450px;
-  font-family:'Outfit',sans-serif;
-  font-size:clamp(1.65rem,5vw,2.25rem);
-  font-weight:900;
-  letter-spacing:-.5px;
-  line-height:1.08;
-}
-.booking-notice-body h2 span { color:var(--accent); }
-.booking-notice-warning {
+.booking-notice-body { padding:16px 26px 24px; }
+.booking-notice-summary {
   width:100%;
-  margin-top:12px;
-  padding:11px 12px;
-  display:flex;
-  align-items:center;
-  gap:10px;
-  border:1px solid rgba(var(--ac),.28);
+  margin:0;
+  padding:12px 14px;
+  display:grid;
+  grid-template-columns:28px minmax(0,1fr);
+  align-items:start;
+  gap:11px;
+  border:1px solid rgba(var(--ac),.2);
   border-radius:10px;
-  background:rgba(var(--ac),.09);
+  background:rgba(var(--ac),.08);
   color:var(--text);
   font-size:.8rem;
-  font-weight:800;
-  line-height:1.4;
+  line-height:1.5;
 }
-.booking-notice-warning i {
-  width:24px;
-  height:24px;
-  flex:0 0 24px;
+.booking-notice-summary i {
+  width:28px;
+  height:28px;
   display:flex;
   align-items:center;
   justify-content:center;
@@ -2446,59 +2456,74 @@ body.light #splashScreen { background: #071320; }
   font-style:normal;
   font-weight:900;
 }
-.booking-notice-body p { margin-top:11px; color:var(--muted); font-size:.88rem; line-height:1.6; }
+.booking-notice-summary strong { display:block; margin-bottom:1px; color:var(--text); font-weight:900; }
+.booking-notice-summary span span { color:var(--muted); font-weight:600; }
 .booking-notice-steps {
-  margin-top:15px;
+  margin:16px 0 0;
   display:grid;
-  grid-template-columns:1fr;
-  gap:7px;
+  grid-template-columns:repeat(3,minmax(0,1fr));
+  gap:9px;
   list-style:none;
   counter-reset:booking-notice-step;
 }
 .booking-notice-steps li {
   counter-increment:booking-notice-step;
   min-width:0;
-  padding:10px 11px;
-  display:grid;
-  grid-template-columns:28px minmax(0,1fr);
-  align-items:center;
-  gap:10px;
+  min-height:132px;
+  padding:14px;
+  display:flex;
+  flex-direction:column;
+  align-items:flex-start;
+  gap:11px;
   border:1px solid var(--border);
-  border-radius:10px;
+  border-radius:12px;
   background:var(--input);
-  color:var(--text);
-  font-size:.78rem;
-  font-weight:700;
-  line-height:1.4;
 }
 .booking-notice-steps li::before {
-  content:counter(booking-notice-step);
-  width:28px;
-  height:28px;
+  content:'0' counter(booking-notice-step);
+  width:32px;
+  height:32px;
   display:flex;
   align-items:center;
   justify-content:center;
   border-radius:50%;
-  background:rgba(var(--ac),.10);
+  background:rgba(var(--ac),.1);
   color:var(--accent);
-  font-size:.76rem;
+  font-size:.68rem;
   font-weight:900;
 }
+.booking-notice-step-copy { min-width:0; }
+.booking-notice-step-copy strong {
+  display:block;
+  color:var(--text);
+  font-size:.8rem;
+  font-weight:900;
+  line-height:1.25;
+}
+.booking-notice-step-copy span {
+  display:block;
+  margin-top:4px;
+  color:var(--muted);
+  font-size:.72rem;
+  font-weight:600;
+  line-height:1.45;
+}
 .booking-notice-foot {
-  padding:14px 22px;
+  padding:15px 26px;
   display:flex;
   align-items:center;
   justify-content:space-between;
-  gap:14px;
+  gap:18px;
   border-top:1px solid var(--border);
   background:var(--input);
 }
-.booking-notice-footnote { max-width:210px; color:var(--muted); font-size:.71rem; font-weight:700; line-height:1.4; }
+.booking-notice-footnote { max-width:290px; color:var(--muted); font-size:.72rem; font-weight:700; line-height:1.45; }
+.booking-notice-footnote strong { color:var(--text); font-weight:900; }
 .booking-notice-continue {
-  min-height:42px;
-  padding:10px 15px;
+  min-height:44px;
+  padding:11px 18px;
   border:1px solid var(--accent);
-  border-radius:9px;
+  border-radius:10px;
   background:var(--accent);
   color:#fff;
   font-family:'Outfit',sans-serif;
@@ -2509,16 +2534,26 @@ body.light #splashScreen { background: #071320; }
 }
 .booking-notice-continue:hover { background:var(--accent-dark); transform:translateY(-1px); }
 .booking-notice-continue:focus-visible { outline:3px solid rgba(var(--ac),.24); outline-offset:2px; }
-@media(max-width:520px) {
-  .booking-notice-pop { padding:12px; align-items:center; }
+@media(max-width:600px) {
+  .booking-notice-pop { padding:10px; align-items:center; }
   .booking-notice-card { border-radius:18px; }
-  .booking-notice-head { padding:16px 18px 0; }
-  .booking-notice-body { padding:12px 18px 18px; }
-  .booking-notice-body h2 { font-size:1.65rem; }
-  .booking-notice-steps { gap:5px; }
-  .booking-notice-steps li { padding:9px 10px; font-size:.72rem; }
-  .booking-notice-foot { padding:12px 18px; flex-direction:column; align-items:stretch; }
-  .booking-notice-footnote { max-width:none; text-align:center; }
+  .booking-notice-head { padding:18px 18px 0; }
+  .booking-notice-heading h2 { margin-top:9px; font-size:1.65rem; }
+  .booking-notice-body { padding:13px 18px 18px; }
+  .booking-notice-summary { padding:10px 11px; font-size:.74rem; }
+  .booking-notice-steps { grid-template-columns:1fr; gap:7px; }
+  .booking-notice-steps li {
+    min-height:0;
+    padding:11px 12px;
+    display:grid;
+    grid-template-columns:32px minmax(0,1fr);
+    align-items:start;
+    gap:10px;
+  }
+  .booking-notice-steps li::before { grid-column:1; grid-row:1; }
+  .booking-notice-step-copy { grid-column:2; grid-row:1; }
+  .booking-notice-foot { padding:13px 18px 16px; flex-direction:column; align-items:stretch; gap:10px; }
+  .booking-notice-footnote { max-width:none; text-align:left; }
   .booking-notice-continue { width:100%; }
 }
 
@@ -2878,22 +2913,26 @@ body.light #splashScreen { background: #071320; }
 <div class="booking-notice-pop" id="bookingNotice" aria-hidden="true">
   <div class="booking-notice-card" role="dialog" aria-modal="true" aria-labelledby="bookingNoticeTitle" aria-describedby="bookingNoticeDescription">
     <div class="booking-notice-head">
-      <span class="booking-notice-label">Important · Before you pay</span>
+      <div class="booking-notice-heading">
+        <span class="booking-notice-label">Before you pay</span>
+        <h2 id="bookingNoticeTitle">Reserve first. <span>Pay second.</span></h2>
+      </div>
       <button type="button" class="booking-notice-x" onclick="closeBookingNotice()" aria-label="Close booking reminder">&times;</button>
     </div>
     <div class="booking-notice-body">
-      <h2 id="bookingNoticeTitle">Reserve first. <span>Pay second.</span></h2>
-      <div class="booking-notice-warning" role="note"><i aria-hidden="true">!</i><span>Sending payment alone does not reserve a court.</span></div>
-      <p id="bookingNoticeDescription">Please follow the booking steps so your payment is matched to an available court and time.</p>
+      <p class="booking-notice-summary" id="bookingNoticeDescription" role="note">
+        <i aria-hidden="true">!</i>
+        <span><strong>Payment alone does not reserve a court.</strong><span>Choose your court and time in the booking form first.</span></span>
+      </p>
       <ol class="booking-notice-steps" aria-label="Correct booking order">
-        <li>Select an available court, date, and time.</li>
-        <li>Tap <strong>Book Now</strong> to hold your slot for 15 minutes.</li>
-        <li>Pay the exact amount shown in the booking form and upload your receipt.</li>
+        <li><span class="booking-notice-step-copy"><strong>Choose your slot</strong><span>Select an available court, date, and time.</span></span></li>
+        <li><span class="booking-notice-step-copy"><strong>Tap Book Now</strong><span>We will hold your selected slot for 15 minutes.</span></span></li>
+        <li><span class="booking-notice-step-copy"><strong>Then pay</strong><span>Pay the amount shown and upload your receipt.</span></span></li>
       </ol>
     </div>
     <div class="booking-notice-foot">
-      <span class="booking-notice-footnote">Your booking is confirmed only after payment verification.</span>
-      <button type="button" class="booking-notice-continue" id="bookingNoticeContinue" onclick="continueToCourts()">I understand — view courts →</button>
+      <span class="booking-notice-footnote"><strong>Your slot is held after Book Now.</strong> Confirmation follows payment verification.</span>
+      <button type="button" class="booking-notice-continue" id="bookingNoticeContinue" onclick="continueToCourts()">View available courts →</button>
     </div>
   </div>
 </div>
