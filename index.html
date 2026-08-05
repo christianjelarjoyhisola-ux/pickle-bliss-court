@@ -2352,8 +2352,8 @@ footer { background:var(--card); border-top:1px solid var(--border); padding:40p
 /* Light mode overrides for splash */
 body.light #splashScreen { background: #071320; }
 
-/* Court owner advertisement */
-.owner-ad-pop {
+/* Booking-before-payment reminder */
+.booking-notice-pop {
   position:fixed;
   inset:0;
   z-index:999;
@@ -2361,38 +2361,38 @@ body.light #splashScreen { background: #071320; }
   align-items:center;
   justify-content:center;
   padding:18px;
-  background:rgba(19,6,6,.68);
+  background:rgba(19,6,6,.76);
   backdrop-filter:blur(8px);
 }
-.owner-ad-pop.show { display:flex; animation:ownerAdFade .2s ease both; }
-@keyframes ownerAdFade { from{opacity:0} to{opacity:1} }
-.owner-ad-card {
+.booking-notice-pop.show { display:flex; animation:bookingNoticeFade .2s ease both; }
+@keyframes bookingNoticeFade { from{opacity:0} to{opacity:1} }
+.booking-notice-card {
   width:min(520px,100%);
-  overflow:hidden;
-  border:1px solid var(--border);
+  max-height:calc(100vh - 24px);
+  overflow-x:hidden;
+  overflow-y:auto;
+  border:1px solid rgba(var(--ac),.28);
   border-radius:20px;
   background:var(--card);
   box-shadow:0 28px 80px rgba(0,0,0,.42);
-  animation:ownerAdIn .28s cubic-bezier(.2,.8,.2,1) both;
+  animation:bookingNoticeIn .28s cubic-bezier(.2,.8,.2,1) both;
 }
-@keyframes ownerAdIn { from{opacity:0;transform:translateY(14px) scale(.98)} to{opacity:1;transform:translateY(0) scale(1)} }
-.owner-ad-progress { height:4px; background:rgba(var(--ac),.10); overflow:hidden; }
-.owner-ad-progress span { display:block; width:100%; height:100%; background:var(--accent); transition:width .3s linear; }
-.owner-ad-head {
+@keyframes bookingNoticeIn { from{opacity:0;transform:translateY(14px) scale(.98)} to{opacity:1;transform:translateY(0) scale(1)} }
+.booking-notice-head {
   padding:18px 22px 0;
   display:flex;
   align-items:center;
   justify-content:space-between;
   gap:16px;
 }
-.owner-ad-label {
+.booking-notice-label {
   color:var(--accent);
   font-size:.64rem;
   font-weight:900;
   letter-spacing:1.2px;
   text-transform:uppercase;
 }
-.owner-ad-x {
+.booking-notice-x {
   width:34px;
   height:34px;
   display:flex;
@@ -2405,111 +2405,86 @@ body.light #splashScreen { background: #071320; }
   font-size:1rem;
   cursor:pointer;
 }
-.owner-ad-x:hover { border-color:var(--accent); color:var(--accent); }
-.owner-ad-body { padding:14px 22px 22px; }
-.owner-ad-free {
-  width:100%;
-  margin-top:12px;
-  padding:9px 12px;
-  display:flex;
-  align-items:center;
-  justify-content:center;
-  border:1px solid rgba(var(--ac),.28);
-  border-radius:10px;
-  background:rgba(var(--ac),.09);
-  color:var(--accent);
-  font-size:.7rem;
-  font-weight:900;
-  letter-spacing:.25px;
-  line-height:1.35;
-  text-align:center;
-}
-.owner-ad-body h2 {
-  max-width:430px;
+.booking-notice-x:hover,
+.booking-notice-x:focus-visible { border-color:var(--accent); color:var(--accent); outline:none; }
+.booking-notice-body { padding:14px 22px 22px; }
+.booking-notice-body h2 {
+  max-width:450px;
   font-family:'Outfit',sans-serif;
-  font-size:clamp(1.55rem,5vw,2.15rem);
+  font-size:clamp(1.65rem,5vw,2.25rem);
   font-weight:900;
   letter-spacing:-.5px;
   line-height:1.08;
 }
-.owner-ad-body p { margin-top:10px; color:var(--muted); font-size:.88rem; line-height:1.6; }
-.owner-ad-benefits {
+.booking-notice-body h2 span { color:var(--accent); }
+.booking-notice-warning {
+  width:100%;
+  margin-top:12px;
+  padding:11px 12px;
+  display:flex;
+  align-items:center;
+  gap:10px;
+  border:1px solid rgba(var(--ac),.28);
+  border-radius:10px;
+  background:rgba(var(--ac),.09);
+  color:var(--text);
+  font-size:.8rem;
+  font-weight:800;
+  line-height:1.4;
+}
+.booking-notice-warning i {
+  width:24px;
+  height:24px;
+  flex:0 0 24px;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  border-radius:50%;
+  background:var(--accent);
+  color:#fff;
+  font-size:.78rem;
+  font-style:normal;
+  font-weight:900;
+}
+.booking-notice-body p { margin-top:11px; color:var(--muted); font-size:.88rem; line-height:1.6; }
+.booking-notice-steps {
   margin-top:15px;
   display:grid;
-  grid-template-columns:repeat(4,minmax(0,1fr));
-  gap:6px;
+  grid-template-columns:1fr;
+  gap:7px;
   list-style:none;
+  counter-reset:booking-notice-step;
 }
-.owner-ad-benefits li {
+.booking-notice-steps li {
+  counter-increment:booking-notice-step;
   min-width:0;
-  padding:9px 4px;
-  display:flex;
-  flex-direction:column;
+  padding:10px 11px;
+  display:grid;
+  grid-template-columns:28px minmax(0,1fr);
   align-items:center;
-  gap:5px;
+  gap:10px;
   border:1px solid var(--border);
   border-radius:10px;
   background:var(--input);
   color:var(--text);
-  font-size:.63rem;
+  font-size:.78rem;
   font-weight:700;
-  line-height:1.25;
-  text-align:center;
+  line-height:1.4;
 }
-.owner-ad-benefits i {
-  width:20px;
-  height:20px;
+.booking-notice-steps li::before {
+  content:counter(booking-notice-step);
+  width:28px;
+  height:28px;
   display:flex;
   align-items:center;
   justify-content:center;
   border-radius:50%;
   background:rgba(var(--ac),.10);
   color:var(--accent);
-  font-size:.7rem;
-  font-style:normal;
+  font-size:.76rem;
   font-weight:900;
 }
-.owner-ad-action-hint {
-  margin-top:14px;
-  color:var(--text);
-  font-size:.74rem;
-  font-weight:700;
-  text-align:center;
-}
-.owner-ad-message {
-  width:100%;
-  min-height:48px;
-  margin-top:7px;
-  padding:12px 16px;
-  display:flex;
-  align-items:center;
-  justify-content:center;
-  gap:8px;
-  border-radius:11px;
-  background:var(--accent);
-  color:#fff;
-  font-size:.88rem;
-  font-weight:900;
-  text-decoration:none;
-  box-shadow:0 0 0 0 rgba(var(--ac),.28);
-  transition:background .2s,transform .2s;
-  animation:ownerAdCtaPulse 2s ease-in-out infinite;
-}
-.owner-ad-message:hover { background:var(--accent-dark); transform:translateY(-1px); }
-.owner-ad-message span { display:inline-block; animation:ownerAdArrowNudge 1.2s ease-in-out infinite; }
-@keyframes ownerAdCtaPulse {
-  0%,100% { box-shadow:0 0 0 0 rgba(var(--ac),.26); }
-  50% { box-shadow:0 0 0 7px rgba(var(--ac),.10); }
-}
-@keyframes ownerAdArrowNudge {
-  0%,100% { transform:translateX(0); }
-  50% { transform:translateX(4px); }
-}
-@media(prefers-reduced-motion:reduce) {
-  .owner-ad-message,
-  .owner-ad-message span { animation:none; }
-}
-.owner-ad-foot {
+.booking-notice-foot {
   padding:14px 22px;
   display:flex;
   align-items:center;
@@ -2518,31 +2493,33 @@ body.light #splashScreen { background: #071320; }
   border-top:1px solid var(--border);
   background:var(--input);
 }
-.owner-ad-countdown { color:var(--muted); font-size:.75rem; font-weight:700; }
-.owner-ad-countdown strong { color:var(--text); }
-.owner-ad-continue {
-  min-height:38px;
-  padding:9px 14px;
-  border:1px solid var(--border);
+.booking-notice-footnote { max-width:210px; color:var(--muted); font-size:.71rem; font-weight:700; line-height:1.4; }
+.booking-notice-continue {
+  min-height:42px;
+  padding:10px 15px;
+  border:1px solid var(--accent);
   border-radius:9px;
-  background:var(--card);
-  color:var(--text);
+  background:var(--accent);
+  color:#fff;
   font-family:'Outfit',sans-serif;
   font-size:.78rem;
   font-weight:800;
   cursor:pointer;
+  transition:background .2s,transform .2s;
 }
-.owner-ad-continue:hover { border-color:var(--accent); color:var(--accent); }
+.booking-notice-continue:hover { background:var(--accent-dark); transform:translateY(-1px); }
+.booking-notice-continue:focus-visible { outline:3px solid rgba(var(--ac),.24); outline-offset:2px; }
 @media(max-width:520px) {
-  .owner-ad-pop { padding:12px; align-items:center; }
-  .owner-ad-card { border-radius:18px; }
-  .owner-ad-head { padding:16px 18px 0; }
-  .owner-ad-body { padding:12px 18px 18px; }
-  .owner-ad-body h2 { font-size:1.65rem; }
-  .owner-ad-benefits { gap:5px; }
-  .owner-ad-benefits li { padding:8px 3px; font-size:.58rem; }
-  .owner-ad-benefits i { width:18px; height:18px; font-size:.62rem; }
-  .owner-ad-foot { padding:12px 18px; }
+  .booking-notice-pop { padding:12px; align-items:center; }
+  .booking-notice-card { border-radius:18px; }
+  .booking-notice-head { padding:16px 18px 0; }
+  .booking-notice-body { padding:12px 18px 18px; }
+  .booking-notice-body h2 { font-size:1.65rem; }
+  .booking-notice-steps { gap:5px; }
+  .booking-notice-steps li { padding:9px 10px; font-size:.72rem; }
+  .booking-notice-foot { padding:12px 18px; flex-direction:column; align-items:stretch; }
+  .booking-notice-footnote { max-width:none; text-align:center; }
+  .booking-notice-continue { width:100%; }
 }
 
 /* ── BOOKING WIZARD ── */
@@ -2892,39 +2869,31 @@ body.light #splashScreen { background: #071320; }
     <div class="sp-tap-card">
       <div class="sp-tap-text">TAP TO BOOK</div>
     </div>
-    <div class="sp-tap-sub">Select a court and reserve your slot</div>
+    <div class="sp-tap-sub">Reserve your slot first — payment comes after</div>
   </div>
 
   <div class="sp-bottom">Pickle Bliss Court &nbsp;·&nbsp; Bliss, Poblacion, Monkayo</div>
 </div>
 
-<div class="owner-ad-pop" id="courtOwnerAd" aria-hidden="true">
-  <div class="owner-ad-card" role="dialog" aria-modal="true" aria-labelledby="courtOwnerAdTitle" aria-describedby="courtOwnerAdDescription">
-    <div class="owner-ad-progress" aria-hidden="true"><span id="courtOwnerAdProgress"></span></div>
-    <div class="owner-ad-head">
-      <span class="owner-ad-label">Advertisement · For court owners</span>
-      <button type="button" class="owner-ad-x" onclick="closeCourtOwnerAd()" aria-label="Close advertisement">&times;</button>
+<div class="booking-notice-pop" id="bookingNotice" aria-hidden="true">
+  <div class="booking-notice-card" role="dialog" aria-modal="true" aria-labelledby="bookingNoticeTitle" aria-describedby="bookingNoticeDescription">
+    <div class="booking-notice-head">
+      <span class="booking-notice-label">Important · Before you pay</span>
+      <button type="button" class="booking-notice-x" onclick="closeBookingNotice()" aria-label="Close booking reminder">&times;</button>
     </div>
-    <div class="owner-ad-body">
-      <h2 id="courtOwnerAdTitle">Spend less time managing bookings. Let your court run smarter.</h2>
-      <div class="owner-ad-free">✓ 100% FREE for court owners — no setup fee, no monthly payments, and no hidden charges.</div>
-      <p id="courtOwnerAdDescription">Give players a free website to see open slots, book anytime, and stay organized automatically—without the back-and-forth messages.</p>
-      <ul class="owner-ad-benefits" aria-label="Booking system benefits">
-        <li><i aria-hidden="true">✓</i><span>24/7 Online Booking</span></li>
-        <li><i aria-hidden="true">✓</i><span>No Double Bookings</span></li>
-        <li><i aria-hidden="true">✓</i><span>Mobile-Friendly</span></li>
-        <li><i aria-hidden="true">✓</i><span>Live Time Availability</span></li>
-        <li><i aria-hidden="true">✓</i><span>Easy Rescheduling</span></li>
-        <li><i aria-hidden="true">✓</i><span>Less Booking Hassle</span></li>
-        <li><i aria-hidden="true">✓</i><span>Automated Reservations</span></li>
-        <li><i aria-hidden="true">✓</i><span>And Much More!</span></li>
-      </ul>
-      <div class="owner-ad-action-hint">Ready to make booking easier? Tap below to message me.</div>
-      <a class="owner-ad-message" href="https://www.facebook.com/jelarjoychristian" target="_blank" rel="noopener noreferrer" aria-label="Message Christian Hisola on Facebook about a free pickleball court booking system">Message Me on Facebook <span aria-hidden="true">→</span></a>
+    <div class="booking-notice-body">
+      <h2 id="bookingNoticeTitle">Reserve first. <span>Pay second.</span></h2>
+      <div class="booking-notice-warning" role="note"><i aria-hidden="true">!</i><span>Sending payment alone does not reserve a court.</span></div>
+      <p id="bookingNoticeDescription">Please follow the booking steps so your payment is matched to an available court and time.</p>
+      <ol class="booking-notice-steps" aria-label="Correct booking order">
+        <li>Select an available court, date, and time.</li>
+        <li>Tap <strong>Book Now</strong> to hold your slot for 15 minutes.</li>
+        <li>Pay the exact amount shown in the booking form and upload your receipt.</li>
+      </ol>
     </div>
-    <div class="owner-ad-foot">
-      <span class="owner-ad-countdown">Continuing in <strong><span id="courtOwnerAdCountdown">10</span>s</strong></span>
-      <button type="button" class="owner-ad-continue" onclick="closeCourtOwnerAd()">Continue Booking</button>
+    <div class="booking-notice-foot">
+      <span class="booking-notice-footnote">Your booking is confirmed only after payment verification.</span>
+      <button type="button" class="booking-notice-continue" id="bookingNoticeContinue" onclick="continueToCourts()">I understand — view courts →</button>
     </div>
   </div>
 </div>
@@ -3038,7 +3007,7 @@ body.light #splashScreen { background: #071320; }
 <div class="sec" id="courts" style="padding-top:24px">
   <div class="sec-hd">
     <h2>BOOK YOUR COURT</h2>
-    <p>Choose your date, then select any available time to reserve your session.</p>
+    <p>Choose an available time and tap Book Now to reserve your slot before paying.</p>
   </div>
   <div class="shared-date-entry">
     <div class="shared-date-title">
@@ -3125,7 +3094,7 @@ body.light #splashScreen { background: #071320; }
 
     <!-- Slot reservation countdown -->
     <div id="slotCountdown">
-      <span class="scd-text">⏳ Slot reserved — complete booking within <span id="scdTime" class="scd-inline-time">15:00</span></span>
+      <span class="scd-text">⏳ Slot reserved — finish your details and payment within <span id="scdTime" class="scd-inline-time">15:00</span></span>
       <span class="scd-timer" id="scdTimerBig">15:00</span>
     </div>
 
@@ -3180,7 +3149,7 @@ body.light #splashScreen { background: #071320; }
         <!-- ── STEP 4: PAYMENT METHOD ── -->
         <div class="wiz-panel" id="wizPanel4">
           <div class="wiz-sec-title bpay-title">
-            <span>💳 Select Payment Method</span>
+            <span>💳 Choose How to Pay</span>
             <span class="bpay-title-amount"><span>Amount to pay</span><strong id="bStepPayAmtMethod">--</strong></span>
           </div>
           <div class="fg bpay-method-block" id="payMethodBlock">
@@ -3253,7 +3222,7 @@ body.light #splashScreen { background: #071320; }
         <!-- ── STEP 5: PAYMENT ── -->
         <div class="wiz-panel" id="wizPanel5">
           <div class="wiz-sec-title bpay-title">
-            <span>💳 Payment</span>
+            <span>💳 Pay for Your Reserved Slot</span>
             <span class="bpay-title-amount"><span>Amount to pay</span><strong id="bStepPayAmt">--</strong></span>
           </div>
 
@@ -3481,7 +3450,7 @@ body.light #splashScreen { background: #071320; }
     <div class="hc"><div class="hc-ic">🏟️</div><div class="hc-tt">Pick a Court</div><div class="hc-ds">Browse courts and compare rates and features.</div></div>
     <div class="hc"><div class="hc-ic">📅</div><div class="hc-tt">Choose Your Time</div><div class="hc-ds">Select a date and any available time slots from 6 AM to 10 PM.</div></div>
     <div class="hc"><div class="hc-ic">📝</div><div class="hc-tt">Fill in Details</div><div class="hc-ds">Enter your contact info and preferred payment method.</div></div>
-    <div class="hc"><div class="hc-ic">✅</div><div class="hc-tt">Get Confirmed</div><div class="hc-ds">Receive your booking reference and invoice instantly.</div></div>
+    <div class="hc"><div class="hc-ic">✅</div><div class="hc-tt">Pay &amp; Confirm</div><div class="hc-ds">After your slot is reserved, pay in the form and receive your booking reference.</div></div>
   </div>
 </div>
 
@@ -7909,15 +7878,12 @@ function dismissSplash() {
   sp.classList.add('dismissed');
   sp.addEventListener('transitionend', () => {
     sp.style.display = 'none';
-    showCourtOwnerAd();
+    showBookingNotice();
   }, { once: true });
 }
 
-let courtOwnerAdTimer = null;
-let courtOwnerAdRemaining = 10;
-
-function showCourtOwnerAd() {
-  const popup = $('courtOwnerAd');
+function showBookingNotice() {
+  const popup = $('bookingNotice');
   if (!popup) {
     document.body.style.overflow = '';
     return;
@@ -7925,27 +7891,21 @@ function showCourtOwnerAd() {
   popup.classList.add('show');
   popup.setAttribute('aria-hidden', 'false');
   document.body.style.overflow = 'hidden';
-  courtOwnerAdRemaining = 10;
-  updateCourtOwnerAdCountdown();
-  clearInterval(courtOwnerAdTimer);
-  courtOwnerAdTimer = setInterval(() => {
-    courtOwnerAdRemaining -= 1;
-    updateCourtOwnerAdCountdown();
-    if (courtOwnerAdRemaining <= 0) closeCourtOwnerAd();
-  }, 1000);
+  requestAnimationFrame(() => $('bookingNoticeContinue')?.focus());
 }
 
-function updateCourtOwnerAdCountdown() {
-  if ($('courtOwnerAdCountdown')) $('courtOwnerAdCountdown').textContent = Math.max(courtOwnerAdRemaining, 0);
-  if ($('courtOwnerAdProgress')) $('courtOwnerAdProgress').style.width = `${Math.max(courtOwnerAdRemaining, 0) * 10}%`;
-}
-
-function closeCourtOwnerAd() {
-  clearInterval(courtOwnerAdTimer);
-  courtOwnerAdTimer = null;
-  $('courtOwnerAd')?.classList.remove('show');
-  $('courtOwnerAd')?.setAttribute('aria-hidden', 'true');
+function closeBookingNotice() {
+  $('bookingNotice')?.classList.remove('show');
+  $('bookingNotice')?.setAttribute('aria-hidden', 'true');
   document.body.style.overflow = '';
+}
+
+function continueToCourts() {
+  closeBookingNotice();
+  const courtsSection = $('courts');
+  const reduceMotion = window.matchMedia?.('(prefers-reduced-motion: reduce)')?.matches;
+  courtsSection?.scrollIntoView({ behavior: reduceMotion ? 'auto' : 'smooth', block: 'start' });
+  setTimeout(() => $('courtSharedDateDisplay')?.focus(), reduceMotion ? 0 : 350);
 }
 
 // Lock scroll while splash is showing
@@ -7971,11 +7931,11 @@ document.addEventListener('DOMContentLoaded', async () => {
   initOpAnnounceSplash();
   initEasterSplash();
   initGrandSplash();
-  $('courtOwnerAd')?.addEventListener('click', e => { if (e.target === $('courtOwnerAd')) closeCourtOwnerAd(); });
+  $('bookingNotice')?.addEventListener('click', e => { if (e.target === $('bookingNotice')) closeBookingNotice(); });
   document.addEventListener('keydown', e => {
     if (e.key !== 'Escape') return;
     if ($('gcashReceiptGuide')?.classList.contains('show')) { closeGcashReceiptGuide(); return; }
-    if ($('courtOwnerAd')?.classList.contains('show')) { closeCourtOwnerAd(); return; }
+    if ($('bookingNotice')?.classList.contains('show')) { closeBookingNotice(); return; }
     closeSharedDatePicker();
     closeQrZoom();
     closeFindTimeModal();
