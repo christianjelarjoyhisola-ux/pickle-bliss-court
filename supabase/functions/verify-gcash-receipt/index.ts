@@ -15,8 +15,8 @@
 //   manual_review : soft flag(s) or unreadable fields or low confidence
 //   rejected      : any hard flag (duplicate / wrong number / underpay / stale)
 //
-// Rejections auto-cancel and release the slot. Manual-review results keep the
-// booking pending so an owner can make the final decision.
+// Rejections never auto-cancel the booking (OCR is heuristic — avoid harming
+// honest customers). They flag the booking red and alert the admin.
 // ----------------------------------------------------------------------------
 
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
@@ -27,8 +27,9 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
-// Match the 15-minute slot hold shown in the booking UI.
-const PAYMENT_WINDOW_MINUTES = 15;
+// Payment must happen within this many minutes after the booking/session join
+// is started.
+const PAYMENT_WINDOW_MINUTES = 10;
 // OCR usually reads only minute-level timestamps. A receipt paid during the
 // same minute as the hold can look a few seconds "before" the booking.
 const PAYMENT_EARLY_TOLERANCE_MINUTES = 2;
@@ -36,8 +37,7 @@ const PAYMENT_EARLY_TOLERANCE_MINUTES = 2;
 const MAX_BYTES = 5 * 1024 * 1024;
 const PESO_TOLERANCE = 5; // allow ±₱5 rounding; underpay beyond this is a hard flag
 
-// Hard flags force a rejection; soft flags force manual review. TIME_FUTURE is
-// intentionally soft: paying before booking needs owner matching, not a cancel.
+// Hard flags force a rejection; soft flags force manual review.
 const HARD_FLAGS = new Set([
   "REF_FORMAT_INVALID",
   "SUSPECTED_FAKE",     // OCR ran and image has zero receipt-like content
@@ -49,6 +49,7 @@ const HARD_FLAGS = new Set([
   "REF_MISMATCH",
   "DATE_NOT_TODAY",
   "TIME_EXPIRED",
+  "TIME_FUTURE",
   "WRONG_GCASH_NUMBER",
   "WRONG_RECEIVER_NUMBER",
   "AMOUNT_MISMATCH",    // Only hard if significantly underpaid (>₱5)
@@ -71,20 +72,15 @@ function publicReceiptMessage(
   result: "auto_approved" | "manual_review" | "rejected",
   flags: string[],
 ): string {
-  const flagSet = new Set(flags);
   if (result === "auto_approved") return "Payment verified.";
-  if (result === "manual_review") {
-    if (flagSet.has("TIME_FUTURE")) {
-      return "Payment received. Because it was sent before this booking, your slot is reserved while the owner verifies it.";
-    }
-    return "Received - the owner will verify your payment shortly.";
-  }
+  if (result === "manual_review") return "Received - the owner will verify your payment shortly.";
 
+  const flagSet = new Set(flags);
   if (flagSet.has("AMOUNT_MISMATCH")) {
     return "Payment amount is lower than required. Please upload the correct payment receipt.";
   }
   if (flagSet.has("TIME_EXPIRED") || flagSet.has("TIME_FUTURE") || flagSet.has("DATE_NOT_TODAY")) {
-    return `Payment was sent outside the allowed ${PAYMENT_WINDOW_MINUTES}-minute window. Please create a new booking.`;
+    return "Payment was sent outside the allowed 10-minute window. Please create a new booking.";
   }
   if (flagSet.has("IMAGE_UNREADABLE") || flagSet.has("OCR_UNAVAILABLE")) {
     return "Receipt image is unreadable. Please upload a clearer screenshot.";
@@ -1654,16 +1650,10 @@ Deno.serve(async (req) => {
       );
     }
 
-    // Only return a user-safe review flag. Full fraud flags stay server-side in
-    // booking metadata and the immutable verification audit.
-    const publicFlags = result === "manual_review" && flags.includes("TIME_FUTURE")
-      ? ["TIME_FUTURE"]
-      : [];
-
     return json({
       ok: true,
       status: result,
-      flags: publicFlags,
+      flags: [],
       publicReason: publicReceiptMessage(result, flags),
       extracted,
       confidence,

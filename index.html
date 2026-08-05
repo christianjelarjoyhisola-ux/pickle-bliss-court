@@ -2914,25 +2914,25 @@ body.light #splashScreen { background: #071320; }
   <div class="booking-notice-card" role="dialog" aria-modal="true" aria-labelledby="bookingNoticeTitle" aria-describedby="bookingNoticeDescription">
     <div class="booking-notice-head">
       <div class="booking-notice-heading">
-        <span class="booking-notice-label">Before you pay</span>
-        <h2 id="bookingNoticeTitle">Reserve first. <span>Pay second.</span></h2>
+        <span class="booking-notice-label">Required booking order</span>
+        <h2 id="bookingNoticeTitle">Book here first. <span>Pay second.</span></h2>
       </div>
       <button type="button" class="booking-notice-x" onclick="closeBookingNotice()" aria-label="Close booking reminder">&times;</button>
     </div>
     <div class="booking-notice-body">
       <p class="booking-notice-summary" id="bookingNoticeDescription" role="note">
         <i aria-hidden="true">!</i>
-        <span><strong>Payment alone does not reserve a court.</strong><span>Choose your court and time in the booking form first.</span></span>
+        <span><strong>Start your booking on this website before sending payment.</strong><span>A payment made before you tap Book Now may be marked Pending Verification or Rejected.</span></span>
       </p>
       <ol class="booking-notice-steps" aria-label="Correct booking order">
-        <li><span class="booking-notice-step-copy"><strong>Choose your slot</strong><span>Select an available court, date, and time.</span></span></li>
-        <li><span class="booking-notice-step-copy"><strong>Tap Book Now</strong><span>We will hold your selected slot for 15 minutes.</span></span></li>
-        <li><span class="booking-notice-step-copy"><strong>Then pay</strong><span>Pay the amount shown and upload your receipt.</span></span></li>
+        <li><span class="booking-notice-step-copy"><strong>Choose your slot</strong><span>Select an available court, date, and time on this website.</span></span></li>
+        <li><span class="booking-notice-step-copy"><strong>Tap Book Now</strong><span>This starts your booking and holds the selected slot for 15 minutes.</span></span></li>
+        <li><span class="booking-notice-step-copy"><strong>Then pay</strong><span>Complete your details, pay the amount shown, and upload your receipt.</span></span></li>
       </ol>
     </div>
     <div class="booking-notice-foot">
-      <span class="booking-notice-footnote"><strong>Your slot is held after Book Now.</strong> Confirmation follows payment verification.</span>
-      <button type="button" class="booking-notice-continue" id="bookingNoticeContinue" onclick="continueToCourts()">View available courts →</button>
+      <span class="booking-notice-footnote"><strong>Your booking must start before payment.</strong> Confirmation follows payment verification.</span>
+      <button type="button" class="booking-notice-continue" id="bookingNoticeContinue" onclick="continueToCourts()">Start website booking →</button>
     </div>
   </div>
 </div>
@@ -5173,8 +5173,8 @@ function receiptReasonFromFlags(flags) {
     REF_MISMATCH: 'Reference mismatch',
     DATE_MISMATCH: 'Date mismatch',
     DATE_NOT_TODAY: 'Wrong payment date',
-    TIME_EXPIRED: 'Payment after the 15-minute window',
-    TIME_FUTURE: 'Paid before booking — owner review',
+    TIME_EXPIRED: 'Payment time expired',
+    TIME_FUTURE: 'Receipt before booking',
     SUSPECTED_FAKE: 'Receipt content not recognized',
     IMAGE_UNREADABLE: 'Image unreadable',
     REF_UNREADABLE: 'Reference unreadable',
@@ -7652,8 +7652,6 @@ function showInvoice(b) {
   const set = (id, value) => { const el = $(id); if (el) el.textContent = value; };
   const isConfirmed = b.status === 'confirmed';
   const receiptStatus = b._receiptResult?.status || b.receiptStatus || '';
-  const receiptFlags = b._receiptResult?.flags || b.receiptFlags || [];
-  const isEarlyPaymentReview = receiptStatus === 'manual_review' && receiptFlags.includes('TIME_FUTURE');
   const isRejected = b.status === 'cancelled' || b.paymentStatus === 'rejected' || receiptStatus === 'rejected';
   const isDigitalPay = isDigitalPayMethod(b.paymentMethod);
   const isFullPay = b.downpayment >= b.total;
@@ -7666,11 +7664,11 @@ function showInvoice(b) {
   if (heroEl) heroEl.classList.remove('inv-hero--rejected','inv-hero--approved');
   if (heroEl && isRejected) heroEl.classList.add('inv-hero--rejected');
 
-  set('iTitle', isRejected ? 'Receipt Rejected' : isConfirmed ? 'Booking Confirmed!' : isEarlyPaymentReview ? 'Booking Saved for Review' : 'Booking Received!');
-  set('iHeroSub', isRejected ? 'Your receipt could not be verified. Please make a new booking.' : isConfirmed ? 'Your court is confirmed. See you on the court!' : isEarlyPaymentReview ? 'Your earlier payment was received. Your slot stays reserved while the owner verifies it.' : isDigitalPay ? 'Payment received for review. We will confirm after verification.' : 'Your request is received. Staff will confirm after payment.');
+  set('iTitle', isRejected ? 'Receipt Rejected' : isConfirmed ? 'Booking Confirmed!' : 'Booking Received!');
+  set('iHeroSub', isRejected ? 'Your receipt could not be verified. Please make a new booking.' : isConfirmed ? 'Your court is confirmed. See you on the court!' : isDigitalPay ? 'Payment received for review. We will confirm after verification.' : 'Your request is received. Staff will confirm after payment.');
   const statusEl = $('iStatus');
   if (statusEl) {
-    statusEl.textContent = isRejected ? 'Receipt Rejected' : isConfirmed ? 'Confirmed' : isEarlyPaymentReview ? 'Early Payment Review' : isDigitalPay ? 'Pending Verification' : 'Pending Confirmation';
+    statusEl.textContent = isRejected ? 'Receipt Rejected' : isConfirmed ? 'Confirmed' : isDigitalPay ? 'Pending Verification' : 'Pending Confirmation';
     statusEl.className = 'inv-status-bdg ' + (isRejected ? 'inv-status-rejected' : isConfirmed ? 'inv-status-confirmed' : isDigitalPay ? 'inv-status-review' : 'inv-status-pending');
   }
   if (checkIconEl) checkIconEl.textContent = isRejected ? '!' : '\u2713';
@@ -7733,10 +7731,10 @@ function showInvoice(b) {
     } else {
       // manual_review
       if (statusEl) {
-        statusEl.textContent = isEarlyPaymentReview ? '🕓 Early Payment Review' : '🕓 Pending Verification';
+        statusEl.textContent = '🕓 Pending Verification';
         statusEl.className = 'inv-status-bdg inv-status-review';
       }
-      if (noteEl) noteEl.textContent = '🕓 ' + (b._receiptResult.message || 'Receipt received — the owner will verify your payment shortly.');
+      if (noteEl) noteEl.textContent = '🕓 Receipt received — the owner will verify your payment shortly.';
     }
   }
 
@@ -7750,10 +7748,6 @@ function showInvoice(b) {
       ['Booking submitted', 'done'],
       ['Payment verified', 'done'],
       ['Booking confirmed', 'done'],
-    ] : isEarlyPaymentReview ? [
-      ['Booking submitted', 'done'],
-      ['Earlier payment review', 'active'],
-      ['Admin confirmation', 'pending'],
     ] : isDigitalPay ? [
       ['Booking submitted', 'done'],
       ['Payment review', 'active'],
