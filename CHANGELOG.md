@@ -6,6 +6,27 @@ Types: **Added**, **Changed**, **Fixed**, **Removed**, **Security**, **DB**
 
 ---
 
+## [2026-08-13] - Submitted Payments Keep Their Court Slot
+
+### Fixed
+- **Payment verification slot loss** - once a customer submits their payment reference and receipt, the booking now changes from the temporary 15-minute `verifying` hold to `pending` before receipt OCR starts. An interrupted OCR request or closed browser can no longer release a paid customer's schedule for another booking.
+- **Reservation-state separation** - the 15-minute expiry remains limited to incomplete booking forms created by **Book Now**; submitted payments stay reserved until they are confirmed or rejected.
+- **Durable receipt upload** - selecting a receipt now uploads it immediately to private storage. **Confirm Booking** remains disabled until storage succeeds, upload failures show a Retry action, and browser resume data retains the opaque staged-upload ID.
+- **Truthful upload errors** - storage failures can no longer continue as manual review while claiming that the receipt was uploaded.
+
+### Security
+- **Capability-protected checkout** - each temporary hold receives a cryptographically random browser-held capability; only its SHA-256 hash is stored with the booking.
+- **Atomic finalization** - a server-only database transaction locks and validates the complete booking group, receipt object, payment details, hold expiry, and court availability before changing every row to `pending` and consuming the staged receipt.
+- **Private staged evidence** - staged receipt records are inaccessible to public database roles, replacement uploads abandon older objects, and expired unconsumed uploads are eligible for bounded cleanup.
+
+### DB
+- Added `bookings.hold_token_hash`, the private `receipt_staged_uploads` table, restrictive anonymous hold creation, immutable capability protection, and the `finalize_staged_booking` transaction.
+- Migration: `supabase/migrations/20260813173000_staged_booking_receipts.sql`.
+
+**Files affected:** `index.html`, `supabase-config.js`, `supabase/functions/verify-gcash-receipt/index.ts`, `supabase/migrations/20260813173000_staged_booking_receipts.sql`, `SETUP_NEW_SUPABASE.sql`, `CHANGELOG.md`
+
+---
+
 ## [2026-07-30] - Owner-Selectable Remittance Due Date
 
 ### Added

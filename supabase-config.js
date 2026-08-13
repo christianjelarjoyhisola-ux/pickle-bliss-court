@@ -385,6 +385,7 @@ function bookingToRow(b) {
     paid_at:        b.paidAt || null,
     gcash_ref:      b.gcashRef || null,
     downpayment:    b.downpayment || null,
+    hold_token_hash: b.holdTokenHash || null,
     status:         b.status,
     created_at:     b.createdAt,
   };
@@ -643,6 +644,7 @@ window.DB = {
     if (updates.paidAt !== undefined) row.paid_at = updates.paidAt;
     if (updates.gcashRef !== undefined) row.gcash_ref = updates.gcashRef;
     if (updates.downpayment !== undefined) row.downpayment = updates.downpayment;
+    if (updates.holdTokenHash !== undefined) row.hold_token_hash = updates.holdTokenHash;
     if (updates.date !== undefined) row.date = updates.date;
     if (updates.startTime !== undefined) row.start_time = updates.startTime;
     if (updates.endTime !== undefined) row.end_time = updates.endTime;
@@ -1126,6 +1128,40 @@ window.DB = {
     const json = _safeJsonParse(txt);
     if (!res.ok) throw new Error(json?.error || `HTTP ${res.status}`);
     return json;
+  },
+
+  // Stage a private receipt as soon as the customer selects it. The opaque
+  // upload ID is later consumed by finalizeBookingWithReceipt; the browser
+  // does not need to keep the File alive after this succeeds.
+  async stageBookingReceipt(payload) {
+    return _invokeEdgeFunction('verify-gcash-receipt', {
+      action: 'stage_upload',
+      ...payload,
+    });
+  },
+
+  // Atomically attach a staged receipt and turn the temporary verifying hold
+  // into a durable pending booking.
+  async finalizeBookingWithReceipt(payload) {
+    return _invokeEdgeFunction('verify-gcash-receipt', {
+      action: 'finalize_booking',
+      ...payload,
+    });
+  },
+
+  // Run OCR against the already-persisted private object.
+  async verifyStagedBookingReceipt(payload) {
+    return _invokeEdgeFunction('verify-gcash-receipt', {
+      action: 'verify_staged',
+      ...payload,
+    });
+  },
+
+  async abandonStagedBookingReceipt(payload) {
+    return _invokeEdgeFunction('verify-gcash-receipt', {
+      action: 'abandon_upload',
+      ...payload,
+    }, { allowFailure: true });
   },
 
   // Request a short-lived signed URL to view a stored receipt (admin only).
@@ -2133,6 +2169,38 @@ window.DB = {
     async verifyGcashReceipt() {
       return { ok: true, status: 'manual_review', flags: ['local_data_mode'], extracted: {}, confidence: 0, message: 'Local data mode: receipt OCR is not sent to Supabase.' };
     },
+    async stageBookingReceipt(payload) {
+      return {
+        ok: true,
+        uploadId: localRef('receipt'),
+        status: 'staged',
+        uploadedAt: nowIso(),
+        expiresAt: new Date(Date.now() + 15 * 60 * 1000).toISOString(),
+        localFileName: payload?.fileName || 'receipt',
+      };
+    },
+    async finalizeBookingWithReceipt(payload) {
+      const db = readDb();
+      const refs = new Set((payload?.items || []).map(item => String(item.ref || '')));
+      db.bookings = db.bookings.map(b => refs.has(String(b.ref)) ? {
+        ...b,
+        fullName: payload.customer?.fullName || b.fullName,
+        contactNumber: payload.customer?.contactNumber || b.contactNumber,
+        email: payload.customer?.email || b.email,
+        paymentMethod: payload.payment?.method || b.paymentMethod,
+        paymentFlow: payload.payment?.flow || b.paymentFlow,
+        gcashRef: payload.payment?.reference || b.gcashRef,
+        downpayment: payload.items.find(item => String(item.ref) === String(b.ref))?.downpayment ?? b.downpayment,
+        paymentStatus: 'for_verification',
+        status: 'pending',
+      } : b);
+      writeDb(db);
+      return { ok: true, status: 'pending', paymentStatus: 'for_verification', bookingRefs: [...refs], uploadId: payload.uploadId, receiptImageUrl: null };
+    },
+    async verifyStagedBookingReceipt() {
+      return { ok: true, status: 'manual_review', flags: ['local_data_mode'], extracted: {}, confidence: 0, message: 'Local data mode: stored receipt is pending manual review.' };
+    },
+    async abandonStagedBookingReceipt() { return { ok: true }; },
     async getReceiptSignedUrl() { throw new Error('No stored receipt in local data mode.'); },
     async getOpenPlayReceiptSignedUrl() { throw new Error('No stored receipt in local data mode.'); },
 

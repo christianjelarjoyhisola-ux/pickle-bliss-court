@@ -13,6 +13,7 @@
 --   2. 20260713233000_remittance_late_cycle_due_fix.sql
 --   3. 20260713234500_remittance_audit_metrics.sql
 --   4. 20260730213000_owner_selectable_remittance_due_date.sql
+--   5. 20260813173000_staged_booking_receipts.sql
 -- They install the exact-cutoff ledger, private proof storage, security
 -- policies, due-cycle correction, reconciled metrics, owner-selectable
 -- audited due dates, and RPCs.
@@ -69,6 +70,7 @@ create table if not exists public.bookings (
   receipt_extracted jsonb,
   receipt_confidence numeric,
   receipt_verified_at timestamptz,
+  hold_token_hash text,
   billed_at timestamptz,
   weekly_fee_id uuid,
   confirmation_email_id text,
@@ -89,7 +91,9 @@ create table if not exists public.bookings (
   constraint bookings_status_check
     check (status in ('pending','verifying','confirmed','cancelled','completed')),
   constraint bookings_receipt_status_check
-    check (receipt_status in ('none','auto_approved','manual_review','rejected'))
+    check (receipt_status in ('none','auto_approved','manual_review','rejected')),
+  constraint bookings_hold_token_hash_check
+    check (hold_token_hash is null or hold_token_hash ~ '^[0-9a-f]{64}$')
 );
 
 create table if not exists public.settings (
@@ -97,6 +101,29 @@ create table if not exists public.settings (
   value text,
   updated_at timestamptz not null default now()
 );
+
+create table if not exists public.receipt_staged_uploads (
+  id uuid primary key default gen_random_uuid(),
+  booking_ref text not null,
+  booking_group_ref text,
+  hold_token_hash text not null check (hold_token_hash ~ '^[0-9a-f]{64}$'),
+  storage_path text not null unique,
+  content_type text not null,
+  byte_size integer not null check (byte_size > 0 and byte_size <= 5242880),
+  image_hash text not null check (image_hash ~ '^[0-9a-f]{64}$'),
+  provider text not null check (provider in ('gcash','bdopay','maya','bpi','gotyme','pnb')),
+  status text not null default 'staged' check (status in ('staged','consumed','abandoned')),
+  created_at timestamptz not null default now(),
+  expires_at timestamptz not null,
+  consumed_at timestamptz,
+  storage_deleted_at timestamptz,
+  constraint receipt_staged_uploads_expiry_check check (expires_at > created_at)
+);
+
+create index if not exists idx_receipt_staged_uploads_hold
+  on public.receipt_staged_uploads (booking_ref, status, created_at desc);
+create index if not exists idx_receipt_staged_uploads_cleanup
+  on public.receipt_staged_uploads (expires_at) where status = 'staged';
 
 create table if not exists public.accounts (
   id uuid primary key,
@@ -359,6 +386,7 @@ alter table public.bookings
   add column if not exists receipt_extracted jsonb,
   add column if not exists receipt_confidence numeric,
   add column if not exists receipt_verified_at timestamptz,
+  add column if not exists hold_token_hash text,
   add column if not exists billed_at timestamptz,
   add column if not exists weekly_fee_id uuid,
   add column if not exists confirmation_email_id text,
@@ -399,6 +427,25 @@ alter table public.bookings drop constraint if exists bookings_receipt_status_ch
 alter table public.bookings
   add constraint bookings_receipt_status_check
   check (receipt_status in ('none','auto_approved','manual_review','rejected'));
+
+alter table public.bookings drop constraint if exists bookings_hold_token_hash_check;
+alter table public.bookings
+  add constraint bookings_hold_token_hash_check
+  check (hold_token_hash is null or hold_token_hash ~ '^[0-9a-f]{64}$');
+
+create or replace function public.guard_booking_hold_token_hash()
+returns trigger
+language plpgsql
+security definer
+set search_path = public
+as $$
+begin
+  if new.hold_token_hash is distinct from old.hold_token_hash then
+    raise exception 'Booking hold capability is immutable.' using errcode = '42501';
+  end if;
+  return new;
+end;
+$$;
 
 alter table public.accounts drop constraint if exists accounts_role_check;
 alter table public.accounts
@@ -794,6 +841,11 @@ create trigger trg_guard_public_booking_hold_update
 before update on public.bookings
 for each row execute function public.guard_public_booking_hold_update();
 
+drop trigger if exists trg_guard_booking_hold_token_hash on public.bookings;
+create trigger trg_guard_booking_hold_token_hash
+before update on public.bookings
+for each row execute function public.guard_booking_hold_token_hash();
+
 drop trigger if exists trg_archive_deleted_booking on public.bookings;
 create trigger trg_archive_deleted_booking
 before delete on public.bookings
@@ -843,6 +895,7 @@ alter table public.open_play_registrations enable row level security;
 alter table public.payment_sessions enable row level security;
 alter table public.used_gcash_refs enable row level security;
 alter table public.receipt_verifications enable row level security;
+alter table public.receipt_staged_uploads enable row level security;
 alter table public.agreements enable row level security;
 alter table public.weekly_fees enable row level security;
 alter table public.open_play_game_sessions enable row level security;
@@ -860,6 +913,17 @@ create policy bookings_select_public on public.bookings
 drop policy if exists bookings_insert_public on public.bookings;
 create policy bookings_insert_public on public.bookings
   for insert with check (true);
+
+drop policy if exists bookings_insert_requires_capability on public.bookings;
+create policy bookings_insert_requires_capability
+  on public.bookings as restrictive
+  for insert to anon
+  with check (
+    status = 'verifying'
+    and hold_token_hash ~ '^[0-9a-f]{64}$'
+    and created_at > now() - interval '1 minute'
+    and created_at <= now() + interval '5 minutes'
+  );
 
 drop policy if exists bookings_update_admin on public.bookings;
 drop policy if exists bookings_update_dashboard_roles on public.bookings;
@@ -1016,6 +1080,8 @@ create policy receipt_verifications_select_admin on public.receipt_verifications
 drop policy if exists receipt_verifications_no_write on public.receipt_verifications;
 create policy receipt_verifications_no_write on public.receipt_verifications
   for all to authenticated using (false) with check (false);
+
+revoke all on table public.receipt_staged_uploads from anon, authenticated;
 
 drop policy if exists agreements_select_self_or_owner on public.agreements;
 drop policy if exists users_read_own_agreement on public.agreements;
@@ -1261,7 +1327,8 @@ notify pgrst, 'reload schema';
 -- DONE
 --
 -- Next steps:
--- 1. Run the three 20260713 remittance migrations listed at the top in order.
+-- 1. Run the follow-up migrations listed at the top in order, including the
+--    staged-booking-receipt migration before deploying the updated Edge Function.
 -- 2. Authentication -> Providers -> Email -> disable Confirm email.
 -- 3. Project Settings -> API -> copy Project URL and anon public key.
 -- 4. Update .env.local / supabase-config.js for the cloned app.
