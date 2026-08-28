@@ -500,7 +500,8 @@ function isBdoPayReference(value: string): boolean {
 }
 
 function isMayaReference(value: string): boolean {
-  return /^[A-Z0-9]{12}$/.test(normalizeReferenceForProvider(value, "maya"));
+  const normalized = normalizeReferenceForProvider(value, "maya");
+  return /^[A-Z0-9]{12}$/.test(normalized) || /^\d{13}$/.test(normalized);
 }
 
 function isBpiConfirmationNo(value: string): boolean {
@@ -1436,6 +1437,28 @@ Deno.serve(async (req) => {
         const forbidden = /capability|receipt service/i.test(message);
         return json({ error: message, code: conflict ? "FINALIZE_CONFLICT" : forbidden ? "INVALID_HOLD_CAPABILITY" : "FINALIZE_INVALID" }, conflict ? 409 : forbidden ? 403 : 400);
       }
+      if (String(payment.method || "").trim().toLowerCase() === "maya") {
+        // Maya is approved atomically by the staged-booking database trigger.
+        // Return the persisted state instead of the RPC's legacy hard-coded
+        // pending response so the browser never presents a successful Maya
+        // checkout as awaiting review.
+        const { data: persisted, error: persistedError } = await db
+          .from("bookings")
+          .select("status,payment_status,receipt_status")
+          .eq("ref", bookingRef)
+          .maybeSingle();
+        if (persistedError) {
+          console.error("finalized Maya booking state read failed:", errMsg(persistedError));
+        }
+        if (persisted) {
+          return json({
+            ...(data || { ok: true }),
+            status: persisted.status,
+            paymentStatus: persisted.payment_status,
+            receiptStatus: persisted.receipt_status,
+          });
+        }
+      }
       return json(data || { ok: true, status: "pending" });
     } catch (error) {
       const message = errMsg(error);
@@ -1732,8 +1755,8 @@ Deno.serve(async (req) => {
         if (!hasExpectedReceiverName(ocrText, expectedName)) flags.push("RECEIVER_NAME_UNREADABLE");
         if (!extractedInvoice) flags.push("INVOICE_UNREADABLE");
       } else if (provider === "maya") {
-        // Maya-to-Maya focused path: do not require GCash/GXI/InstaPay/QRPh
-        // evidence and do not require a receipt timestamp.
+        // Collect Maya-specific audit signals. GCash-to-Maya receipts may fail
+        // these OCR checks, but selected-Maya policy keeps the flags audit-only.
         if (!extractedRef) flags.push("REF_UNREADABLE");
         else if (typedRef && extractedRef !== typedRef) flags.push("REF_MISMATCH");
 
@@ -1836,8 +1859,18 @@ Deno.serve(async (req) => {
     // ── decision routing ────────────────────────────────────────────────────
     const hasHard = flags.some((f) => HARD_FLAGS.has(f));
     const hasSoftOrUnreadable = flags.length > 0;
+    // Venue policy: a booking paid through the Maya option is approved after
+    // its receipt has been stored and the booking itself has been validated.
+    // Customers may send to Maya from GCash, so receipt/OCR and duplicate flags
+    // remain available for auditing but must not route Maya bookings to review
+    // or rejection.
+    const autoApproveMaya = provider === "maya";
+    if (autoApproveMaya && !flags.includes("MAYA_POLICY_AUTO_APPROVED")) {
+      flags.push("MAYA_POLICY_AUTO_APPROVED");
+    }
     let result: "auto_approved" | "manual_review" | "rejected";
-    if (hasHard) result = "rejected";
+    if (autoApproveMaya) result = "auto_approved";
+    else if (hasHard) result = "rejected";
     else if (hasSoftOrUnreadable) result = "manual_review";
     else result = "auto_approved";
 
@@ -1852,13 +1885,18 @@ Deno.serve(async (req) => {
         if (claimErr) {
           console.error("payment ledger claim failed:", errMsg(claimErr));
           if (!flags.includes(item.duplicateFlag)) flags.push(item.duplicateFlag);
-          result = "rejected";
-          break;
+          if (!autoApproveMaya) {
+            result = "rejected";
+            break;
+          }
         }
       }
     }
 
-    const confidence = result === "auto_approved" ? Math.max(0.9, ocrConfidence)
+    // Policy approval is not evidence that OCR was confident. Preserve the
+    // measured value for Maya so the audit trail remains truthful.
+    const confidence = autoApproveMaya ? ocrConfidence
+      : result === "auto_approved" ? Math.max(0.9, ocrConfidence)
       : result === "manual_review" ? 0.5 : 0.1;
 
     const extracted = {
@@ -1879,6 +1917,7 @@ Deno.serve(async (req) => {
       allowedPaymentEarlyToleranceMinutes: PAYMENT_EARLY_TOLERANCE_MINUTES,
       expectedAmount,
       provider,
+      approvalPolicy: autoApproveMaya ? "maya_auto_approve" : null,
       ocrProvider,
       ocrPrimaryProvider,
       ocrFallbackProvider,
@@ -1994,7 +2033,9 @@ Deno.serve(async (req) => {
       ok: true,
       status: result,
       flags: [],
-      publicReason: publicReceiptMessage(result, flags),
+      publicReason: autoApproveMaya
+        ? "Maya payment approved automatically."
+        : publicReceiptMessage(result, flags),
       extracted,
       confidence,
       receiptImageUrl: objectPath,
@@ -2004,7 +2045,7 @@ Deno.serve(async (req) => {
       ...(statusUpdateError ? { warning: `status update failed: ${statusUpdateError}` } : {}),
       ...(metadataUpdateError ? { metadataWarning: metadataUpdateError } : {}),
       message:
-        result === "auto_approved" ? "Payment verified."
+        result === "auto_approved" ? (autoApproveMaya ? "Maya payment approved automatically." : "Payment verified.")
         : result === "manual_review" ? "Received — the owner will verify your payment shortly."
         : "Your receipt could not be verified. Your booking has been cancelled — please try again with a valid receipt.",
     });

@@ -2166,7 +2166,11 @@ window.DB = {
         ],
       };
     },
-    async verifyGcashReceipt() {
+    async verifyGcashReceipt(payload) {
+      const method = String(payload?.bookingData?.payment_method || payload?.provider || '').toLowerCase();
+      if (method === 'maya') {
+        return { ok: true, status: 'auto_approved', flags: [], extracted: { approvalPolicy: 'maya_auto_approve' }, confidence: 0, message: 'Maya payment approved automatically.' };
+      }
       return { ok: true, status: 'manual_review', flags: ['local_data_mode'], extracted: {}, confidence: 0, message: 'Local data mode: receipt OCR is not sent to Supabase.' };
     },
     async stageBookingReceipt(payload) {
@@ -2182,6 +2186,12 @@ window.DB = {
     async finalizeBookingWithReceipt(payload) {
       const db = readDb();
       const refs = new Set((payload?.items || []).map(item => String(item.ref || '')));
+      const mayaAutoApprove = String(payload?.payment?.method || '').toLowerCase() === 'maya';
+      const mayaFullyPaid = mayaAutoApprove && [...refs].every(ref => {
+        const row = db.bookings.find(b => String(b.ref) === ref);
+        const item = payload.items.find(candidate => String(candidate.ref) === ref);
+        return Number(item?.downpayment || 0) >= Number(row?.total || 0) - 1;
+      });
       db.bookings = db.bookings.map(b => refs.has(String(b.ref)) ? {
         ...b,
         fullName: payload.customer?.fullName || b.fullName,
@@ -2191,13 +2201,29 @@ window.DB = {
         paymentFlow: payload.payment?.flow || b.paymentFlow,
         gcashRef: payload.payment?.reference || b.gcashRef,
         downpayment: payload.items.find(item => String(item.ref) === String(b.ref))?.downpayment ?? b.downpayment,
-        paymentStatus: 'for_verification',
-        status: 'pending',
+        paymentStatus: mayaAutoApprove
+          ? ((Number(payload.items.find(item => String(item.ref) === String(b.ref))?.downpayment || 0) >= Number(b.total || 0) - 1) ? 'paid' : 'downpayment_paid')
+          : 'for_verification',
+        status: mayaAutoApprove ? 'confirmed' : 'pending',
+        receiptStatus: mayaAutoApprove ? 'auto_approved' : 'none',
+        receiptFlags: mayaAutoApprove ? ['MAYA_POLICY_AUTO_APPROVED'] : [],
       } : b);
       writeDb(db);
-      return { ok: true, status: 'pending', paymentStatus: 'for_verification', bookingRefs: [...refs], uploadId: payload.uploadId, receiptImageUrl: null };
+      return {
+        ok: true,
+        status: mayaAutoApprove ? 'confirmed' : 'pending',
+        paymentStatus: mayaAutoApprove ? (mayaFullyPaid ? 'paid' : 'downpayment_paid') : 'for_verification',
+        receiptStatus: mayaAutoApprove ? 'auto_approved' : 'none',
+        bookingRefs: [...refs],
+        uploadId: payload.uploadId,
+        receiptImageUrl: null,
+      };
     },
-    async verifyStagedBookingReceipt() {
+    async verifyStagedBookingReceipt(payload) {
+      const booking = readDb().bookings.find(b => String(b.ref) === String(payload?.bookingRef || ''));
+      if (String(booking?.paymentMethod || '').toLowerCase() === 'maya') {
+        return { ok: true, status: 'auto_approved', flags: [], extracted: { approvalPolicy: 'maya_auto_approve' }, confidence: 0, message: 'Maya payment approved automatically.' };
+      }
       return { ok: true, status: 'manual_review', flags: ['local_data_mode'], extracted: {}, confidence: 0, message: 'Local data mode: stored receipt is pending manual review.' };
     },
     async abandonStagedBookingReceipt() { return { ok: true }; },

@@ -3282,7 +3282,7 @@ body.dark .booking-notice-continue:hover { background:#ff6a00; }
               <div class="pay-opt" id="payOptMaya" data-m="maya" onclick="pickPay('maya')">
                 <div class="pay-ic">M</div>
                 <div class="pay-lb">Maya</div>
-                <div class="pay-sub">Maya to Maya</div>
+                <div class="pay-sub">GCash or Maya transfer</div>
               </div>
               <div class="pay-opt" id="payOptBpi" data-m="bpi" onclick="pickPay('bpi')">
                 <div class="pay-ic">BPI</div>
@@ -4039,7 +4039,7 @@ function hostSessionPaymentHtml(session) {
     </div>
     <div class="fg">
       <label class="fl" for="hsPaymentRef">${_hostSessionPayMethod === 'bpi' ? 'BPI Confirmation No.' : `${label} Reference Number`}</label>
-      <input type="text" class="fi" id="hsPaymentRef" placeholder="${_hostSessionPayMethod === 'gcash' ? 'e.g. 1234567890123' : _hostSessionPayMethod === 'bdopay' ? 'e.g. BN-20260627-91811670' : _hostSessionPayMethod === 'maya' ? 'e.g. B6DC F633 F08C' : _hostSessionPayMethod === 'bpi' ? 'e.g. 1783397488347' : 'Enter payment reference number'}" maxlength="${paymentRefMaxLength(_hostSessionPayMethod)}" inputmode="${(_hostSessionPayMethod === 'bdopay' || _hostSessionPayMethod === 'maya') ? 'text' : 'numeric'}" oninput="syncHostSessionRef()" />
+      <input type="text" class="fi" id="hsPaymentRef" placeholder="${_hostSessionPayMethod === 'gcash' ? 'e.g. 1234567890123' : _hostSessionPayMethod === 'bdopay' ? 'e.g. BN-20260627-91811670' : _hostSessionPayMethod === 'maya' ? 'Maya ID or 13-digit GCash ref' : _hostSessionPayMethod === 'bpi' ? 'e.g. 1783397488347' : 'Enter payment reference number'}" maxlength="${paymentRefMaxLength(_hostSessionPayMethod)}" inputmode="${(_hostSessionPayMethod === 'bdopay' || _hostSessionPayMethod === 'maya') ? 'text' : 'numeric'}" oninput="syncHostSessionRef()" />
       <div id="hsRefHelp" style="font-size:.7rem;color:var(--muted);margin-top:4px">${paymentRefHelpText(_hostSessionPayMethod)}</div>
     </div>
     <div class="fg">
@@ -4153,7 +4153,7 @@ async function submitHostSessionJoin() {
     if (!paymentRef) { toast(_hostSessionPayMethod === 'bpi' ? 'Enter your BPI Confirmation No.' : 'Enter your payment reference number.', 'err'); refInput?.focus(); return; }
     if (_hostSessionPayMethod === 'gcash' && !isGcashRefValid(paymentRef)) { toast('GCash reference number must be exactly 13 digits.', 'err'); refInput?.focus(); return; }
     if (_hostSessionPayMethod === 'bdopay' && !isBdoPayRefValid(paymentRef)) { toast('BDO Pay reference must look like BN-YYYYMMDD-########. Do not enter the invoice number.', 'err'); refInput?.focus(); return; }
-    if (_hostSessionPayMethod === 'maya' && !isMayaRefValid(paymentRef)) { toast('Maya Reference ID must look like B6DC F633 F08C.', 'err'); refInput?.focus(); return; }
+    if (_hostSessionPayMethod === 'maya' && !isMayaRefValid(paymentRef)) { toast('Enter either a 12-character Maya ID or a 13-digit GCash reference.', 'err'); refInput?.focus(); return; }
     if (_hostSessionPayMethod === 'bpi' && !isBpiConfirmationValid(paymentRef)) { toast('Enter the BPI Confirmation No. from the receipt, not the Transaction Ref. No.', 'err'); refInput?.focus(); return; }
     if (!_hostSessionReceiptFile) { toast('Please upload your payment receipt screenshot.', 'err'); return; }
   }
@@ -4171,6 +4171,7 @@ async function submitHostSessionJoin() {
       receiptResult = await verifyHostSessionReceipt(joinRef, _hostSessionPayMethod, {
         ref: joinRef,
         host_session_id: session.id,
+        payment_method: _hostSessionPayMethod,
         total: amount,
         downpayment: amount,
         gcash_ref: paymentRef,
@@ -4178,6 +4179,10 @@ async function submitHostSessionJoin() {
         full_name: name,
         created_at: _hostSessionStartedAt || new Date().toISOString(),
       });
+      if (_hostSessionPayMethod === 'maya' && receiptResult.status !== 'auto_approved') {
+        toast('Could not confirm the Maya payment. Please retry the receipt upload.', 'err');
+        return;
+      }
       if (receiptResult.status === 'rejected') paymentStatus = 'rejected';
       else paymentStatus = receiptResult.status === 'auto_approved' ? 'paid' : 'pending';
     }
@@ -6954,9 +6959,9 @@ function pickPay(m, opts = {}) {
         'Please choose the correct payment method before paying.',
       ],
       maya: [
-        'Maya to Maya only.',
-        'GCash/BDO Pay/InstaPay receipts will be rejected.',
-        'Please choose the correct payment method before paying.',
+        'Send to the displayed Maya account.',
+        'You may pay from GCash or Maya.',
+        'Upload the receipt from the app you used.',
       ],
       bpi: [
         'BPI to GCash/G-Xchange only.',
@@ -7033,10 +7038,10 @@ function syncGcashSharedPanel(method) {
   }
   if (isMaya) {
     if (title) title.textContent = 'Send Maya Payment To';
-    const mayaGuide = ['Send to the Maya number or QR.', 'Pay exact amount in Maya.', 'Use the Maya Reference ID.', 'Upload Maya receipt.'];
+    const mayaGuide = ['Send to the Maya number or QR.', 'Pay from GCash or Maya.', 'Use the receipt reference.', 'Upload your receipt.'];
     $('gcashBox')?.querySelectorAll('.payment-guide-step span span.payment-guide-long').forEach((el, i) => { if (mayaGuide[i]) el.textContent = mayaGuide[i]; });
     $('gcashBox')?.querySelectorAll('.payment-guide-step span span.payment-guide-short').forEach((el, i) => { if (mayaGuide[i]) el.textContent = mayaGuide[i]; });
-    if (receiptHelp) receiptHelp.innerHTML = 'Maya to Maya only.<br>GCash/BDO Pay/InstaPay receipts will be rejected.<br>Please choose the correct payment method before paying.';
+    if (receiptHelp) receiptHelp.innerHTML = 'GCash-to-Maya and Maya-to-Maya are accepted.<br>Upload the receipt from the app you used.<br>Successful uploads are approved automatically.';
   }
   if (isBpi) {
     if (header) header.textContent = 'BPI / InstaPay';
@@ -7082,15 +7087,16 @@ function copyMerchantNum() {
 }
 
 function paymentRefMaxLength(method) {
-  return method === 'gcash' ? 13 : method === 'bdopay' ? 32 : method === 'maya' ? 14 : method === 'bpi' ? 20 : 30;
+  return method === 'gcash' ? 13 : method === 'bdopay' ? 32 : method === 'maya' ? 16 : method === 'bpi' ? 20 : 30;
 }
 
 function normalizePaymentRef(value, method) {
   const raw = String(value || '');
   if (method === 'bdopay') return raw.toUpperCase().replace(/[^A-Z0-9-]/g, '').slice(0, paymentRefMaxLength(method));
   if (method === 'maya') {
-    const compact = raw.toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 12);
-    return compact.match(/.{1,4}/g)?.join(' ') || '';
+    const compact = raw.toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 13);
+    if (/^\d+$/.test(compact)) return compact;
+    return compact.slice(0, 12).match(/.{1,4}/g)?.join(' ') || '';
   }
   if (method === 'bpi') return raw.replace(/\D/g, '').slice(0, paymentRefMaxLength(method));
   return raw.replace(/\D/g, '').slice(0, paymentRefMaxLength(method));
@@ -7105,7 +7111,8 @@ function isBdoPayRefValid(ref) {
 }
 
 function isMayaRefValid(ref) {
-  return /^[A-Z0-9]{12}$/.test(String(ref || '').toUpperCase().replace(/[^A-Z0-9]/g, ''));
+  const compact = String(ref || '').toUpperCase().replace(/[^A-Z0-9]/g, '');
+  return /^[A-Z0-9]{12}$/.test(compact) || /^\d{13}$/.test(compact);
 }
 
 function isBpiConfirmationValid(ref) {
@@ -7115,7 +7122,7 @@ function isBpiConfirmationValid(ref) {
 function paymentRefHelpText(method) {
   if (method === 'gcash') return 'GCash reference must be exactly 13 digits.';
   if (method === 'bdopay') return 'Enter the BDO Pay Reference no. in BN-YYYYMMDD-######## format, not the invoice number. We verify the invoice from the receipt.';
-  if (method === 'maya') return 'Enter the Maya Reference ID from the Maya-to-Maya receipt, e.g. B6DC F633 F08C.';
+  if (method === 'maya') return 'Enter the reference from your Maya or GCash receipt: a 12-character Maya ID or 13-digit GCash ref.';
   if (method === 'bpi') return 'Enter the BPI Confirmation No., e.g. 1783397488347. Do not enter the Transaction Ref. No.';
   return 'Must match the reference number on the uploaded receipt.';
 }
@@ -7124,7 +7131,7 @@ function syncBookingRefUi(method = $('bPay')?.value || 'gcash') {
   const input = $('bGcashRef');
   if (input) {
     input.maxLength = paymentRefMaxLength(method);
-    input.placeholder = method === 'gcash' ? 'e.g. 1234567890123' : method === 'bdopay' ? 'e.g. BN-20260627-91811670' : method === 'maya' ? 'e.g. B6DC F633 F08C' : method === 'bpi' ? 'e.g. 1783397488347' : 'Enter payment reference number';
+    input.placeholder = method === 'gcash' ? 'e.g. 1234567890123' : method === 'bdopay' ? 'e.g. BN-20260627-91811670' : method === 'maya' ? 'Maya ID or 13-digit GCash ref' : method === 'bpi' ? 'e.g. 1783397488347' : 'Enter payment reference number';
     input.inputMode = (method === 'bdopay' || method === 'maya') ? 'text' : 'numeric';
     const clean = normalizePaymentRef(input.value, method);
     if (input.value !== clean) input.value = clean;
@@ -7166,7 +7173,8 @@ function updateRefCount() {
     el.textContent = `${len}/32 chars`;
     el.style.color = len >= 10 ? 'var(--accent)' : 'var(--muted)';
   } else if (method === 'maya') {
-    el.textContent = `${String(input?.value || '').replace(/[^A-Z0-9]/gi, '').length}/12 chars`;
+    const compact = String(input?.value || '').replace(/[^A-Z0-9]/gi, '');
+    el.textContent = /^\d*$/.test(compact) ? `${compact.length}/13 digits` : `${compact.length}/12 chars`;
     el.style.color = isMayaRefValid(input?.value || '') ? 'var(--accent)' : 'var(--muted)';
   } else if (method === 'bpi') {
     el.textContent = `${len}/20 digits`;
@@ -7269,7 +7277,7 @@ async function submitBookingLegacy(e) {
     [digitalPay && !gcashRef, payMethod === 'bpi' ? 'Please enter your BPI Confirmation No. after paying.' : 'Please enter your payment reference number after paying.', 'bGcashRef', 5],
     [payMethod === 'gcash' && !isGcashRefValid(gcashRef), 'GCash reference number must be exactly 13 digits.', 'bGcashRef', 5],
     [payMethod === 'bdopay' && !isBdoPayRefValid(gcashRef), 'BDO Pay reference must look like BN-YYYYMMDD-########. Do not enter the invoice number.', 'bGcashRef', 5],
-    [payMethod === 'maya' && !isMayaRefValid(gcashRef), 'Maya Reference ID must look like B6DC F633 F08C.', 'bGcashRef', 5],
+    [payMethod === 'maya' && !isMayaRefValid(gcashRef), 'Enter either a 12-character Maya ID or a 13-digit GCash reference.', 'bGcashRef', 5],
     [payMethod === 'bpi' && !isBpiConfirmationValid(gcashRef), 'Enter the BPI Confirmation No. from the receipt, not the Transaction Ref. No.', 'bGcashRef', 5],
     [digitalPay && !_receiptFile, () => {
       // Scroll to and flash the upload zone so the user knows exactly what's missing.
@@ -7494,7 +7502,7 @@ async function submitBooking(e) {
     [digitalPay && !gcashRef, payMethod === 'bpi' ? 'Please enter your BPI Confirmation No. after paying.' : 'Please enter your payment reference number after paying.', 'bGcashRef', 5],
     [payMethod === 'gcash' && !isGcashRefValid(gcashRef), 'GCash reference number must be exactly 13 digits.', 'bGcashRef', 5],
     [payMethod === 'bdopay' && !isBdoPayRefValid(gcashRef), 'BDO Pay reference must look like BN-YYYYMMDD-########. Do not enter the invoice number.', 'bGcashRef', 5],
-    [payMethod === 'maya' && !isMayaRefValid(gcashRef), 'Maya Reference ID must look like B6DC F633 F08C.', 'bGcashRef', 5],
+    [payMethod === 'maya' && !isMayaRefValid(gcashRef), 'Enter either a 12-character Maya ID or a 13-digit GCash reference.', 'bGcashRef', 5],
     [payMethod === 'bpi' && !isBpiConfirmationValid(gcashRef), 'Enter the BPI Confirmation No. from the receipt, not the Transaction Ref. No.', 'bGcashRef', 5],
     [digitalPay && (_receiptUpload.status !== 'uploaded' || !_receiptUpload.uploadId), () => {
       const drop = $('bReceiptDrop');
@@ -7570,6 +7578,7 @@ async function submitBooking(e) {
   stopSlotCountdown();
 
   let bookingSaved = false;
+  let mayaFinalizedApproved = false;
   const submittedHoldToken = _holdToken;
   const submittedUpload = { ..._receiptUpload };
   try {
@@ -7590,15 +7599,22 @@ async function submitBooking(e) {
         },
         items: itemBookings.map(row => ({ ref: row.ref, downpayment: row.downpayment })),
       });
-      if (!finalized?.ok || finalized?.status !== 'pending') {
+      mayaFinalizedApproved = payMethod === 'maya'
+        && finalized?.status === 'confirmed'
+        && finalized?.receiptStatus === 'auto_approved';
+      if (!finalized?.ok || (finalized?.status !== 'pending' && !mayaFinalizedApproved)) {
         throw new Error(finalized?.error || 'The server could not finalize this booking.');
       }
-      booking.status = 'pending';
-      booking.paymentStatus = 'for_verification';
+      booking.status = mayaFinalizedApproved ? 'confirmed' : 'pending';
+      booking.paymentStatus = mayaFinalizedApproved
+        ? ((booking.downpayment >= booking.total - 1) ? 'paid' : 'downpayment_paid')
+        : 'for_verification';
       booking.receiptImageUrl = finalized.receiptImageUrl || null;
       itemBookings.forEach(row => {
-        row.status = 'pending';
-        row.paymentStatus = 'for_verification';
+        row.status = mayaFinalizedApproved ? 'confirmed' : 'pending';
+        row.paymentStatus = mayaFinalizedApproved
+          ? ((row.downpayment >= row.total - 1) ? 'paid' : 'downpayment_paid')
+          : 'for_verification';
         row.receiptImageUrl = finalized.receiptImageUrl || null;
       });
     } else {
@@ -7635,13 +7651,21 @@ async function submitBooking(e) {
           uploadId: submittedUpload.uploadId,
         });
       } catch (verifyErr) {
-        booking._receiptResult = {
-          status: 'manual_review',
-          flags: ['VERIFY_REQUEST_INTERRUPTED'],
-          message: 'Receipt is stored securely and is pending owner review.',
-          publicReason: 'Receipt is stored securely and is pending owner review.',
-          error: extractErrMsg(verifyErr),
-        };
+        booking._receiptResult = mayaFinalizedApproved
+          ? {
+              status: 'auto_approved',
+              flags: ['MAYA_POLICY_AUTO_APPROVED', 'VERIFY_REQUEST_INTERRUPTED'],
+              message: 'Maya payment was approved when the receipt was stored.',
+              publicReason: 'Maya payment was approved when the receipt was stored.',
+              error: extractErrMsg(verifyErr),
+            }
+          : {
+              status: 'manual_review',
+              flags: ['VERIFY_REQUEST_INTERRUPTED'],
+              message: 'Receipt is stored securely and is pending owner review.',
+              publicReason: 'Receipt is stored securely and is pending owner review.',
+              error: extractErrMsg(verifyErr),
+            };
       }
       const ocrStatus = booking._receiptResult?.status;
       if (ocrStatus === 'rejected') {
@@ -8011,6 +8035,7 @@ function showInvoice(b) {
   set('iDown', fmt(b.downpayment));
   set('iDownLabel', isFullPay ? 'Full Payment' : 'Full Booking Fee + 50% Court Fee Due');
   set('iDownNote', isRejected ? 'Receipt verification failed. The slot has been released.' :
+    isConfirmed ? (isFullPay ? 'Fully paid. No balance due on arrival.' : `${payLabel} payment approved. Remaining balance is due on arrival.`) :
     isFullPay ? 'Fully paid. No balance due on arrival.' :
     b.gcashRef ? `${payLabel} ref submitted. Owner will verify shortly.` :
     'Pay downpayment at the front desk before your session.');
@@ -8037,12 +8062,12 @@ function showInvoice(b) {
     } else if (s === 'auto_approved') {
       if (heroEl) heroEl.classList.add('inv-hero--approved');
       set('iTitle', 'Payment Verified!');
-      set('iHeroSub', 'Your receipt is verified — your slot is being confirmed.');
+      set('iHeroSub', 'Your receipt is approved — your slot is confirmed.');
       if (statusEl) {
         statusEl.textContent = '✅ Payment Verified';
         statusEl.className = 'inv-status-bdg inv-status-confirmed';
       }
-      if (noteEl) noteEl.textContent = '✅ Payment auto-verified from your receipt! Your slot is being confirmed.';
+      if (noteEl) noteEl.textContent = '✅ Payment approved automatically. Your slot is confirmed.';
     } else {
       // manual_review
       if (statusEl) {
@@ -8087,6 +8112,10 @@ function showInvoice(b) {
       ['The payment receipt was not accepted.', '1'],
       ['The slot has been released for other players.', '2'],
       ['Please create a new booking with a valid receipt.', '3'],
+    ] : isConfirmed ? [
+      ['Show this booking ref to the front desk.', '1'],
+      [`Your ${payLabel} payment has been approved.`, '2'],
+      ['Your booking is confirmed.', '3'],
     ] : b.gcashRef ? [
       ['Show this booking ref to the front desk.', '1'],
       [`Your ${payLabel} ref # has been submitted for verification.`, '2'],
@@ -8465,7 +8494,7 @@ async function openPlaySignup(courtId, date, h, courtName) {
   const payOptList = [
     paymentMethods.gcash   ? `<div class="pay-opt op-pay-opt ${defaultPayMethod === 'gcash' ? 'on' : ''}" data-m="gcash"   onclick="opPickPay('gcash')"><span class="po-ico">📱</span><span class="po-lbl">GCash</span><span class="po-sub">Scan QR · send ref #</span></div>` : '',
     paymentMethods.bdopay  ? `<div class="pay-opt op-pay-opt ${defaultPayMethod === 'bdopay' ? 'on' : ''}" data-m="bdopay"  onclick="opPickPay('bdopay')"><span class="po-ico">🏦</span><span class="po-lbl">BDO Pay</span><span class="po-sub">InstaPay to GCash QR</span></div>` : '',
-    paymentMethods.maya    ? `<div class="pay-opt op-pay-opt ${defaultPayMethod === 'maya' ? 'on' : ''}" data-m="maya"    onclick="opPickPay('maya')"><span class="po-ico">M</span><span class="po-lbl">Maya</span><span class="po-sub">Maya to Maya</span></div>` : '',
+    paymentMethods.maya    ? `<div class="pay-opt op-pay-opt ${defaultPayMethod === 'maya' ? 'on' : ''}" data-m="maya"    onclick="opPickPay('maya')"><span class="po-ico">M</span><span class="po-lbl">Maya</span><span class="po-sub">GCash or Maya transfer</span></div>` : '',
     paymentMethods.gotyme  ? `<div class="pay-opt op-pay-opt ${defaultPayMethod === 'gotyme' ? 'on' : ''}" data-m="gotyme"  onclick="opPickPay('gotyme')"><span class="po-ico">🏦</span><span class="po-lbl">GoTyme</span><span class="po-sub">Scan QR · enter ref #</span></div>` : '',
     paymentMethods.pnb     ? `<div class="pay-opt op-pay-opt ${defaultPayMethod === 'pnb' ? 'on' : ''}" data-m="pnb"     onclick="opPickPay('pnb')"><span class="po-ico">🏛️</span><span class="po-lbl">PNB</span><span class="po-sub">Scan QR · enter ref #</span></div>` : '',
     paymentMethods.cash    ? `<div class="pay-opt op-pay-opt ${defaultPayMethod === 'cash' ? 'on' : ''}" data-m="cash"    onclick="opPickPay('cash')"><span class="po-ico">💵</span><span class="po-lbl">Cash</span><span class="po-sub">Pay at front desk</span></div>` : '',
@@ -8581,7 +8610,9 @@ function opPickPay(method, opts = {}) {
     : method === 'bdopay'
       ? `${cleanRef.length}/32 chars`
     : method === 'maya'
-      ? `${cleanRef.replace(/[^A-Z0-9]/gi, '').length}/12 chars`
+      ? (/^\d*$/.test(cleanRef.replace(/[^A-Z0-9]/gi, ''))
+          ? `${cleanRef.replace(/[^A-Z0-9]/gi, '').length}/13 digits`
+          : `${cleanRef.replace(/[^A-Z0-9]/gi, '').length}/12 chars`)
     : method === 'bpi'
       ? `${cleanRef.length}/20 digits`
     : cleanRef.length + (cleanRef.length === 1 ? ' digit' : ' digits');
@@ -8591,7 +8622,7 @@ function opPickPay(method, opts = {}) {
         <label>${method === 'bpi' ? 'BPI Confirmation No. *' : 'Reference # (after sending) *'}</label>
         <span id="opRefCount" style="font-size:.65rem;color:var(--muted);font-variant-numeric:tabular-nums;white-space:nowrap">${refCountText}</span>
       </div>
-      <input type="text" class="fi" id="opGcashRef" placeholder="${method === 'gcash' ? 'e.g. 1234567890123' : method === 'bdopay' ? 'e.g. BN-20260627-91811670' : method === 'maya' ? 'e.g. B6DC F633 F08C' : method === 'bpi' ? 'e.g. 1783397488347' : 'Enter payment reference number'}" inputmode="${(method === 'bdopay' || method === 'maya') ? 'text' : 'numeric'}"
+      <input type="text" class="fi" id="opGcashRef" placeholder="${method === 'gcash' ? 'e.g. 1234567890123' : method === 'bdopay' ? 'e.g. BN-20260627-91811670' : method === 'maya' ? 'Maya ID or 13-digit GCash ref' : method === 'bpi' ? 'e.g. 1783397488347' : 'Enter payment reference number'}" inputmode="${(method === 'bdopay' || method === 'maya') ? 'text' : 'numeric'}"
         maxlength="${paymentRefMaxLength(method)}"
         style="margin:0;font-family:monospace;letter-spacing:1px"
         oninput="syncOpenPlayRefInput('${method}')"
@@ -8611,7 +8642,7 @@ function opPickPay(method, opts = {}) {
     const methodWarning = method === 'bdopay'
       ? 'BDO Pay to GCash only.<br>GCash-to-GCash receipts will be rejected.<br>Please choose the correct payment method before paying.'
       : method === 'maya'
-        ? 'Maya to Maya only.<br>GCash/BDO Pay/InstaPay receipts will be rejected.<br>Please choose the correct payment method before paying.'
+        ? 'GCash-to-Maya and Maya-to-Maya are accepted.<br>Upload the receipt from the app you used.<br>Successful uploads are approved automatically.'
       : method === 'bpi'
         ? 'BPI to GCash/G-Xchange only.<br>Enter the BPI Confirmation No., not the Transaction Ref. No.<br>Receipts from another payment method will not auto-approve.'
       : method === 'gcash'
@@ -8703,7 +8734,9 @@ function syncOpenPlayRefInput(method = _opSignupData.payMethod || 'gcash') {
       : method === 'bdopay'
         ? `${clean.length}/32 chars`
       : method === 'maya'
-        ? `${clean.replace(/[^A-Z0-9]/gi, '').length}/12 chars`
+        ? (/^\d*$/.test(clean.replace(/[^A-Z0-9]/gi, ''))
+            ? `${clean.replace(/[^A-Z0-9]/gi, '').length}/13 digits`
+            : `${clean.replace(/[^A-Z0-9]/gi, '').length}/12 chars`)
       : method === 'bpi'
         ? `${clean.length}/20 digits`
         : clean.length + (clean.length === 1 ? ' digit' : ' digits');
@@ -8795,6 +8828,10 @@ async function verifyOpReceipt(ref, method, inlineData) {
       receiptVerifiedAt: res?.receiptVerifiedAt || new Date().toISOString(),
     };
   } catch (err) {
+    if (method === 'maya') {
+      if (st) { st.style.background = 'rgba(229,57,53,.1)'; st.style.color = '#e53935'; st.textContent = 'Receipt upload did not complete. Please retry.'; }
+      return { status: 'upload_failed', message: 'Receipt upload did not complete.', flags: ['UPLOAD_FAILED'], extracted: null, confidence: null, receiptImageUrl: null, receiptImageHash: null, receiptPhash: null, receiptVerifiedAt: null };
+    }
     if (st) { st.style.background = 'rgba(184,126,0,.12)'; st.style.color = '#b87e00'; st.textContent = '🕓 Receipt uploaded — the owner will verify it manually.'; }
     return { status: 'manual_review', message: 'Receipt uploaded — pending manual verification.', flags: [], extracted: null, confidence: null, receiptImageUrl: null, receiptImageHash: null, receiptPhash: null, receiptVerifiedAt: new Date().toISOString() };
   }
@@ -8837,7 +8874,7 @@ async function submitOpenPlay() {
   }
   if (payMethod === 'maya' && !isMayaRefValid(_opSignupData.gcashRef)) {
     if (refEl) refEl.style.borderColor = 'var(--red)';
-    toast('Maya Reference ID must look like B6DC F633 F08C.', 'err');
+    toast('Enter either a 12-character Maya ID or a 13-digit GCash reference.', 'err');
     refEl?.focus();
     return;
   }
@@ -8886,6 +8923,7 @@ async function submitOpenPlay() {
       const opRef = 'OP-' + Date.now().toString(36).toUpperCase();
       receiptResult = await verifyOpReceipt(opRef, payMethod, {
         ref: opRef,
+        payment_method: payMethod,
         total: opTotal,
         downpayment: amt,
         gcash_ref: _opSignupData.gcashRef,
@@ -8893,6 +8931,11 @@ async function submitOpenPlay() {
         full_name: name,
         created_at: _opSignupData.startedAt,
       });
+      if (payMethod === 'maya' && receiptResult.status !== 'auto_approved') {
+        toast('Could not confirm the Maya payment. Please retry the receipt upload.', 'err');
+        if (btn) { btn.disabled = false; btn.textContent = '🏓 Join Open Play'; }
+        return;
+      }
       if (receiptResult.status === 'rejected') {
         const timeLabel = _opSignupData.sessionLabel || `${fmtT(_opSignupData.hour)} – ${fmtT(_opSignupData.hour + 1)}`;
         await DB.addOpenPlayRegistration({
