@@ -10,17 +10,16 @@
 //   { action: "verify", bookingRef, provider, imageBase64, contentType }
 //     -> OCR (Google Vision) + fraud checks + confidence routing.
 //        Stores the image (private bucket), writes an audit row, advances
-//        payment_status on auto-approve, and alerts admin on review/reject.
+//        payment_status on auto-approve, and alerts admin when review is needed.
 //   { action: "sign", bookingRef }    (admin-only, requires a user JWT)
 //     -> returns a short-lived signed URL to view the stored receipt image.
 //
 // Decision lanes:
-//   auto_approved : zero hard flags, zero soft flags, OCR confident
-//   manual_review : soft flag(s) or unreadable fields or low confidence
-//   rejected      : any hard flag (duplicate / wrong number / underpay / stale)
+//   auto_approved : no verification flags and OCR confident
+//   manual_review : any mismatch, duplicate, timing, authenticity, or OCR flag
 //
-// Rejections never auto-cancel the booking (OCR is heuristic — avoid harming
-// honest customers). They flag the booking red and alert the admin.
+// Receipt verification never auto-cancels a booking. OCR and fraud checks are
+// advisory: flagged submissions remain pending until an admin reviews them.
 // ----------------------------------------------------------------------------
 
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
@@ -42,28 +41,21 @@ const MAX_BYTES = 5 * 1024 * 1024;
 const HOLD_WINDOW_MINUTES = 15;
 const STAGED_UPLOAD_LIMIT_PER_HOLD = 5;
 const STAGED_CLEANUP_BATCH = 25;
-const PESO_TOLERANCE = 5; // allow ±₱5 rounding; underpay beyond this is a hard flag
+const PESO_TOLERANCE = 5; // allow ±₱5 rounding; larger underpayments require admin review
 
-// Hard flags force a rejection; soft flags force manual review.
-const HARD_FLAGS = new Set([
-  "REF_FORMAT_INVALID",
-  "SUSPECTED_FAKE",     // OCR ran and image has zero receipt-like content
+type PaymentProvider = "gcash" | "bdopay" | "maya" | "bpi" | "gotyme" | "pnb";
+type OcrProvider = "google_vision" | "none";
+type ReceiptDecision = "auto_approved" | "manual_review";
+
+const MAYA_MANUAL_REVIEW_FLAGS = new Set([
   "DUPLICATE_REF",
   "DUPLICATE_INVOICE",
   "DUPLICATE_INSTAPAY_REF",
   "DUPLICATE_BPI_TRANSACTION_REF",
-  "METHOD_MISMATCH",
-  "REF_MISMATCH",
   "DATE_NOT_TODAY",
-  "TIME_EXPIRED",
   "TIME_FUTURE",
-  "WRONG_GCASH_NUMBER",
-  "WRONG_RECEIVER_NUMBER",
-  "AMOUNT_MISMATCH",    // Only hard if significantly underpaid (>₱5)
+  "TIME_EXPIRED",
 ]);
-
-type PaymentProvider = "gcash" | "bdopay" | "maya" | "bpi" | "gotyme" | "pnb";
-type OcrProvider = "google_vision" | "none";
 
 type OcrResult = {
   text: string;
@@ -76,32 +68,10 @@ type OcrResult = {
 };
 
 function publicReceiptMessage(
-  result: "auto_approved" | "manual_review" | "rejected",
-  flags: string[],
+  result: ReceiptDecision,
 ): string {
   if (result === "auto_approved") return "Payment verified.";
-  if (result === "manual_review") return "Received - the owner will verify your payment shortly.";
-
-  const flagSet = new Set(flags);
-  if (flagSet.has("AMOUNT_MISMATCH")) {
-    return "Payment amount is lower than required. Please upload the correct payment receipt.";
-  }
-  if (flagSet.has("TIME_EXPIRED") || flagSet.has("TIME_FUTURE") || flagSet.has("DATE_NOT_TODAY")) {
-    return "Payment was sent outside the allowed 10-minute window. Please create a new booking.";
-  }
-  if (flagSet.has("IMAGE_UNREADABLE") || flagSet.has("OCR_UNAVAILABLE")) {
-    return "Receipt image is unreadable. Please upload a clearer screenshot.";
-  }
-  if (
-    flagSet.has("SUSPECTED_FAKE")
-    || flagSet.has("GCASH_RECEIPT_UNREADABLE")
-    || flagSet.has("BDO_PAY_UNREADABLE")
-    || flagSet.has("MAYA_UNREADABLE")
-    || flagSet.has("BPI_UNREADABLE")
-  ) {
-    return "Payment could not be verified. Please upload a valid receipt or contact admin.";
-  }
-  return "Payment details do not match this booking. Please check your receipt and try again, or contact admin.";
+  return "Received - the owner will verify your payment shortly.";
 }
 
 function json(body: unknown, status = 200) {
@@ -506,6 +476,14 @@ function isMayaReference(value: string): boolean {
 
 function isBpiConfirmationNo(value: string): boolean {
   return /^\d{10,20}$/.test(digitsOnly(value));
+}
+
+function isValidReferenceForProvider(value: string, provider: PaymentProvider): boolean {
+  if (provider === "gcash") return /^\d{13}$/.test(value);
+  if (provider === "bdopay") return isBdoPayReference(value);
+  if (provider === "maya") return isMayaReference(value);
+  if (provider === "bpi") return isBpiConfirmationNo(value);
+  return /^[A-Z0-9]{6,40}$/.test(value);
 }
 
 function flexibleDigitPattern(digits: string): RegExp {
@@ -1437,28 +1415,6 @@ Deno.serve(async (req) => {
         const forbidden = /capability|receipt service/i.test(message);
         return json({ error: message, code: conflict ? "FINALIZE_CONFLICT" : forbidden ? "INVALID_HOLD_CAPABILITY" : "FINALIZE_INVALID" }, conflict ? 409 : forbidden ? 403 : 400);
       }
-      if (String(payment.method || "").trim().toLowerCase() === "maya") {
-        // Maya is approved atomically by the staged-booking database trigger.
-        // Return the persisted state instead of the RPC's legacy hard-coded
-        // pending response so the browser never presents a successful Maya
-        // checkout as awaiting review.
-        const { data: persisted, error: persistedError } = await db
-          .from("bookings")
-          .select("status,payment_status,receipt_status")
-          .eq("ref", bookingRef)
-          .maybeSingle();
-        if (persistedError) {
-          console.error("finalized Maya booking state read failed:", errMsg(persistedError));
-        }
-        if (persisted) {
-          return json({
-            ...(data || { ok: true }),
-            status: persisted.status,
-            paymentStatus: persisted.payment_status,
-            receiptStatus: persisted.receipt_status,
-          });
-        }
-      }
       return json(data || { ok: true, status: "pending" });
     } catch (error) {
       const message = errMsg(error);
@@ -1499,30 +1455,86 @@ Deno.serve(async (req) => {
     });
     const { data: userData } = await userClient.auth.getUser();
     if (!userData?.user) return json({ error: "Unauthorized" }, 401);
+    const { data: account } = await db
+      .from("accounts")
+      .select("role")
+      .eq("id", userData.user.id)
+      .maybeSingle();
+    if (!account || !["owner", "court_owner", "staff", "developer"].includes(String(account.role || ""))) {
+      return json({ error: "Forbidden" }, 403);
+    }
 
     let path: string | null = null;
+    let auditBookingRef = bookingRef;
+    let expectedImageHash: string | null = null;
     if (hostSessionRegistrationId) {
       const { data: reg } = await db
         .from("open_play_host_session_registrations")
-        .select("receipt_image_url")
+        .select("receipt_image_url,receipt_image_hash")
         .eq("id", hostSessionRegistrationId)
         .single();
       path = reg?.receipt_image_url || null;
+      expectedImageHash = reg?.receipt_image_hash || null;
+      auditBookingRef = path ? String(path).split("/")[0] : "";
     } else if (openPlayRegistrationId) {
       const { data: reg } = await db
         .from("open_play_registrations")
-        .select("receipt_image_url")
+        .select("receipt_image_url,receipt_image_hash")
         .eq("id", openPlayRegistrationId)
         .single();
       path = reg?.receipt_image_url || null;
+      expectedImageHash = reg?.receipt_image_hash || null;
+      auditBookingRef = path ? String(path).split("/")[0] : "";
     } else {
-      const { data: bk } = await db.from("bookings").select("receipt_image_url").eq("ref", bookingRef).single();
+      const { data: bk } = await db
+        .from("bookings")
+        .select("receipt_image_url,receipt_image_hash")
+        .eq("ref", bookingRef)
+        .single();
       path = bk?.receipt_image_url || null;
+      expectedImageHash = bk?.receipt_image_hash || null;
     }
     if (!path) return json({ error: "No receipt on file" }, 404);
+    let audit: Record<string, unknown> | null = null;
+    if (auditBookingRef) {
+      // Bind the audit to the exact stored receipt path. A booking reference can
+      // have multiple attempts, so "latest by ref" alone could pair a signed
+      // image with another upload's flags. Hash fallback supports legacy audit
+      // rows created before storage_path was recorded.
+      let { data: auditRow, error: auditError } = await db
+        .from("receipt_verifications")
+        .select("result,flags,extracted,confidence,created_at")
+        .eq("storage_path", path)
+        .order("created_at", { ascending: false })
+        .limit(1)
+        .maybeSingle();
+      if (auditError) console.error("receipt audit lookup failed:", errMsg(auditError));
+      if (!auditRow && expectedImageHash) {
+        const fallback = await db
+          .from("receipt_verifications")
+          .select("result,flags,extracted,confidence,created_at")
+          .eq("booking_ref", auditBookingRef)
+          .eq("image_hash", expectedImageHash)
+          .order("created_at", { ascending: false })
+          .limit(1)
+          .maybeSingle();
+        auditRow = fallback.data;
+        auditError = fallback.error;
+        if (auditError) console.error("legacy receipt audit lookup failed:", errMsg(auditError));
+      }
+      if (auditRow) {
+        audit = {
+          result: auditRow.result,
+          flags: auditRow.flags || [],
+          extracted: auditRow.extracted || null,
+          confidence: auditRow.confidence,
+          createdAt: auditRow.created_at,
+        };
+      }
+    }
     const { data: signed, error: signErr } = await db.storage.from("receipts").createSignedUrl(path, 300);
     if (signErr || !signed) return json({ error: errMsg(signErr || "sign failed") }, 500);
-    return json({ ok: true, url: signed.signedUrl });
+    return json({ ok: true, url: signed.signedUrl, audit });
   }
 
   // ── verify a freshly-uploaded receipt ─────────────────────────────────────
@@ -1755,14 +1767,21 @@ Deno.serve(async (req) => {
         if (!hasExpectedReceiverName(ocrText, expectedName)) flags.push("RECEIVER_NAME_UNREADABLE");
         if (!extractedInvoice) flags.push("INVOICE_UNREADABLE");
       } else if (provider === "maya") {
-        // Collect Maya-specific audit signals. GCash-to-Maya receipts may fail
-        // these OCR checks, but selected-Maya policy keeps the flags audit-only.
+        // Collect Maya-specific audit signals. GCash-to-Maya compatibility
+        // flags remain audit-only, but duplicate and parsed timing flags must
+        // hold the booking for an admin decision.
         if (!extractedRef) flags.push("REF_UNREADABLE");
         else if (typedRef && extractedRef !== typedRef) flags.push("REF_MISMATCH");
 
         if (pricingError) flags.push("AMOUNT_MISMATCH");
         else if (extractedAmount == null) flags.push("AMOUNT_UNREADABLE");
         else if (extractedAmount < expectedAmount - PESO_TOLERANCE) flags.push("AMOUNT_MISMATCH");
+
+        if (receiptDate && bookingStartedDate && receiptDate !== bookingStartedDate) flags.push("DATE_NOT_TODAY");
+        if (receiptDateTime && bookingStartedAt) {
+          if ((receiptAgeMinutes as number) < -PAYMENT_EARLY_TOLERANCE_MINUTES) flags.push("TIME_FUTURE");
+          else if ((receiptAgeMinutes as number) > PAYMENT_WINDOW_MINUTES) flags.push("TIME_EXPIRED");
+        }
 
         if (!hasMayaIndicator(ocrText)) flags.push("MAYA_UNREADABLE");
         if (!hasMayaCompletedIndicator(ocrText)) flags.push("MAYA_UNREADABLE");
@@ -1800,7 +1819,7 @@ Deno.serve(async (req) => {
         else if (extractedAmount < expectedAmount - PESO_TOLERANCE) flags.push("AMOUNT_MISMATCH");
       }
 
-      // Authenticity heuristics — HARD: a non-receipt image should be rejected outright.
+      // Authenticity heuristics — suspicious images require admin review.
       if (!looksLikeGcashReceipt(ocrText)) flags.push("SUSPECTED_FAKE");
     }
     if (editedBySoftware(bytes)) flags.push("EDITED_METADATA");
@@ -1809,40 +1828,47 @@ Deno.serve(async (req) => {
     if (ocrText && ocrConfidence < 0.55) flags.push("LOW_OCR_CONFIDENCE");
 
     // ── reference reuse / replay guard ──────────────────────────────────────
-    // Use the OCR-extracted ref when available, else the customer-typed ref.
-    // GCash refs are stored as digits only; other providers are namespaced so
-    // same-looking references from different banks do not collide.
-    const rawRefForDedupe = extractedRef || typedRef || null;
-    const refForDedupe = rawRefForDedupe
-      ? provider === "gcash" ? rawRefForDedupe : `${provider}:${rawRefForDedupe}`
-      : null;
-    const dedupeKeys: Array<{ key: string; providerKey: string; duplicateFlag: string }> = [];
-    if (refForDedupe) {
-      dedupeKeys.push({ key: refForDedupe, providerKey: provider, duplicateFlag: "DUPLICATE_REF" });
+    // Check both the OCR-extracted and customer-entered references. A mismatch
+    // must not let a duplicate typed reference bypass the replay guard. GCash
+    // refs are stored as digits only; other providers are namespaced.
+    const dedupeKeys: Array<{ key: string; providerKey: string; duplicateFlag: string; claimable: boolean }> = [];
+    const seenDedupeKeys = new Set<string>();
+    const addDedupeKey = (key: string, providerKey: string, duplicateFlag: string, claimable = true) => {
+      if (seenDedupeKeys.has(key)) return;
+      seenDedupeKeys.add(key);
+      dedupeKeys.push({ key, providerKey, duplicateFlag, claimable });
+    };
+    const referenceCandidates = new Set([extractedRef, typedRef].filter((value): value is string => !!value));
+    for (const reference of referenceCandidates) {
+      if (provider === "gcash") {
+        addDedupeKey(reference, provider, "DUPLICATE_REF", reference === typedRef && isValidReferenceForProvider(reference, provider));
+      } else if (provider === "maya" && /^\d{13}$/.test(reference)) {
+        // A 13-digit reference under Maya is a GCash-to-Maya transaction. Use
+        // the bare GCash key for cross-method replay protection, while also
+        // checking/claiming the namespaced key created by older deployments.
+        addDedupeKey(reference, provider, "DUPLICATE_REF", reference === typedRef);
+        addDedupeKey(`maya:${reference}`, provider, "DUPLICATE_REF", false);
+      } else {
+        addDedupeKey(
+          `${provider}:${reference}`,
+          provider,
+          "DUPLICATE_REF",
+          reference === typedRef && isValidReferenceForProvider(reference, provider),
+        );
+      }
     }
     if (provider === "bdopay" && extractedInvoice) {
-      dedupeKeys.push({
-        key: `bdopay_invoice:${extractedInvoice}`,
-        providerKey: "bdopay_invoice",
-        duplicateFlag: "DUPLICATE_INVOICE",
-      });
+      addDedupeKey(`bdopay_invoice:${extractedInvoice}`, "bdopay_invoice", "DUPLICATE_INVOICE");
     }
     if (provider === "maya" && extractedInstapayRefNo) {
-      dedupeKeys.push({
-        key: `maya_instapay:${extractedInstapayRefNo}`,
-        providerKey: "maya_instapay",
-        duplicateFlag: "DUPLICATE_INSTAPAY_REF",
-      });
+      addDedupeKey(`maya_instapay:${extractedInstapayRefNo}`, "maya_instapay", "DUPLICATE_INSTAPAY_REF");
     }
     if (provider === "bpi" && extractedBpiTransactionRefNo) {
-      dedupeKeys.push({
-        key: `bpi_transaction:${extractedBpiTransactionRefNo}`,
-        providerKey: "bpi_transaction",
-        duplicateFlag: "DUPLICATE_BPI_TRANSACTION_REF",
-      });
+      addDedupeKey(`bpi_transaction:${extractedBpiTransactionRefNo}`, "bpi_transaction", "DUPLICATE_BPI_TRANSACTION_REF");
     }
 
     const alreadyClaimedByThisBooking = new Set<string>();
+    let hasForeignClaim = false;
     for (const item of dedupeKeys) {
       const { data: existingRef } = await db
         .from("used_gcash_refs")
@@ -1850,54 +1876,58 @@ Deno.serve(async (req) => {
         .eq("gcash_ref", item.key)
         .maybeSingle();
       if (existingRef && !bookingGroupRefs.has(String(existingRef.booking_ref || ""))) {
-        flags.push(item.duplicateFlag);
+        if (!flags.includes(item.duplicateFlag)) flags.push(item.duplicateFlag);
+        hasForeignClaim = true;
       } else if (existingRef && bookingGroupRefs.has(String(existingRef.booking_ref || ""))) {
         alreadyClaimedByThisBooking.add(item.key);
       }
     }
 
     // ── decision routing ────────────────────────────────────────────────────
-    const hasHard = flags.some((f) => HARD_FLAGS.has(f));
-    const hasSoftOrUnreadable = flags.length > 0;
-    // Venue policy: a booking paid through the Maya option is approved after
-    // its receipt has been stored and the booking itself has been validated.
-    // Customers may send to Maya from GCash, so receipt/OCR and duplicate flags
-    // remain available for auditing but must not route Maya bookings to review
-    // or rejection.
-    const autoApproveMaya = provider === "maya";
-    if (autoApproveMaya && !flags.includes("MAYA_POLICY_AUTO_APPROVED")) {
-      flags.push("MAYA_POLICY_AUTO_APPROVED");
-    }
-    let result: "auto_approved" | "manual_review" | "rejected";
-    if (autoApproveMaya) result = "auto_approved";
-    else if (hasHard) result = "rejected";
-    else if (hasSoftOrUnreadable) result = "manual_review";
+    const needsAdminReview = flags.length > 0;
+    // GCash-to-Maya compatibility/OCR mismatches remain audit-only. Duplicate
+    // references and parsed receipts outside the booking window are explicit
+    // exceptions and stay pending for an admin decision.
+    const mayaNeedsAdminReview = provider === "maya"
+      && flags.some((flag) => MAYA_MANUAL_REVIEW_FLAGS.has(flag));
+    const mayaPolicyEligible = provider === "maya" && !mayaNeedsAdminReview;
+    let result: ReceiptDecision;
+    if (mayaPolicyEligible) result = "auto_approved";
+    else if (needsAdminReview) result = "manual_review";
     else result = "auto_approved";
 
     // Race-safe claim of payment ledger keys. The table's primary key on
     // gcash_ref is the source of truth if another request claims the same key.
-    if (result === "auto_approved") {
+    // Claim only valid references on an otherwise approved receipt. Manual
+    // attempts are deliberately not allowed to reserve arbitrary customer-
+    // supplied values. If any alias already belongs to another booking, claim
+    // none of them so the duplicate attempt cannot take ownership of a missing
+    // canonical/legacy alias.
+    if (result === "auto_approved" && !hasForeignClaim) {
       for (const item of dedupeKeys) {
-        if (alreadyClaimedByThisBooking.has(item.key)) continue;
+        if (!item.claimable || alreadyClaimedByThisBooking.has(item.key)) continue;
         const { error: claimErr } = await db
           .from("used_gcash_refs")
           .insert({ gcash_ref: item.key, booking_ref: bookingRef, provider: item.providerKey });
         if (claimErr) {
           console.error("payment ledger claim failed:", errMsg(claimErr));
           if (!flags.includes(item.duplicateFlag)) flags.push(item.duplicateFlag);
-          if (!autoApproveMaya) {
-            result = "rejected";
-            break;
-          }
+          result = "manual_review";
+          break;
         }
       }
+    }
+
+    const autoApproveMaya = provider === "maya" && result === "auto_approved";
+    if (autoApproveMaya && !flags.includes("MAYA_POLICY_AUTO_APPROVED")) {
+      flags.push("MAYA_POLICY_AUTO_APPROVED");
     }
 
     // Policy approval is not evidence that OCR was confident. Preserve the
     // measured value for Maya so the audit trail remains truthful.
     const confidence = autoApproveMaya ? ocrConfidence
       : result === "auto_approved" ? Math.max(0.9, ocrConfidence)
-      : result === "manual_review" ? 0.5 : 0.1;
+      : 0.5;
 
     const extracted = {
       ref: extractedRef,
@@ -1931,9 +1961,9 @@ Deno.serve(async (req) => {
 
     // ── persist outcome on the booking ──────────────────────────────────────
     // Split into TWO updates so a transient failure on a single metadata field
-    // (e.g. JSONB shape, missing column) cannot prevent the slot from being
-    // released. Pass 1 = status invariants (the only fields that gate slot
-    // availability). Pass 2 = receipt_* metadata for admin/audit display.
+    // (e.g. JSONB shape, missing column) cannot prevent the booking state from
+    // being saved. Pass 1 = status invariants. Pass 2 = receipt_* metadata for
+    // admin/audit display.
     const statusUpdate: Record<string, unknown> = {};
     if (result === "auto_approved") {
       const fullyPaid = expectedAmount >= expectedTotal - PESO_TOLERANCE;
@@ -1941,15 +1971,11 @@ Deno.serve(async (req) => {
       if (booking.status !== "completed" && booking.status !== "cancelled") {
         statusUpdate.status = "confirmed";
       }
-    } else if (result === "manual_review") {
+    } else {
       statusUpdate.payment_status = "for_verification";
       if (booking.status !== "completed" && booking.status !== "cancelled") {
         statusUpdate.status = "pending";
       }
-    } else if (result === "rejected") {
-      // Cancel the booking immediately — invalid/fake receipt → slot must be freed.
-      statusUpdate.status = "cancelled";
-      statusUpdate.payment_status = "rejected";
     }
 
     const metadataUpdate: Record<string, unknown> = {
@@ -1968,7 +1994,7 @@ Deno.serve(async (req) => {
 
     // Skip DB update when booking hasn't been saved yet (pre-save verification flow).
     if (!inlineBookingData) {
-      // Pass 1 — status invariants (CRITICAL for slot release on rejection).
+      // Pass 1 — booking/payment status invariants.
       if (Object.keys(statusUpdate).length > 0) {
         const { data: statusRows, error: sErr } = await bookingUpdateQuery(db, booking, statusUpdate)
           .select("ref, status, payment_status");
@@ -1980,24 +2006,11 @@ Deno.serve(async (req) => {
           console.error(statusUpdateError);
         }
       }
-      // Pass 2 — receipt_* metadata. A failure here MUST NOT block slot release.
+      // Pass 2 — receipt_* metadata for admin review and audit.
       const { error: mErr } = await bookingUpdateQuery(db, booking, metadataUpdate);
       if (mErr) {
         metadataUpdateError = errMsg(mErr);
         console.error("booking METADATA update failed:", metadataUpdateError);
-      }
-
-      // Last-resort fallback: if rejection's status update failed, try once
-      // more with just the cancel field. The slot MUST be freed on a rejected
-      // receipt — no exceptions.
-      if (statusUpdateError && result === "rejected") {
-        const { error: fallbackErr } = await bookingUpdateQuery(db, booking, { status: "cancelled" });
-        if (fallbackErr) {
-          console.error("FALLBACK cancel also failed:", errMsg(fallbackErr));
-        } else {
-          console.error("FALLBACK cancel succeeded after status update failure");
-          statusUpdateError = null;
-        }
       }
     }
 
@@ -2010,22 +2023,21 @@ Deno.serve(async (req) => {
       confidence,
       image_hash: imageHash,
       phash,
+      storage_path: objectPath,
       raw_ocr_text: ocrText || null,
     });
 
     // ── alert admin on anything needing a human ─────────────────────────────
     if (result !== "auto_approved") {
-      const icon = result === "rejected" ? "❌" : "⚠️";
-      const head = result === "rejected" ? "RECEIPT REJECTED — BOOKING CANCELLED" : "RECEIPT NEEDS REVIEW";
       await sendTelegram(
-        `${icon} <b>${head}</b>\n` +
+        `⚠️ <b>RECEIPT NEEDS REVIEW</b>\n` +
         `━━━━━━━━━━━━━━━━━━\n` +
         `📋 Ref: <code>${bookingRef}</code>\n` +
         `👤 ${booking.full_name || "—"}\n` +
         `💰 Expected: ₱${expectedAmount.toFixed(2)}` +
         (extractedAmount != null ? ` · Seen: ₱${extractedAmount.toFixed(2)}` : "") + `\n` +
         `🚩 Flags: <code>${flags.join(", ") || "none"}</code>\n` +
-        (result === "rejected" ? `🗑 Booking auto-cancelled. Slot is now free.` : `👉 Open admin panel to review the receipt.`),
+        `👉 Booking remains pending. Open the admin panel to review the receipt.`,
       );
     }
 
@@ -2035,7 +2047,7 @@ Deno.serve(async (req) => {
       flags: [],
       publicReason: autoApproveMaya
         ? "Maya payment approved automatically."
-        : publicReceiptMessage(result, flags),
+        : publicReceiptMessage(result),
       extracted,
       confidence,
       receiptImageUrl: objectPath,
@@ -2046,8 +2058,7 @@ Deno.serve(async (req) => {
       ...(metadataUpdateError ? { metadataWarning: metadataUpdateError } : {}),
       message:
         result === "auto_approved" ? (autoApproveMaya ? "Maya payment approved automatically." : "Payment verified.")
-        : result === "manual_review" ? "Received — the owner will verify your payment shortly."
-        : "Your receipt could not be verified. Your booking has been cancelled — please try again with a valid receipt.",
+        : "Received — the owner will verify your payment shortly.",
     });
   } catch (err) {
     const message = errMsg(err);

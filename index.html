@@ -4179,10 +4179,6 @@ async function submitHostSessionJoin() {
         full_name: name,
         created_at: _hostSessionStartedAt || new Date().toISOString(),
       });
-      if (_hostSessionPayMethod === 'maya' && receiptResult.status !== 'auto_approved') {
-        toast('Could not confirm the Maya payment. Please retry the receipt upload.', 'err');
-        return;
-      }
       if (receiptResult.status === 'rejected') paymentStatus = 'rejected';
       else paymentStatus = receiptResult.status === 'auto_approved' ? 'paid' : 'pending';
     }
@@ -6950,12 +6946,12 @@ function pickPay(m, opts = {}) {
     const notes = {
       gcash: [
         'GCash to GCash only.',
-        'BDO Pay/InstaPay receipts will be rejected.',
+        'Other receipt types will be held for owner review.',
         'Please choose the correct payment method before paying.',
       ],
       bdopay: [
         'BDO Pay to GCash only.',
-        'GCash-to-GCash receipts will be rejected.',
+        'Other receipt types will be held for owner review.',
         'Please choose the correct payment method before paying.',
       ],
       maya: [
@@ -7033,8 +7029,8 @@ function syncGcashSharedPanel(method) {
   const receiptHelp = $('bReceiptRequired');
   if (receiptHelp) {
     receiptHelp.innerHTML = isBdo
-      ? 'BDO Pay to GCash only.<br>GCash-to-GCash receipts will be rejected.<br>Please choose the correct payment method before paying.'
-      : 'GCash to GCash only.<br>BDO Pay/InstaPay receipts will be rejected.<br>Please choose the correct payment method before paying.';
+      ? 'BDO Pay to GCash only.<br>Other receipt types will be held for owner review.<br>Please choose the correct payment method before paying.'
+      : 'GCash to GCash only.<br>Other receipt types will be held for owner review.<br>Please choose the correct payment method before paying.';
   }
   if (isMaya) {
     if (title) title.textContent = 'Send Maya Payment To';
@@ -8640,13 +8636,13 @@ function opPickPay(method, opts = {}) {
     }[method];
     const receiver = meta.receiver;
     const methodWarning = method === 'bdopay'
-      ? 'BDO Pay to GCash only.<br>GCash-to-GCash receipts will be rejected.<br>Please choose the correct payment method before paying.'
+      ? 'BDO Pay to GCash only.<br>Other receipt types will be held for owner review.<br>Please choose the correct payment method before paying.'
       : method === 'maya'
         ? 'GCash-to-Maya and Maya-to-Maya are accepted.<br>Upload the receipt from the app you used.<br>Successful uploads are approved automatically.'
       : method === 'bpi'
         ? 'BPI to GCash/G-Xchange only.<br>Enter the BPI Confirmation No., not the Transaction Ref. No.<br>Receipts from another payment method will not auto-approve.'
       : method === 'gcash'
-        ? 'GCash to GCash only.<br>BDO Pay/InstaPay receipts will be rejected.<br>Please choose the correct payment method before paying.'
+        ? 'GCash to GCash only.<br>Other receipt types will be held for owner review.<br>Please choose the correct payment method before paying.'
         : `Use ${meta.label} only. Receipts from another payment method will not auto-approve.`;
     const displayReceiverName = method === 'gcash'
       ? (maskGcashOwnerName(receiver.name) || 'Court owner account')
@@ -8828,12 +8824,8 @@ async function verifyOpReceipt(ref, method, inlineData) {
       receiptVerifiedAt: res?.receiptVerifiedAt || new Date().toISOString(),
     };
   } catch (err) {
-    if (method === 'maya') {
-      if (st) { st.style.background = 'rgba(229,57,53,.1)'; st.style.color = '#e53935'; st.textContent = 'Receipt upload did not complete. Please retry.'; }
-      return { status: 'upload_failed', message: 'Receipt upload did not complete.', flags: ['UPLOAD_FAILED'], extracted: null, confidence: null, receiptImageUrl: null, receiptImageHash: null, receiptPhash: null, receiptVerifiedAt: null };
-    }
-    if (st) { st.style.background = 'rgba(184,126,0,.12)'; st.style.color = '#b87e00'; st.textContent = '🕓 Receipt uploaded — the owner will verify it manually.'; }
-    return { status: 'manual_review', message: 'Receipt uploaded — pending manual verification.', flags: [], extracted: null, confidence: null, receiptImageUrl: null, receiptImageHash: null, receiptPhash: null, receiptVerifiedAt: new Date().toISOString() };
+    if (st) { st.style.background = 'rgba(229,57,53,.1)'; st.style.color = '#e53935'; st.textContent = 'Receipt upload did not complete. Please retry.'; }
+    return { status: 'upload_failed', message: 'Receipt upload did not complete.', flags: ['UPLOAD_FAILED'], extracted: null, confidence: null, receiptImageUrl: null, receiptImageHash: null, receiptPhash: null, receiptVerifiedAt: null };
   }
 }
 
@@ -8931,8 +8923,8 @@ async function submitOpenPlay() {
         full_name: name,
         created_at: _opSignupData.startedAt,
       });
-      if (payMethod === 'maya' && receiptResult.status !== 'auto_approved') {
-        toast('Could not confirm the Maya payment. Please retry the receipt upload.', 'err');
+      if (receiptResult.status === 'upload_failed') {
+        toast('Could not store the payment receipt. Please retry the upload.', 'err');
         if (btn) { btn.disabled = false; btn.textContent = '🏓 Join Open Play'; }
         return;
       }

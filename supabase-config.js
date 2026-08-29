@@ -886,6 +886,19 @@ window.DB = {
     return rowToOpenPlayHostSessionRegistration(data);
   },
 
+  async updateOpenPlayHostSessionRegistration(id, updates) {
+    const row = {};
+    if (updates.paymentStatus !== undefined) row.payment_status = updates.paymentStatus;
+    if (updates.receiptStatus !== undefined) row.receipt_status = updates.receiptStatus;
+    const { data, error } = await _sb.from('open_play_host_session_registrations')
+      .update(row)
+      .eq('id', id)
+      .select('*')
+      .single();
+    if (error) { console.error('updateOpenPlayHostSessionRegistration:', error); throw error; }
+    return rowToOpenPlayHostSessionRegistration(data);
+  },
+
   // ---- OPEN PLAY GAME MANAGER ----
   async getOpenPlayGameSessions() {
     const { data, error } = await _sb.from('open_play_game_sessions').select('*').order('date', { ascending: false }).order('created_at', { ascending: false });
@@ -1174,6 +1187,15 @@ window.DB = {
     return data.url;
   },
 
+  async getReceiptReview(bookingRef) {
+    const { data, error } = await _sb.functions.invoke('verify-gcash-receipt', {
+      body: { action: 'sign', bookingRef },
+    });
+    if (error) throw new Error(_extractFnError(error, 'Could not load receipt'));
+    if (!data?.url) throw new Error(data?.error || 'No receipt available');
+    return { url: data.url, audit: data.audit || null };
+  },
+
   async getOpenPlayReceiptSignedUrl(registrationId) {
     const { data, error } = await _sb.functions.invoke('verify-gcash-receipt', {
       body: { action: 'sign', openPlayRegistrationId: registrationId },
@@ -1183,6 +1205,15 @@ window.DB = {
     return data.url;
   },
 
+  async getOpenPlayReceiptReview(registrationId) {
+    const { data, error } = await _sb.functions.invoke('verify-gcash-receipt', {
+      body: { action: 'sign', openPlayRegistrationId: registrationId },
+    });
+    if (error) throw new Error(_extractFnError(error, 'Could not load receipt'));
+    if (!data?.url) throw new Error(data?.error || 'No receipt available');
+    return { url: data.url, audit: data.audit || null };
+  },
+
   async getHostSessionReceiptSignedUrl(registrationId) {
     const { data, error } = await _sb.functions.invoke('verify-gcash-receipt', {
       body: { action: 'sign', hostSessionRegistrationId: registrationId },
@@ -1190,6 +1221,15 @@ window.DB = {
     if (error) throw new Error(_extractFnError(error, 'Could not load receipt'));
     if (!data?.url) throw new Error(data?.error || 'No receipt available');
     return data.url;
+  },
+
+  async getHostSessionReceiptReview(registrationId) {
+    const { data, error } = await _sb.functions.invoke('verify-gcash-receipt', {
+      body: { action: 'sign', hostSessionRegistrationId: registrationId },
+    });
+    if (error) throw new Error(_extractFnError(error, 'Could not load receipt'));
+    if (!data?.url) throw new Error(data?.error || 'No receipt available');
+    return { url: data.url, audit: data.audit || null };
   },
 
   // ---- SEED DEFAULT DATA (runs once on first load) ----
@@ -1973,6 +2013,17 @@ window.DB = {
       writeDb(db);
       return row;
     },
+    async updateOpenPlayHostSessionRegistration(id, updates) {
+      const db = readDb();
+      let saved = null;
+      db.openPlayHostSessionRegistrations = (db.openPlayHostSessionRegistrations || []).map(reg => {
+        if (String(reg.id) !== String(id)) return reg;
+        saved = { ...reg, ...updates, updatedAt: nowIso() };
+        return saved;
+      });
+      writeDb(db);
+      return saved;
+    },
 
     async getOpenPlayGameSessions() {
       return readDb().openPlayGameSessions.sort((a, b) =>
@@ -2228,7 +2279,11 @@ window.DB = {
     },
     async abandonStagedBookingReceipt() { return { ok: true }; },
     async getReceiptSignedUrl() { throw new Error('No stored receipt in local data mode.'); },
+    async getReceiptReview() { throw new Error('No stored receipt in local data mode.'); },
     async getOpenPlayReceiptSignedUrl() { throw new Error('No stored receipt in local data mode.'); },
+    async getOpenPlayReceiptReview() { throw new Error('No stored receipt in local data mode.'); },
+    async getHostSessionReceiptSignedUrl() { throw new Error('No stored receipt in local data mode.'); },
+    async getHostSessionReceiptReview() { throw new Error('No stored receipt in local data mode.'); },
 
     async seedDefaultData() { readDb(); },
     async getAgreement(userId, version = 1) {

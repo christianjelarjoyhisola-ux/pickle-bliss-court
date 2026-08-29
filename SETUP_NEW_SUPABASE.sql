@@ -200,6 +200,7 @@ create table if not exists public.receipt_verifications (
   confidence numeric,
   image_hash text,
   phash text,
+  storage_path text,
   raw_ocr_text text,
   created_at timestamptz not null default now()
 );
@@ -520,6 +521,9 @@ create index if not exists idx_payment_sessions_provider_reference on public.pay
 create index if not exists idx_used_gcash_refs_booking_ref on public.used_gcash_refs (booking_ref);
 create index if not exists idx_receipt_verifications_booking_ref on public.receipt_verifications (booking_ref);
 create index if not exists idx_receipt_verifications_created_at on public.receipt_verifications (created_at);
+create index if not exists idx_receipt_verifications_storage_path
+  on public.receipt_verifications (storage_path, created_at desc)
+  where storage_path is not null and storage_path <> '';
 create unique index if not exists agreements_user_version_uq on public.agreements (user_id, version);
 
 create unique index if not exists weekly_fees_owner_week_uq
@@ -1207,7 +1211,7 @@ create policy open_play_host_session_registrations_select_host_roles
   on public.open_play_host_session_registrations
   for select to authenticated
   using (
-    public.has_account_role(array['owner','court_owner'])
+    public.has_account_role(array['owner','court_owner','staff'])
     or exists (
       select 1
       from public.open_play_host_sessions s
@@ -1223,7 +1227,7 @@ create policy open_play_host_session_registrations_update_host_roles
   on public.open_play_host_session_registrations
   for update to authenticated
   using (
-    public.has_account_role(array['owner','court_owner'])
+    public.has_account_role(array['owner','court_owner','staff'])
     or exists (
       select 1
       from public.open_play_host_sessions s
@@ -1233,7 +1237,7 @@ create policy open_play_host_session_registrations_update_host_roles
     )
   )
   with check (
-    public.has_account_role(array['owner','court_owner'])
+    public.has_account_role(array['owner','court_owner','staff'])
     or exists (
       select 1
       from public.open_play_host_sessions s

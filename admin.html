@@ -2089,6 +2089,7 @@ tr:hover td { background: var(--bg2); }
               <option value="">All Types</option>
               <option value="booking">Court Bookings</option>
               <option value="open_play">Open Play Reservations</option>
+              <option value="host_session">Host Session Players</option>
             </select>
             <select id="prStatus" onchange="renderPaymentReview()">
               <option value="attention">Needs Attention</option>
@@ -3093,7 +3094,7 @@ tr:hover td { background: var(--bg2); }
 <div class="overlay" id="opVerifyModal">
   <div class="modal" style="max-width:400px">
     <div class="m-hd" style="background:linear-gradient(135deg,rgba(56,189,248,.1),transparent)">
-      <h2 style="color:#38bdf8">🏓 VERIFY OPEN PLAY PAYMENT</h2>
+      <h2 id="ovTitle" style="color:#38bdf8">🏓 VERIFY OPEN PLAY PAYMENT</h2>
       <button class="m-x" onclick="closeModal('opVerifyModal')">✕</button>
     </div>
     <div class="m-body">
@@ -3819,12 +3820,16 @@ function receiptFlagsForDisplay(b){
   return flags;
 }
 function receiptBadge(b){
-  const s = b.receiptStatus || 'none';
+  const paymentApproved = b.paymentStatus === 'paid' || b.paymentStatus === 'downpayment_paid';
+  const s = b.receiptStatus === 'manual_review' && paymentApproved
+    ? 'admin_approved'
+    : (b.receiptStatus || 'none');
   if (s === 'none') return '';
   const displayFlags = receiptFlagsForDisplay(b);
   const reason = receiptReasonText(displayFlags);
   const map = {
     auto_approved: ['var(--green)','rgba(var(--green-rgb),.15)','✅ Auto-verified'],
+    admin_approved: ['var(--green)','rgba(var(--green-rgb),.15)','✅ Admin verified'],
     manual_review: ['#b87e00','rgba(184,126,0,.15)','🕓 Review receipt'],
     rejected:      ['#e53935','rgba(229,57,53,.12)','⚠️ Receipt flagged'],
   };
@@ -4063,6 +4068,7 @@ function startAdminRealtime(){
     .on('postgres_changes',{event:'*',schema:'public',table:'open_play_registrations'},rerender)
     .on('postgres_changes',{event:'*',schema:'public',table:'open_play_host_applications'},rerender)
     .on('postgres_changes',{event:'*',schema:'public',table:'open_play_host_sessions'},rerender)
+    .on('postgres_changes',{event:'*',schema:'public',table:'open_play_host_session_registrations'},rerender)
     .on('postgres_changes',{event:'*',schema:'public',table:'open_play_game_sessions'},rerender)
     .on('postgres_changes',{event:'*',schema:'public',table:'open_play_game_players'},rerender)
     .on('postgres_changes',{event:'*',schema:'public',table:'open_play_game_rounds'},rerender)
@@ -4581,20 +4587,28 @@ function receivedAccountLabel(b) {
 }
 
 function bookingReviewStatus(b) {
-  if (b.receiptStatus === 'manual_review') return 'manual_review';
   if (b.receiptStatus === 'rejected' || b.paymentStatus === 'rejected') return 'rejected';
   if (b.receiptStatus === 'auto_approved') return 'auto_approved';
-  if (b.paymentStatus === 'for_verification' || b.status === 'verifying') return 'pending';
   if (b.paymentStatus === 'paid' || b.paymentStatus === 'downpayment_paid') return 'paid';
+  if (b.receiptStatus === 'manual_review') return 'manual_review';
+  if (b.paymentStatus === 'for_verification' || b.status === 'verifying') return 'pending';
   if (isDigitalPayment(b.paymentMethod) && b.gcashRef && b.status === 'pending') return 'pending';
   return b.paymentStatus || 'unpaid';
 }
 
 function openPlayReviewStatus(r) {
-  if (r.receipt_status === 'manual_review') return 'manual_review';
   if (r.receipt_status === 'rejected' || r.payment_status === 'rejected') return 'rejected';
   if (r.receipt_status === 'auto_approved') return 'auto_approved';
   if (r.payment_status === 'paid') return 'paid';
+  if (r.receipt_status === 'manual_review') return 'manual_review';
+  return 'pending';
+}
+
+function hostSessionReviewStatus(r) {
+  if (r.receiptStatus === 'rejected' || r.paymentStatus === 'rejected') return 'rejected';
+  if (r.receiptStatus === 'auto_approved') return 'auto_approved';
+  if (r.paymentStatus === 'paid') return 'paid';
+  if (r.receiptStatus === 'manual_review') return 'manual_review';
   return 'pending';
 }
 
@@ -4622,14 +4636,17 @@ function paymentReviewAction(item) {
   if (item.type === 'booking') {
     return `<button class="btn btn-sm" style="background:rgba(200,160,96,.15);color:var(--yellow);border:1px solid rgba(200,160,96,.35);font-weight:700" onclick="openVerifyModal('${jsArg(item.id)}')">Review</button>`;
   }
-  if (item.type === 'open_play' && item.status !== 'paid') {
+  if (item.type === 'open_play' && ['manual_review', 'pending', 'rejected'].includes(item.status)) {
     return `<button class="btn btn-sm" style="background:rgba(56,189,248,.12);color:#38bdf8;border:1px solid rgba(56,189,248,.35);font-weight:700" onclick="openOpVerifyModal('${jsArg(item.id)}')">Review</button>`;
+  }
+  if (item.type === 'host_session' && ['manual_review', 'pending', 'rejected'].includes(item.status)) {
+    return `<button class="btn btn-sm" style="background:rgba(56,189,248,.12);color:#38bdf8;border:1px solid rgba(56,189,248,.35);font-weight:700" onclick="openHostRegVerifyModal('${jsArg(item.id)}')">Review</button>`;
   }
   return '<span style="color:var(--muted);font-size:.78rem">No action</span>';
 }
 
 function paymentReviewRow(item) {
-  const typeLabel = item.type === 'booking' ? 'Court Booking' : 'Open Play Reservation';
+  const typeLabel = item.type === 'booking' ? 'Court Booking' : item.type === 'host_session' ? 'Host Session Player' : 'Open Play Reservation';
   const typeClass = item.type === 'booking' ? 'pr-type-booking' : 'pr-type-open';
   const flags = item.flags?.length
     ? receiptFlagChips(item.flags)
@@ -4660,7 +4677,12 @@ function paymentReviewRow(item) {
 }
 
 async function renderPaymentReview() {
-  const [bookings, regs] = await Promise.all([DB.getBookings(), DB.getOpenPlayRegistrations()]);
+  const [bookings, regs, hostRegs, hostSessions] = await Promise.all([
+    DB.getBookings(),
+    DB.getOpenPlayRegistrations(),
+    DB.getOpenPlayHostSessionRegistrations(),
+    DB.getOpenPlayHostSessions(),
+  ]);
   const bookingItems = groupBookings(bookings.filter(b => b.email !== 'reserve@hold.internal' && isDigitalPayment(b.paymentMethod)))
     .map(b => ({
       type: 'booking',
@@ -4694,7 +4716,29 @@ async function renderPaymentReview() {
       flags: r.receipt_flags || [],
       createdAt: r.receipt_verified_at || r.created_at,
     }));
-  const items = [...bookingItems, ...opItems].sort((a, b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0));
+  const hostSessionById = new Map(hostSessions.map(session => [String(session.id), session]));
+  const hostItems = hostRegs
+    .filter(r => isDigitalPayment(r.paymentMethod))
+    .map(r => {
+      const session = hostSessionById.get(String(r.sessionId)) || {};
+      return {
+        type: 'host_session',
+        id: String(r.id),
+        ref: r.gcashRef || String(r.id),
+        name: r.fullName || '--',
+        courtName: (session.courtNames || []).join(', ') || session.title || 'Host Session',
+        dateLabel: session.date ? fmtD(session.date) : '--',
+        timeLabel: session.startHour != null && session.endHour != null
+          ? `${hostFmtTime(session.startHour)} - ${hostFmtTime(session.endHour)}`
+          : '--',
+        method: r.paymentMethod,
+        amount: r.amount || 0,
+        status: hostSessionReviewStatus(r),
+        flags: r.receiptFlags || [],
+        createdAt: r.receiptVerifiedAt || r.createdAt,
+      };
+    });
+  const items = [...bookingItems, ...opItems, ...hostItems].sort((a, b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0));
   const counts = {
     needsReview: items.filter(i => i.status === 'manual_review').length,
     pending: items.filter(i => i.status === 'pending').length,
@@ -4727,7 +4771,7 @@ async function renderPaymentReview() {
   $('prLogBody').innerHTML = recent.length ? recent.map(i => `<article class="pr-log-item">
     <div>
       <div class="pr-log-name">${esc(i.name)}</div>
-      <div class="pr-log-meta">${esc(paymentReviewWhenText(i.createdAt))} · ${esc(i.type === 'booking' ? 'Court Booking' : 'Open Play')} · <code>${esc(i.ref)}</code></div>
+      <div class="pr-log-meta">${esc(paymentReviewWhenText(i.createdAt))} · ${esc(i.type === 'booking' ? 'Court Booking' : i.type === 'host_session' ? 'Host Session' : 'Open Play')} · <code>${esc(i.ref)}</code></div>
       <div class="pr-log-meta">${esc(i.dateLabel || '--')} · ${esc(i.timeLabel || '--')}</div>
     </div>
     <div class="pr-log-pay">
@@ -5135,13 +5179,42 @@ async function openVerifyModal(ref) {
 
 async function vmPopulateReceipt(b){
   const wrap = $('vmReceiptWrap');
-  const s = b.receiptStatus || 'none';
-  const displayFlags = receiptFlagsForDisplay(b);
-  if (s === 'none' && !b.receiptImageUrl) { if (wrap) wrap.style.display = 'none'; return; }
+  if ((b.receiptStatus || 'none') === 'none' && !b.receiptImageUrl) { if (wrap) wrap.style.display = 'none'; return; }
   if (wrap) wrap.style.display = '';
+  const link = $('vmReceiptLink'), img = $('vmReceiptImg'), noImg = $('vmReceiptNoImg');
+  if (link) link.style.display = 'none';
+  if (noImg) noImg.style.display = 'none';
+  let trustedAudit = null;
+  if (b.receiptImageUrl) {
+    try {
+      const review = await DB.getReceiptReview(b.ref);
+      trustedAudit = review.audit || null;
+      if (img) img.src = review.url;
+      if (link) { link.href = review.url; link.style.display = ''; }
+    } catch(e) {
+      if (noImg) { noImg.style.display = ''; noImg.textContent = 'Could not load receipt image.'; }
+    }
+  } else if (noImg) {
+    noImg.style.display = '';
+  }
+
+  const receiptView = {
+    ...b,
+    receiptStatus: trustedAudit?.result || 'none',
+    receiptFlags: Array.isArray(trustedAudit?.flags) ? trustedAudit.flags : [],
+    receiptExtracted: trustedAudit?.extracted || null,
+    receiptConfidence: trustedAudit?.confidence ?? null,
+    receiptVerifiedAt: trustedAudit?.createdAt || null,
+  };
+  const paymentApproved = b.paymentStatus === 'paid' || b.paymentStatus === 'downpayment_paid';
+  const s = receiptView.receiptStatus === 'manual_review' && paymentApproved
+    ? 'admin_approved'
+    : receiptView.receiptStatus;
+  const displayFlags = receiptFlagsForDisplay(receiptView);
   const st = $('vmReceiptStatus');
   const map = {
     auto_approved: ['var(--green)','rgba(var(--green-rgb),.12)','✅ Auto-verified — all checks passed'],
+    admin_approved: ['var(--green)','rgba(var(--green-rgb),.12)','✅ Admin verified — OCR flags retained for audit'],
     manual_review: ['#b87e00','rgba(184,126,0,.12)','🕓 Needs review — see flags below'],
     rejected:      ['#e53935','rgba(229,57,53,.1)','⚠️ Flagged — review carefully before confirming'],
     none:          ['#888','var(--input)','No automated result'],
@@ -5153,22 +5226,8 @@ async function vmPopulateReceipt(b){
   $('vmReceiptFlags').innerHTML = receiptFlagChips(displayFlags);
   const detailBox = $('vmReceiptDetails');
   if (detailBox) {
-    detailBox.innerHTML = receiptDetailsHtml(b);
+    detailBox.innerHTML = receiptDetailsHtml(receiptView);
     detailBox.style.display = '';
-  }
-  const link = $('vmReceiptLink'), img = $('vmReceiptImg'), noImg = $('vmReceiptNoImg');
-  if (link) link.style.display = 'none';
-  if (noImg) noImg.style.display = 'none';
-  if (b.receiptImageUrl) {
-    try {
-      const url = await DB.getReceiptSignedUrl(b.ref);
-      if (img) img.src = url;
-      if (link) { link.href = url; link.style.display = ''; }
-    } catch(e) {
-      if (noImg) { noImg.style.display = ''; noImg.textContent = 'Could not load receipt image.'; }
-    }
-  } else if (noImg) {
-    noImg.style.display = '';
   }
 }
 
@@ -8621,6 +8680,7 @@ async function openOpVerifyModal(id) {
   const regs = await DB.getOpenPlayRegistrations();
   const r = regs.find(x => String(x.id) === String(id));
   if (!r) { toast('Registration not found.', 'err'); return; }
+  if ($('ovTitle')) $('ovTitle').textContent = '🏓 VERIFY OPEN PLAY PAYMENT';
   const methodLabel = { gcash: 'GCash', bdopay: 'BDO Pay', maya: 'Maya', bpi: 'BPI', gotyme: 'GoTyme', pnb: 'PNB', cash: 'Cash' };
   $('ovMethod').textContent  = methodLabel[r.payment_method] || r.payment_method || 'GCash';
   $('ovGcashRef').textContent = r.gcash_ref || '—';
@@ -8629,50 +8689,96 @@ async function openOpVerifyModal(id) {
   $('ovDate').textContent    = `${fmtD(r.date)} · ${r.time_label || '—'}`;
   $('ovPayType').textContent = r.payment_type || '—';
   $('ovAmount').textContent  = '₱' + Number(r.amount).toLocaleString('en-PH', { minimumFractionDigits: 2 });
-  await ovPopulateReceipt(r);
+  await ovPopulateReceipt(r, 'open_play');
   $('opVerifyModal').dataset.regId = id;
+  $('opVerifyModal').dataset.regType = 'open_play';
   $('opVerifyModal').classList.add('show');
 }
 
-async function ovPopulateReceipt(r) {
+async function openHostRegVerifyModal(id) {
+  const [regs, sessions] = await Promise.all([
+    DB.getOpenPlayHostSessionRegistrations(),
+    DB.getOpenPlayHostSessions(),
+  ]);
+  const r = regs.find(x => String(x.id) === String(id));
+  if (!r) { toast('Host-session registration not found.', 'err'); return; }
+  const session = sessions.find(x => String(x.id) === String(r.sessionId)) || {};
+  if ($('ovTitle')) $('ovTitle').textContent = '🏓 VERIFY HOST SESSION PAYMENT';
+  $('ovMethod').textContent = paymentMethodLabel(r.paymentMethod);
+  $('ovGcashRef').textContent = r.gcashRef || '—';
+  $('ovName').textContent = r.fullName || '—';
+  $('ovCourt').textContent = (session.courtNames || []).join(', ') || session.title || 'Host Session';
+  $('ovDate').textContent = session.date
+    ? `${fmtD(session.date)} · ${hostFmtTime(session.startHour)} - ${hostFmtTime(session.endHour)}`
+    : '—';
+  $('ovPayType').textContent = 'Session fee';
+  $('ovAmount').textContent = '₱' + Number(r.amount || 0).toLocaleString('en-PH', { minimumFractionDigits: 2 });
+  await ovPopulateReceipt({
+    id: r.id,
+    receipt_status: r.receiptStatus,
+    receipt_image_url: r.receiptImageUrl,
+    receipt_flags: r.receiptFlags,
+    payment_status: r.paymentStatus,
+  }, 'host_session');
+  $('opVerifyModal').dataset.regId = id;
+  $('opVerifyModal').dataset.regType = 'host_session';
+  $('opVerifyModal').classList.add('show');
+}
+
+async function ovPopulateReceipt(r, registrationType = 'open_play') {
   const wrap = $('ovReceiptWrap');
-  const s = r.receipt_status || 'none';
-  if (s === 'none' && !r.receipt_image_url) { if (wrap) wrap.style.display = 'none'; return; }
+  if ((r.receipt_status || 'none') === 'none' && !r.receipt_image_url) { if (wrap) wrap.style.display = 'none'; return; }
   if (wrap) wrap.style.display = '';
-  const st = $('ovReceiptStatus');
-  const map = {
-    auto_approved: ['var(--green)','rgba(var(--green-rgb),.12)','Auto-verified - all checks passed'],
-    manual_review: ['#b87e00','rgba(184,126,0,.12)','Needs review - see flags below'],
-    rejected:      ['#e53935','rgba(229,57,53,.1)','Flagged - review carefully before confirming'],
-    none:          ['#888','var(--input)','No automated result'],
-  };
-  const [c,bg,lbl] = map[s] || map.none;
-  if (st) { st.style.color = c; st.style.background = bg; st.textContent = lbl; }
-  if ($('ovReceiptFlags')) $('ovReceiptFlags').innerHTML = receiptFlagChips(r.receipt_flags);
   const link = $('ovReceiptLink'), img = $('ovReceiptImg'), noImg = $('ovReceiptNoImg');
   if (link) link.style.display = 'none';
   if (noImg) noImg.style.display = 'none';
+  let trustedAudit = null;
   if (r.receipt_image_url) {
     try {
-      const url = await DB.getOpenPlayReceiptSignedUrl(r.id);
-      if (img) img.src = url;
-      if (link) { link.href = url; link.style.display = ''; }
+      const review = registrationType === 'host_session'
+        ? await DB.getHostSessionReceiptReview(r.id)
+        : await DB.getOpenPlayReceiptReview(r.id);
+      trustedAudit = review.audit || null;
+      if (img) img.src = review.url;
+      if (link) { link.href = review.url; link.style.display = ''; }
     } catch(e) {
       if (noImg) { noImg.style.display = ''; noImg.textContent = 'Could not load receipt image.'; }
     }
   } else if (noImg) {
     noImg.style.display = '';
   }
+
+  // Inline public registration rows are customer-writable. Display fraud/OCR
+  // reasons only from the immutable server-side verification audit returned by
+  // the authenticated receipt endpoint.
+  const receiptStatus = trustedAudit?.result || 'none';
+  const s = r.payment_status === 'paid' && receiptStatus === 'manual_review'
+    ? 'admin_approved'
+    : receiptStatus;
+  const st = $('ovReceiptStatus');
+  const map = {
+    auto_approved: ['var(--green)','rgba(var(--green-rgb),.12)','Auto-verified - all checks passed'],
+    admin_approved: ['var(--green)','rgba(var(--green-rgb),.12)','Admin verified - OCR flags retained for audit'],
+    manual_review: ['#b87e00','rgba(184,126,0,.12)','Needs review - see flags below'],
+    rejected:      ['#e53935','rgba(229,57,53,.1)','Flagged - review carefully before confirming'],
+    none:          ['#888','var(--input)','No automated result'],
+  };
+  const [c,bg,lbl] = map[s] || map.none;
+  if (st) { st.style.color = c; st.style.background = bg; st.textContent = lbl; }
+  const trustedFlags = Array.isArray(trustedAudit?.flags) ? trustedAudit.flags : [];
+  if ($('ovReceiptFlags')) $('ovReceiptFlags').innerHTML = receiptFlagChips(trustedFlags);
 }
 
 async function confirmOpPayment() {
   const id = $('opVerifyModal').dataset.regId;
+  const registrationType = $('opVerifyModal').dataset.regType || 'open_play';
   if (!id) return;
   try {
-    await DB.updateOpenPlayRegistration(id, { paymentStatus: 'paid' });
+    if (registrationType === 'host_session') await DB.updateOpenPlayHostSessionRegistration(id, { paymentStatus: 'paid' });
+    else await DB.updateOpenPlayRegistration(id, { paymentStatus: 'paid' });
     closeModal('opVerifyModal');
-    toast('✅ Open Play payment confirmed!');
-    await renderOpRegistrations();
+    toast('✅ Payment confirmed!');
+    if (registrationType === 'open_play') await renderOpRegistrations();
     if (_curSection === 'payreview') await renderPaymentReview();
   } catch(e) {
     toast('Failed to confirm payment.', 'err');
@@ -8681,13 +8787,15 @@ async function confirmOpPayment() {
 
 async function rejectOpPayment() {
   const id = $('opVerifyModal').dataset.regId;
+  const registrationType = $('opVerifyModal').dataset.regType || 'open_play';
   if (!id) return;
   if (!confirm('Mark this payment as not received?')) return;
   try {
-    await DB.updateOpenPlayRegistration(id, { paymentStatus: 'rejected' });
+    if (registrationType === 'host_session') await DB.updateOpenPlayHostSessionRegistration(id, { paymentStatus: 'rejected' });
+    else await DB.updateOpenPlayRegistration(id, { paymentStatus: 'rejected' });
     closeModal('opVerifyModal');
     toast('Payment marked as not received.', 'err');
-    await renderOpRegistrations();
+    if (registrationType === 'open_play') await renderOpRegistrations();
     if (_curSection === 'payreview') await renderPaymentReview();
   } catch(e) {
     toast('Failed to update payment.', 'err');
