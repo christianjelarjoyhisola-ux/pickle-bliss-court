@@ -3824,12 +3824,13 @@ function receiptBadge(b){
   const s = b.receiptStatus === 'manual_review' && paymentApproved
     ? 'admin_approved'
     : (b.receiptStatus || 'none');
-  if (s === 'none') return '';
+  // A manually confirmed payment is already represented by the Pay State.
+  // Keep the receipt audit internally without adding a redundant badge.
+  if (s === 'none' || s === 'admin_approved') return '';
   const displayFlags = receiptFlagsForDisplay(b);
   const reason = receiptReasonText(displayFlags);
   const map = {
     auto_approved: ['var(--green)','rgba(var(--green-rgb),.15)','✅ Auto-verified'],
-    admin_approved: ['var(--green)','rgba(var(--green-rgb),.15)','✅ Admin verified'],
     manual_review: ['#b87e00','rgba(184,126,0,.15)','🕓 Review receipt'],
     rejected:      ['#e53935','rgba(229,57,53,.12)','⚠️ Receipt flagged'],
   };
@@ -3975,6 +3976,7 @@ function mobileBookingCard(b, canDelete){
     const d = new Date(b.createdAt);
     return Number.isNaN(d.getTime()) ? '--' : `${d.toLocaleDateString('en-PH',{month:'short',day:'numeric',year:'numeric'})} ${d.toLocaleTimeString('en-PH',{hour:'numeric',minute:'2-digit',hour12:true})}`;
   })() : '--';
+  const receiptBadgeHtml = receiptBadge(b);
   return `<div class="mb-book">
     <div class="mb-book-top">
       <code class="mb-book-ref">${esc(refLabel)}</code>
@@ -4007,7 +4009,7 @@ function mobileBookingCard(b, canDelete){
         <div class="mb-book-detail-row"><span>Booked</span><span>${esc(bookedOn)}</span></div>
         <div class="mb-book-detail-row"><span>Pay State</span><span>${bookingPayStateSelect(b)}</span></div>
         ${b.duplicatePaymentRef ? `<div class="mb-book-detail-row"><span>Warning</span><span>${duplicatePaymentRefBadge(b)}</span></div>` : ''}
-        ${b.receiptStatus && b.receiptStatus !== 'none' ? `<div class="mb-book-detail-row"><span>Receipt</span><span>${receiptBadge(b)}</span></div>` : ''}
+        ${receiptBadgeHtml ? `<div class="mb-book-detail-row"><span>Receipt</span><span>${receiptBadgeHtml}</span></div>` : ''}
       </div>
       <div class="mb-book-actions">${bookingActionsHtml(b, canDelete)}</div>
     </details>
@@ -5214,7 +5216,7 @@ async function vmPopulateReceipt(b){
   const st = $('vmReceiptStatus');
   const map = {
     auto_approved: ['var(--green)','rgba(var(--green-rgb),.12)','✅ Auto-verified — all checks passed'],
-    admin_approved: ['var(--green)','rgba(var(--green-rgb),.12)','✅ Admin verified — OCR flags retained for audit'],
+    admin_approved: ['var(--green)','rgba(var(--green-rgb),.12)','✅ Payment confirmed — receipt review retained for audit'],
     manual_review: ['#b87e00','rgba(184,126,0,.12)','🕓 Needs review — see flags below'],
     rejected:      ['#e53935','rgba(229,57,53,.1)','⚠️ Flagged — review carefully before confirming'],
     none:          ['#888','var(--input)','No automated result'],
@@ -8758,7 +8760,7 @@ async function ovPopulateReceipt(r, registrationType = 'open_play') {
   const st = $('ovReceiptStatus');
   const map = {
     auto_approved: ['var(--green)','rgba(var(--green-rgb),.12)','Auto-verified - all checks passed'],
-    admin_approved: ['var(--green)','rgba(var(--green-rgb),.12)','Admin verified - OCR flags retained for audit'],
+    admin_approved: ['var(--green)','rgba(var(--green-rgb),.12)','Payment confirmed - receipt review retained for audit'],
     manual_review: ['#b87e00','rgba(184,126,0,.12)','Needs review - see flags below'],
     rejected:      ['#e53935','rgba(229,57,53,.1)','Flagged - review carefully before confirming'],
     none:          ['#888','var(--input)','No automated result'],
