@@ -8,6 +8,7 @@
 <script src="chart.min.js"></script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@300;400;500;600;700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet"/>
+<link rel="stylesheet" href="availability-graphic.css?v=20260920-pickle-bliss-v1"/>
 <style>
 /* ── DESIGN TOKENS ─────────────────────────────────────── */
 :root {
@@ -1970,6 +1971,7 @@ tr:hover td { background: var(--bg2); }
             <button id="viewBtnList" class="view-btn active" onclick="switchBookingView('list')">List</button>
             <button id="viewBtnCal" class="view-btn" onclick="switchBookingView('cal')">Calendar</button>
           </div>
+          <button class="btn btn-g btn-sm availability-post-launch" data-perm="export" onclick="openAvailabilityGraphic()">✦ Availability Post</button>
           <button class="btn btn-g btn-sm booking-export-btn" data-perm="export" onclick="exportCSV()">Export</button>
           <button class="btn btn-p btn-sm" onclick="openNewBookingModal()">+ New</button>
         </div>
@@ -4922,6 +4924,25 @@ function calClearDaySelection(){
   renderCalendar();
 }
 
+function openAvailabilityGraphic(dateStr='') {
+  if (!Auth.can('export', sess?.role)) {
+    toast('Only venue owners can create availability posts.', 'err');
+    return;
+  }
+  const requestedDate = /^\d{4}-\d{2}-\d{2}$/.test(String(dateStr || ''))
+    ? String(dateStr)
+    : phDateKeyFromTimestamp(new Date().toISOString());
+  if (!window.PickleBlissAvailabilityGraphic?.open) {
+    toast('Availability Studio could not be loaded. Please refresh and try again.', 'err');
+    return;
+  }
+  window.PickleBlissAvailabilityGraphic.open({
+    date: requestedDate,
+    bookingUrl: 'https://pickleblisscourt.com/',
+    logoUrl: 'pickle-bliss-logo.jpg',
+  });
+}
+
 function calHourFromTime(value) {
   const raw = String(value || '').trim();
   const m = raw.match(/^(\d{1,2})(?::(\d{2}))?\s*(AM|PM)$/i);
@@ -5091,6 +5112,7 @@ function renderCalendarDayPanel(dateStr, bookings = [], bkMap = {}, courts = [])
     ${maintenance}
     <div class="cal-day-actions">
       <button class="btn btn-p btn-sm" onclick="calViewDayBookings('${jsArg(dateStr)}')">View bookings</button>
+      ${Auth.can('export', sess?.role) ? `<button class="btn btn-sm availability-post-launch" type="button" onclick="openAvailabilityGraphic('${jsArg(dateStr)}')"><span aria-hidden="true">&#10022;</span><span>Create availability post</span></button>` : ''}
       <button class="btn btn-g btn-sm" onclick="calClearDaySelection()">Close</button>
     </div>
   `;
@@ -10151,5 +10173,7 @@ async function checkAgreementGate(session) {
 
 <script src="supabase.min.js"></script>
 <script src="supabase-config.js?v=20260730-remittance-due-date-v2"></script>
+<script src="qrcode.min.js?v=1.5.4"></script>
+<script src="availability-graphic.js?v=20260920-pickle-bliss-v1"></script>
 </body>
 </html>

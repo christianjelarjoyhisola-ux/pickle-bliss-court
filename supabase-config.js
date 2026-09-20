@@ -404,6 +404,144 @@ function rowToCourt(r) {
   };
 }
 
+function _pbAvailabilityHourLabel(hour) {
+  const normalized = ((Number(hour) % 24) + 24) % 24;
+  return `${normalized % 12 || 12}:00 ${normalized < 12 ? 'AM' : 'PM'}`;
+}
+
+function _pbAvailabilityMaintenanceRule(settings, date, hour, courtId) {
+  let config = null;
+  try {
+    config = settings?.maintenance_config ? JSON.parse(settings.maintenance_config) : null;
+  } catch (_) {
+    config = null;
+  }
+  const rules = Array.isArray(config?.rules) ? config.rules : (config ? [config] : []);
+  const dayOfWeek = new Date(`${date}T12:00:00+08:00`).getUTCDay();
+  const dayOfMonth = Number(String(date).slice(8, 10));
+  return rules.find(rule => {
+    if (!rule?.enabled) return false;
+    const courtIds = Array.isArray(rule.courtIds) ? rule.courtIds.map(String) : [];
+    if (courtIds.length && !courtIds.includes(String(courtId))) return false;
+    const start = Number(rule.start);
+    const end = Number(rule.end);
+    if (!Number.isFinite(start) || !Number.isFinite(end) || start === end) return false;
+    const inRange = start < end ? hour >= start && hour < end : hour >= start || hour < end;
+    if (!inRange) return false;
+    const mode = rule.mode || 'specific';
+    if (mode === 'specific') return (rule.dates || []).includes(date);
+    if (mode === 'weekly') return (rule.recurring?.days || []).includes(dayOfWeek);
+    if (mode === 'monthly') return Number(rule.recurring?.day) === dayOfMonth;
+    return false;
+  }) || null;
+}
+
+function _pbAvailabilityManilaNow() {
+  const parts = Object.fromEntries(new Intl.DateTimeFormat('en-US', {
+    timeZone: 'Asia/Manila',
+    year: 'numeric', month: '2-digit', day: '2-digit',
+    hour: '2-digit', minute: '2-digit', second: '2-digit', hourCycle: 'h23',
+  }).formatToParts(new Date()).map(part => [part.type, part.value]));
+  const date = `${parts.year}-${parts.month}-${parts.day}`;
+  const hour = Number(parts.hour);
+  return {
+    date,
+    hour,
+    asOf: `${date}T${parts.hour}:${parts.minute}:${parts.second}+08:00`,
+  };
+}
+
+async function _pbBuildAvailabilityGraphicSnapshot(db, date, courtIds = []) {
+  const requestedDate = String(date || '').trim();
+  const requestedCourtIds = [...new Set((Array.isArray(courtIds) ? courtIds : [])
+    .map(id => String(id || '').trim()).filter(Boolean))];
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(requestedDate) || requestedCourtIds.length > 50) {
+    throw new Error('Choose a valid availability date and court selection.');
+  }
+
+  const [allCourts, bookings, settings, blockedDates] = await Promise.all([
+    db.getCourts(),
+    db.getBookings({ date: requestedDate }),
+    db.getSettings(),
+    db.getBlockedDates(),
+  ]);
+  const courts = (allCourts || []).filter(court => (
+    !requestedCourtIds.length || requestedCourtIds.includes(String(court.id))
+  ));
+  if (!courts.length || (requestedCourtIds.length && courts.length !== requestedCourtIds.length)) {
+    throw new Error('The selected courts are not available for this date.');
+  }
+
+  const openHour = Number.parseInt(settings?.open_hour ?? '6', 10);
+  const closeHour = Number.parseInt(settings?.close_hour ?? '22', 10);
+  if (!Number.isInteger(openHour) || !Number.isInteger(closeHour)
+      || openHour < 0 || closeHour > 24 || closeHour <= openHour) {
+    throw new Error('Set valid operating hours before creating an availability post.');
+  }
+
+  const venueClosed = (blockedDates || []).includes(requestedDate);
+  const manilaNow = _pbAvailabilityManilaNow();
+  const slotCount = closeHour - openHour;
+  const normalizedCourts = courts.map(court => {
+    const bookedHours = new Set((bookings || [])
+      .filter(booking => bookingHoldsSlotForConflict(booking))
+      .filter(booking => String(booking.courtId || '') === String(court.id)
+        || (!booking.courtId && String(booking.courtName || '').trim().toLowerCase()
+          === String(court.name || '').trim().toLowerCase()))
+      .flatMap(booking => booking.slots || [])
+      .map(Number)
+      .filter(Number.isFinite));
+
+    const slots = Array.from({ length: slotCount }, (_, index) => {
+      const hour = openHour + index;
+      const maintenance = _pbAvailabilityMaintenanceRule(settings, requestedDate, hour, court.id);
+      let reason = null;
+      let label = 'Available';
+      if (venueClosed) {
+        reason = 'blocked_date';
+        label = 'Closed';
+      } else if (court.blocked || maintenance) {
+        reason = 'maintenance';
+        label = maintenance?.label || 'Maintenance';
+      } else if (bookedHours.has(hour)) {
+        reason = 'booked';
+        label = 'Booked';
+      } else if (requestedDate < manilaNow.date || (requestedDate === manilaNow.date && hour <= manilaNow.hour)) {
+        reason = hour === manilaNow.hour && requestedDate === manilaNow.date ? 'current' : 'past';
+        label = reason === 'current' ? 'In progress' : 'Past';
+      }
+      return {
+        hour,
+        startHour: hour,
+        endHour: hour + 1,
+        startLabel: _pbAvailabilityHourLabel(hour),
+        endLabel: _pbAvailabilityHourLabel(hour + 1),
+        label,
+        state: reason ? 'unavailable' : 'free',
+        reason,
+      };
+    });
+    return {
+      id: String(court.id),
+      name: String(court.name || 'Court').trim(),
+      availableCount: slots.filter(slot => slot.state === 'free').length,
+      totalSlots: slotCount,
+      slots,
+    };
+  });
+
+  return {
+    version: 1,
+    date: requestedDate,
+    timezone: 'Asia/Manila',
+    asOf: manilaNow.asOf,
+    generatedAt: manilaNow.asOf,
+    openHour,
+    closeHour,
+    courts: normalizedCourts,
+  };
+}
+
 function courtToRow(c) {
   return {
     id:            c.id,
@@ -572,6 +710,14 @@ window.DB = {
       if (error) { console.error('getCourts:', error); return []; }
       return data.map(rowToCourt);
     });
+  },
+
+  async getAvailabilityGraphic(date, courtIds = []) {
+    return _pbBuildAvailabilityGraphicSnapshot(this, date, courtIds);
+  },
+
+  async getAvailabilityGraphicSnapshot(date, courtIds = []) {
+    return this.getAvailabilityGraphic(date, courtIds);
   },
 
   async saveCourt(court) {
@@ -1706,6 +1852,12 @@ window.DB = {
 
   window.DB = {
     async getCourts() { return readDb().courts; },
+    async getAvailabilityGraphic(date, courtIds = []) {
+      return _pbBuildAvailabilityGraphicSnapshot(this, date, courtIds);
+    },
+    async getAvailabilityGraphicSnapshot(date, courtIds = []) {
+      return this.getAvailabilityGraphic(date, courtIds);
+    },
     async saveCourt(court) {
       const db = readDb();
       const row = { ...court, id: String(court.id || localRef('court')).toLowerCase() };
