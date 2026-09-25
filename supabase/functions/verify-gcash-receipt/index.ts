@@ -23,6 +23,8 @@
 // ----------------------------------------------------------------------------
 
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { extractGcashRef, referenceIsPhone, historyTransferRecipient } from "./reference.ts";
+import { processReceiptConfirmation, runReceiptJobRequest, type ReceiptJob } from "./jobs.ts";
 import { Image } from "https://deno.land/x/imagescript@1.2.17/mod.ts";
 
 const corsHeaders = {
@@ -496,45 +498,6 @@ function maskedDigitPattern(digits: string): RegExp {
 }
 
 // Extract candidate 13-digit GCash reference numbers from OCR text.
-function extractGcashRef(text: string, typedRef = ""): string | null {
-  text = normalizeOcrText(text);
-  const normalizedTyped = digitsOnly(typedRef);
-
-  // If the customer-entered ref is visible in the OCR text, trust it. This
-  // avoids false mismatches when OCR sees the receiver mobile number before the
-  // "Ref No." line and a broad numeric scan accidentally joins nearby digits.
-  if (normalizedTyped.length === 13 && flexibleDigitPattern(normalizedTyped).test(text)) {
-    return normalizedTyped;
-  }
-
-  // Prefer numbers immediately following receipt reference labels.
-  const labelPattern = /\b(?:ref(?:erence)?(?:\s*(?:no|number|#))?\.?)\s*[:#]?\s*([0-9oOiIl|sSbB][0-9oOiIl|sSbB\s-]{11,30}[0-9oOiIl|sSbB])/gi;
-  let labelMatch: RegExpExecArray | null;
-  while ((labelMatch = labelPattern.exec(text)) !== null) {
-    const d = ocrDigitsOnly(labelMatch[1]);
-    if (d.length === 13) return d;
-    if (normalizedTyped.length === 13 && d.includes(normalizedTyped)) return normalizedTyped;
-  }
-
-  // Fallback: any standalone 13-digit run.
-  const standalone = text.match(/\b[0-9oOiIl|sSbB]{13}\b/);
-  if (standalone) {
-    const d = ocrDigitsOnly(standalone[0]);
-    if (d.length === 13) return d;
-  }
-
-  // Last resort: tolerate OCR spaces inside a single long numeric group.
-  // Keep this after label/typed matching because phone numbers and amounts can
-  // otherwise be accidentally joined into a fake 13-digit reference.
-  const cleaned = text.replace(/[^0-9oOiIl|sSbB\s-]/g, " ");
-  const groups = cleaned.match(/(?:[0-9oOiIl|sSbB][0-9oOiIl|sSbB\s-]{11,30}[0-9oOiIl|sSbB])/g) || [];
-  for (const g of groups) {
-    const d = ocrDigitsOnly(g);
-    if (d.length === 13) return d;
-  }
-  return null;
-}
-
 function extractBpiConfirmationNo(text: string, typedRef = ""): string | null {
   const normalizedTyped = digitsOnly(typedRef);
   if (isBpiConfirmationNo(normalizedTyped) && flexibleDigitPattern(normalizedTyped).test(text)) {
@@ -638,7 +601,8 @@ function isGcashToGcashReceipt(text: string): boolean {
   return /\bsent\s+via\s+gcash\b/i.test(t)
     || /\bsent\s+through\s+gcash\b/i.test(t)
     || /\bgcash\s+receipt\b/i.test(t)
-    || /\btotal\s+amount\s+sent\b/i.test(t);
+    || /\btotal\s+amount\s+sent\b/i.test(t)
+    || historyTransferRecipient(t) !== null;
 }
 
 function selectedMethodMismatch(provider: PaymentProvider, text: string): boolean {
@@ -1080,6 +1044,7 @@ function googleVisionConfidence(annotation: Record<string, unknown> | null, text
 async function googleVisionOCR(apiKey: string, base64: string): Promise<{ text: string; confidence: number }> {
   const content = base64.startsWith("data:") ? base64.slice(base64.indexOf(",") + 1) : base64;
   const res = await fetch(`https://vision.googleapis.com/v1/images:annotate?key=${apiKey}`, {
+    signal: AbortSignal.timeout(15000),
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({
@@ -1128,6 +1093,7 @@ async function runOCR(
   bytes: Uint8Array,
   provider: PaymentProvider,
   typedRef: string,
+  allowTransforms = true,
 ): Promise<OcrResult> {
   if (visionKey) {
     let best: OcrResult | null = null;
@@ -1138,6 +1104,10 @@ async function runOCR(
       if (!needsOcrRetry(v, provider, typedRef)) {
         return best;
       }
+      // Edge CPU time is limited. Durable jobs submit the original image to
+      // Vision and save uncertain readings for review instead of encoding many
+      // large JPEGs locally (which previously killed the worker before audit).
+      if (!allowTransforms) return { ...best, fallbackReason: `google_missing_${gaps.join("_") || "confidence"}` };
 
       const variants = await buildOcrImageVariants(bytes);
       for (const variant of variants) {
@@ -1178,12 +1148,13 @@ async function runOCR(
     } catch (e) {
       console.error("Vision OCR failed:", errMsg(e));
       const originalError = errMsg(e);
+      if (!allowTransforms) return { text: "", confidence: 0, provider: "none", primaryProvider: "none", fallbackReason: `google_vision_failed: ${originalError}` };
       const variants = await buildOcrImageVariants(bytes);
       for (const variant of variants) {
         try {
           const retry = await googleVisionOCR(visionKey, variant.base64);
           if (retry.text) {
-            return {
+            const candidate: OcrResult = {
               ...retry,
               provider: "google_vision",
               primaryProvider: "google_vision",
@@ -1191,11 +1162,14 @@ async function runOCR(
               fallbackReason: `original_failed_retry_${variant.label}`,
               imageVariant: variant.label,
             };
+            if (!best || ocrScore(candidate, provider, typedRef) > ocrScore(best, provider, typedRef)) best = candidate;
+            if (!needsOcrRetry(candidate, provider, typedRef)) return candidate;
           }
         } catch (retryErr) {
           console.error(`Vision OCR retry failed (${variant.label}):`, errMsg(retryErr));
         }
       }
+      if (best?.text) return best;
       return {
         text: "",
         confidence: 0,
@@ -1224,7 +1198,7 @@ async function sendTelegram(message: string) {
 
 // ── handler ─────────────────────────────────────────────────────────────────
 
-Deno.serve(async (req) => {
+async function handleReceipt(req: Request, job?: ReceiptJob): Promise<Response> {
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
   if (req.method !== "POST") return json({ error: "Method not allowed" }, 405);
 
@@ -1237,6 +1211,11 @@ Deno.serve(async (req) => {
   let body: Record<string, unknown>;
   try { body = await req.json(); } catch { return json({ error: "Invalid JSON body" }, 400); }
   const action = (body.action as string) || "verify";
+  if (action === "process_notification") return processReceiptConfirmation(req, db, body, json);
+
+  if (!job && ["verify_staged", "reread", "process_job"].includes(action)) {
+    return runReceiptJobRequest(req, db, body, holdTokenHash, handleReceipt, json);
+  }
 
   if (action === "stage_upload") {
     try {
@@ -1534,7 +1513,11 @@ Deno.serve(async (req) => {
     }
     const { data: signed, error: signErr } = await db.storage.from("receipts").createSignedUrl(path, 300);
     if (signErr || !signed) return json({ error: errMsg(signErr || "sign failed") }, 500);
-    return json({ ok: true, url: signed.signedUrl, audit });
+    const { data: latestJob } = auditBookingRef ? await db.from("receipt_verification_jobs")
+      .select("status,attempts,last_error,available_at,finished_at,receipt_staged_uploads!inner(storage_path)")
+      .eq("receipt_staged_uploads.storage_path", path).order("created_at", { ascending: false }).limit(1).maybeSingle()
+      : { data: null };
+    return json({ ok: true, url: signed.signedUrl, audit, job: latestJob });
   }
 
   // ── verify a freshly-uploaded receipt ─────────────────────────────────────
@@ -1561,7 +1544,7 @@ Deno.serve(async (req) => {
     } else {
       const { data: bk, error: bErr } = await db
         .from("bookings")
-        .select("ref, booking_group_ref, court_id, slots, total, downpayment, gcash_ref, payment_method, date, payment_status, status, full_name, created_at, hold_token_hash")
+        .select("ref, booking_group_ref, court_id, slots, total, downpayment, gcash_ref, payment_method, date, payment_status, status, full_name, contact_number, created_at, hold_token_hash")
         .eq("ref", bookingRef)
         .single();
       if (bErr || !bk) return json({ error: "Booking not found" }, 404);
@@ -1573,7 +1556,7 @@ Deno.serve(async (req) => {
       if (inlineBookingData) return json({ error: "bookingData is not accepted for staged verification" }, 400);
       const uploadId = String(body.uploadId || "").trim();
       if (!uploadId) return json({ error: "uploadId is required" }, 400);
-      const capabilityHash = await holdTokenHash(body.holdToken);
+      const capabilityHash = job ? String(booking.hold_token_hash || "") : await holdTokenHash(body.holdToken);
       if (String(booking.hold_token_hash || "") !== capabilityHash) {
         return json({ error: "Invalid hold capability", code: "INVALID_HOLD_CAPABILITY" }, 403);
       }
@@ -1641,8 +1624,13 @@ Deno.serve(async (req) => {
         expectedAmount = chooseExpectedDue(expectedTotal, toNumber(booking.downpayment, expectedTotal), settings);
       } else {
         bookingGroup = await loadBookingGroup(db, booking);
-        expectedAmount = await expectedBookingGroupAmount(db, bookingGroup, settings);
+        // Finalization already validated these amounts. Re-reads must use the
+        // original committed price, not today's rates or payment-mode settings.
+        expectedAmount = job
+          ? roundMoney(bookingGroup.reduce((sum, row) => sum + Number(row.downpayment), 0))
+          : await expectedBookingGroupAmount(db, bookingGroup, settings);
         expectedTotal = bookingGroupStoredTotal(bookingGroup);
+        if (!Number.isFinite(expectedAmount) || expectedAmount <= 0) throw new Error("Invalid stored payment amount");
       }
     } catch (err) {
       pricingError = errMsg(err);
@@ -1651,7 +1639,7 @@ Deno.serve(async (req) => {
 
     // Hashes are stored for audit only. GCash validity is based on receipt details.
     const imageHash = await sha256Hex(bytes);
-    const phash = await dHash(bytes);
+    const phash = job ? null : await dHash(bytes);
 
     const flags: string[] = [];
 
@@ -1670,7 +1658,7 @@ Deno.serve(async (req) => {
     let ocrFallbackReason: string | null = null;
     let ocrImageVariant: string | null = null;
     try {
-      const ocr = await runOCR(visionKey, imageBase64, bytes, provider, typedRef);
+      const ocr = await runOCR(visionKey, bytesToBase64(bytes), bytes, provider, typedRef, !job);
       ocrText = ocr.text;
       ocrConfidence = ocr.confidence;
       ocrProvider = ocr.provider;
@@ -1690,6 +1678,11 @@ Deno.serve(async (req) => {
       // because of compression, screenshots-within-screenshots, or API latency.
       flags.push("IMAGE_UNREADABLE");
     }
+
+    if (job && (!visionKey || ocrProvider === "none")) {
+      return json({ error: "OCR provider unavailable; queued for retry" }, 503);
+    }
+    if (provider === "gcash" && referenceIsPhone(typedRef, String(booking.contact_number || ""))) flags.push("REF_IS_PHONE");
 
     // ── field extraction ────────────────────────────────────────────────────
     const extractedRef = extractReference(ocrText, provider, typedRef);
@@ -1741,7 +1734,10 @@ Deno.serve(async (req) => {
 
         if (!isGcashToGcashReceipt(ocrText)) flags.push("GCASH_RECEIPT_UNREADABLE");
 
-        const numCheck = checkReceiverNumber(ocrText, expectedNumber);
+        const historyRecipient = historyTransferRecipient(ocrText);
+        const numCheck = historyRecipient
+          ? historyRecipient.slice(-10) === digitsOnly(expectedNumber).slice(-10) ? "match" : "wrong"
+          : checkReceiverNumber(ocrText, expectedNumber);
         if (numCheck === "wrong") flags.push("WRONG_GCASH_NUMBER");
         else if (numCheck === "unreadable" && expectedNumber) flags.push("NUMBER_UNREADABLE");
 
@@ -1993,7 +1989,7 @@ Deno.serve(async (req) => {
     let metadataUpdateError: string | null = null;
 
     // Skip DB update when booking hasn't been saved yet (pre-save verification flow).
-    if (!inlineBookingData) {
+    if (!inlineBookingData && !job) {
       // Pass 1 — booking/payment status invariants.
       if (Object.keys(statusUpdate).length > 0) {
         const { data: statusRows, error: sErr } = await bookingUpdateQuery(db, booking, statusUpdate)
@@ -2015,7 +2011,7 @@ Deno.serve(async (req) => {
     }
 
     // ── audit trail (immutable) ─────────────────────────────────────────────
-    await db.from("receipt_verifications").insert({
+    const audit = {
       booking_ref: bookingRef,
       result,
       flags,
@@ -2025,7 +2021,40 @@ Deno.serve(async (req) => {
       phash,
       storage_path: objectPath,
       raw_ocr_text: ocrText || null,
-    });
+      typed_ref: booking.gcash_ref,
+      booking_created_at: booking.created_at,
+    };
+    if (job) {
+      // Freeze the normal confirmation payload in the same transaction as the
+      // approval. Delivery continues even if the customer's browser closes.
+      if (!job.requested_by && result === "auto_approved") {
+        const { data: rows, error: detailsError } = await db.from("bookings")
+          .select("ref,email,full_name,court_name,date,start_time,end_time,duration,total,downpayment,contact_number")
+          .in("ref", [...bookingGroupRefs]).order("ref");
+        if (detailsError) throw detailsError;
+        const primary = rows?.find((row: any) => row.ref === bookingRef);
+        if (primary?.email) {
+          const items = rows.map((row: any) => ({courtName:row.court_name,date:row.date,startTime:row.start_time,
+            endTime:row.end_time,duration:row.duration,total:row.total,downpayment:row.downpayment}));
+          metadataUpdate.confirmation = {bookingRef,email:primary.email,fullName:primary.full_name,
+            courtName:primary.court_name,date:primary.date,startTime:primary.start_time,endTime:primary.end_time,
+            duration:items.reduce((sum: number,row: any)=>sum+Number(row.duration||0),0),
+            total:expectedTotal,downpayment:expectedAmount,contactNumber:primary.contact_number,bookingItems:items};
+        }
+      }
+      const { data: outcome, error: finishError } = await db.rpc("finish_receipt_job", {
+        p_job_id: job.id, p_lease: job.lease_token, p_audit: audit, p_metadata: metadataUpdate,
+        p_outcome: { ok: true, status: result, flags: [], extracted, confidence,
+          receiptImageUrl: objectPath, receiptVerifiedAt: metadataUpdate.receipt_verified_at,
+          message: publicReceiptMessage(result), publicReason: publicReceiptMessage(result) },
+      });
+      if (finishError) throw finishError;
+      // Re-reading never resends customer email or chat notifications.
+      return json(outcome);
+    }
+    const { typed_ref: _typed, booking_created_at: _created, ...auditRow } = audit;
+    const { error: auditError } = await db.from("receipt_verifications").insert(auditRow);
+    if (auditError) throw auditError;
 
     // ── alert admin on anything needing a human ─────────────────────────────
     if (result !== "auto_approved") {
@@ -2068,4 +2097,6 @@ Deno.serve(async (req) => {
     }
     return json({ error: message }, 500);
   }
-});
+}
+
+Deno.serve((req: Request) => handleReceipt(req));

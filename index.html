@@ -3488,6 +3488,7 @@ body.dark .booking-notice-continue:hover { background:#ff6a00; }
           <!-- GCash / GoTyme Reference Number -->
           <div id="gcashRefWrap" style="display:none;">
             <div class="bpay-ref-card">
+              <div class="bpay-window" role="status"><div><strong>Send exactly <span id="bExactPayAmt">—</span></strong><br><span id="bExactPayBreakdown">Includes the full booking fee. Do not subtract it from your payment.</span></div></div>
               <div class="bpay-window" id="bPayWindow" style="display:none">
                 <span>⏳</span>
                 <div><strong>Payment window:</strong> <span>pay between</span> <strong id="bPayWindowStart">--</strong> and <strong id="bPayWindowEnd">--</strong> PH.</div>
@@ -3505,7 +3506,7 @@ body.dark .booking-notice-continue:hover { background:#ff6a00; }
                 <button type="button" class="gc-copy-btn" onclick="pasteRef()" style="background:var(--input);color:var(--text);border:1px solid var(--border);flex-shrink:0;">📋 Paste</button>
               </div>
               <div class="bpay-help" id="bRefHelp">
-                GCash reference must be exactly 13 digits.
+                Use the 13-digit Ref No. from your receipt, not a phone number.
               </div>
 
               <!-- Receipt screenshot upload (auto-verification) -->
@@ -3525,7 +3526,7 @@ body.dark .booking-notice-continue:hover { background:#ff6a00; }
                 </div>
                 <div id="bReceiptStatus" role="status" aria-live="polite" style="display:none;margin-top:8px;font-size:.78rem;font-weight:700;border-radius:8px;padding:8px 10px;line-height:1.5"></div>
                 <div id="bReceiptRequired" class="bpay-help">
-                  Your receipt uploads securely as soon as you select it. Confirmation stays locked until the upload succeeds.
+                  Use the original downloaded receipt or a direct screenshot, with amount, recipient, date/time and reference visible. Avoid photographing another phone. Your receipt uploads securely when selected; verification continues after submission even if you close this page.
                 </div>
               </div>
             </div>
@@ -6864,6 +6865,8 @@ function updatePriceLegacy() {
   if ($('pnDownAmt'))   $('pnDownAmt').textContent   = fmt(payAmt);
   if ($('bStepPayAmtMethod')) $('bStepPayAmtMethod').textContent = fmt(payAmt);
   if ($('bStepPayAmt')) $('bStepPayAmt').textContent = fmt(payAmt);
+  if ($('bExactPayAmt')) $('bExactPayAmt').textContent = fmt(payAmt);
+  if ($('bExactPayBreakdown')) $('bExactPayBreakdown').textContent = `${fmt(payAmt - svcFee)} court payment + ${fmt(svcFee)} booking fee. Send the full total shown above.`;
 
   // Update price breakdown label and down note
   if ($('pDownLabel')) $('pDownLabel').textContent = payFull ? 'Full Payment' : 'Booking Fee + 50% Court Fee';
@@ -6904,6 +6907,8 @@ function updatePrice() {
   if ($('pnDownAmt'))   $('pnDownAmt').textContent   = fmt(payAmt);
   if ($('bStepPayAmtMethod')) $('bStepPayAmtMethod').textContent = fmt(payAmt);
   if ($('bStepPayAmt')) $('bStepPayAmt').textContent = fmt(payAmt);
+  if ($('bExactPayAmt')) $('bExactPayAmt').textContent = fmt(payAmt);
+  if ($('bExactPayBreakdown')) $('bExactPayBreakdown').textContent = `${fmt(payAmt - svcFee)} court payment + ${fmt(svcFee)} booking fee. Send the full total shown above.`;
 
   if ($('pDownLabel')) $('pDownLabel').textContent = payFull ? 'Full Payment' : 'Booking Fee + 50% Court Fee';
   if ($('downNote')) {
@@ -7098,6 +7103,13 @@ function normalizePaymentRef(value, method) {
   return raw.replace(/\D/g, '').slice(0, paymentRefMaxLength(method));
 }
 
+function referenceMatchesBookingPhone(ref) {
+  const phone = String($('bPhone')?.value || '').replace(/\D/g, '');
+  if (!/^(?:0|63)?9\d{9}$/.test(phone)) return false;
+  const tail = phone.slice(-10);
+  return [tail, '0' + tail, '63' + tail, '063' + tail].includes(String(ref || '').replace(/\D/g, ''));
+}
+
 function isGcashRefValid(ref) {
   return /^\d{13}$/.test(String(ref || ''));
 }
@@ -7116,7 +7128,7 @@ function isBpiConfirmationValid(ref) {
 }
 
 function paymentRefHelpText(method) {
-  if (method === 'gcash') return 'GCash reference must be exactly 13 digits.';
+  if (method === 'gcash') return 'Use the 13-digit Ref No. from your receipt, not a phone number.';
   if (method === 'bdopay') return 'Enter the BDO Pay Reference no. in BN-YYYYMMDD-######## format, not the invoice number. We verify the invoice from the receipt.';
   if (method === 'maya') return 'Enter the reference from your Maya or GCash receipt: a 12-character Maya ID or 13-digit GCash ref.';
   if (method === 'bpi') return 'Enter the BPI Confirmation No., e.g. 1783397488347. Do not enter the Transaction Ref. No.';
@@ -7271,6 +7283,7 @@ async function submitBookingLegacy(e) {
     [!!payMethod && !paymentMethods[payMethod], 'Selected payment method is no longer available.', 'payMethodBlock', 4],
     [!$('bookingPolicyAgree')?.checked, 'Please agree to the booking and payment policy before confirming.', $('bookingPolicyAgree')?.closest('.booking-policy-check'), 5],
     [digitalPay && !gcashRef, payMethod === 'bpi' ? 'Please enter your BPI Confirmation No. after paying.' : 'Please enter your payment reference number after paying.', 'bGcashRef', 5],
+    [payMethod === 'gcash' && referenceMatchesBookingPhone(gcashRef), 'This looks like your phone number. Enter the Ref No. printed on your receipt.', 'bGcashRef', 5],
     [payMethod === 'gcash' && !isGcashRefValid(gcashRef), 'GCash reference number must be exactly 13 digits.', 'bGcashRef', 5],
     [payMethod === 'bdopay' && !isBdoPayRefValid(gcashRef), 'BDO Pay reference must look like BN-YYYYMMDD-########. Do not enter the invoice number.', 'bGcashRef', 5],
     [payMethod === 'maya' && !isMayaRefValid(gcashRef), 'Enter either a 12-character Maya ID or a 13-digit GCash reference.', 'bGcashRef', 5],
@@ -7389,8 +7402,10 @@ async function submitBookingLegacy(e) {
         booking.paymentStatus = (booking.downpayment >= booking.total - 1) ? 'paid' : 'downpayment_paid';
         Object.assign(booking, receiptBookingUpdatePayload(booking._receiptResult, booking.status, booking.paymentStatus));
         await DB.updateBooking(booking.ref, receiptBookingUpdatePayload(booking._receiptResult, booking.status, booking.paymentStatus)).catch(() => {});
-        DB.notifyBookingUpdate(booking, 'payment_verified', 'Receipt auto-verified.').catch(() => {});
-        sendCustomerConfirmationEmail(booking);
+        if (!booking._receiptResult?.replayed && !booking._receiptResult?.notificationsManaged) {
+          DB.notifyBookingUpdate(booking, 'payment_verified', 'Receipt auto-verified.').catch(() => {});
+          sendCustomerConfirmationEmail(booking);
+        }
       } else {
         // manual_review or OCR error — downgrade from verifying to pending so
         // slot shows as taken (red) while admin reviews it, not yellow forever.
@@ -7496,6 +7511,7 @@ async function submitBooking(e) {
     [!!payMethod && !paymentMethods[payMethod], 'Selected payment method is no longer available.', 'payMethodBlock', 4],
     [!$('bookingPolicyAgree')?.checked, 'Please agree to the booking and payment policy before confirming.', $('bookingPolicyAgree')?.closest('.booking-policy-check'), 5],
     [digitalPay && !gcashRef, payMethod === 'bpi' ? 'Please enter your BPI Confirmation No. after paying.' : 'Please enter your payment reference number after paying.', 'bGcashRef', 5],
+    [payMethod === 'gcash' && referenceMatchesBookingPhone(gcashRef), 'This looks like your phone number. Enter the Ref No. printed on your receipt.', 'bGcashRef', 5],
     [payMethod === 'gcash' && !isGcashRefValid(gcashRef), 'GCash reference number must be exactly 13 digits.', 'bGcashRef', 5],
     [payMethod === 'bdopay' && !isBdoPayRefValid(gcashRef), 'BDO Pay reference must look like BN-YYYYMMDD-########. Do not enter the invoice number.', 'bGcashRef', 5],
     [payMethod === 'maya' && !isMayaRefValid(gcashRef), 'Enter either a 12-character Maya ID or a 13-digit GCash reference.', 'bGcashRef', 5],
@@ -7681,8 +7697,10 @@ async function submitBooking(e) {
           row.status = 'confirmed';
           row.paymentStatus = (row.downpayment >= row.total - 1) ? 'paid' : 'downpayment_paid';
         });
-        DB.notifyBookingUpdate(booking, 'payment_verified', 'Receipt auto-verified.').catch(() => {});
-        sendCustomerConfirmationEmail(booking);
+        if (!booking._receiptResult?.replayed && !booking._receiptResult?.notificationsManaged) {
+          DB.notifyBookingUpdate(booking, 'payment_verified', 'Receipt auto-verified.').catch(() => {});
+          sendCustomerConfirmationEmail(booking);
+        }
       } else {
         booking.status = 'pending';
         booking.paymentStatus = 'for_verification';
@@ -9015,7 +9033,7 @@ async function submitOpenPlay() {
 }
 </script>
 <script src="supabase.min.js"></script>
-<script src="supabase-config.js?v=20260730-remittance-due-date-v2"></script>
+<script src="supabase-config.js?v=20260925-receipt-retries-v1"></script>
 
 <!-- MOBILE STICKY BOOK NOW BAR -->
 <div id="mobileBookBar" class="mobile-book-bar" style="display:none">

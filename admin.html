@@ -3072,6 +3072,8 @@ tr:hover td { background: var(--bg2); }
       </div>
       <div id="vmGroupBreakdown" style="display:none;margin-top:8px;font-size:.76rem;color:var(--muted)"></div>
       <div id="vmReceiptWrap" style="display:none;margin-top:14px;border-top:1px solid var(--border);padding-top:12px">
+        <button id="vmRereadBtn" type="button" class="btn btn-sm" onclick="rereadBookingReceipt()" style="margin-bottom:10px">↻ Re-read receipt</button>
+        <div id="vmRereadResult" role="status" aria-live="polite" style="font-size:.8rem;margin-bottom:10px"></div>
         <div style="font-size:.66rem;text-transform:uppercase;letter-spacing:1px;color:var(--muted);margin-bottom:8px">Auto-Verification</div>
         <div id="vmReceiptStatus" style="font-size:.82rem;font-weight:700;border-radius:8px;padding:8px 10px;margin-bottom:8px"></div>
         <div id="vmReceiptFlags" style="display:flex;flex-wrap:wrap;gap:5px;margin-bottom:10px"></div>
@@ -3781,7 +3783,7 @@ const RECEIPT_FLAG_LABELS = {
   AMOUNT_MISMATCH:'Amount too low', DATE_NOT_TODAY:'Wrong payment date', TIME_EXPIRED:'Paid after 10 min',
   TIME_STALE:'Stale time', TIME_FUTURE:'Receipt before booking', RECEIVER_NAME_MISMATCH:'Receiver name mismatch',
   METHOD_MISMATCH:'Wrong payment method selected', GCASH_RECEIPT_UNREADABLE:'GCash receipt unreadable',
-  EDITED_METADATA:'Edited image metadata', SUSPECTED_FAKE:'Not a receipt', REF_FORMAT_INVALID:'Bad reference format',
+  EDITED_METADATA:'Edited image metadata', SUSPECTED_FAKE:'Not a receipt', REF_FORMAT_INVALID:'Bad reference format', REF_IS_PHONE:'Phone number entered as payment reference',
   REF_UNREADABLE:'Reference unreadable', INVOICE_UNREADABLE:'Invoice unreadable', LOW_OCR_CONFIDENCE:'Blurry / low OCR', OCR_UNAVAILABLE:'OCR unavailable', AMOUNT_UNREADABLE:'Amount unreadable',
   DATE_UNREADABLE:'Date unreadable', TIME_UNREADABLE:'Time unreadable', NUMBER_UNREADABLE:'Receiver number unreadable',
   BDO_PAY_UNREADABLE:'BDO Pay/InstaPay unreadable', MAYA_UNREADABLE:'Maya unreadable', BPI_UNREADABLE:'BPI unreadable', BPI_CONFIRMATION_UNREADABLE:'BPI confirmation unreadable', INSTAPAY_QRPH_UNREADABLE:'InstaPay/QRPh unreadable', GXI_DESTINATION_UNREADABLE:'GXI/GCash destination unreadable', RECEIVER_NAME_UNREADABLE:'Receiver name unreadable', WRONG_RECEIVER_NUMBER:'Wrong receiver number',
@@ -3885,7 +3887,9 @@ function receiptDetailsHtml(b){
   const ex = b.receiptExtracted || {};
   const hasOcrText = Number(ex.ocrTextLength || 0) > 0;
   const displayFlags = receiptFlagsForDisplay(b);
-  const reason = displayFlags.length ? receiptReasonText(displayFlags) : 'All visible checks passed';
+  const reason = displayFlags.length ? receiptReasonText(displayFlags)
+    : !b.receiptStatus || b.receiptStatus === 'none' ? 'No saved verification result — checks have not been confirmed.'
+    : b.receiptStatus === 'auto_approved' ? 'Automated checks passed' : 'Review the receipt and payment before confirming.';
   const confidence = b.receiptConfidence != null ? `${Math.round(Number(b.receiptConfidence) * 100)}%` : '--';
   const rows = [
     ['OCR Ref', hasOcrText ? receiptDetailValue(ex.ref) : '<span style="color:var(--muted)">OCR did not read text</span>'],
@@ -5179,6 +5183,7 @@ async function updateStatus(ref, status) {
 }
 
 async function openVerifyModal(ref) {
+  $('vmRereadResult').textContent = '';
   const b = await getBookingGroupByRef(ref);
   if (!b) { toast('Booking not found.', 'err'); return; }
   $('vmMethod').textContent = paymentMethodLabel(b.paymentMethod);
@@ -5201,6 +5206,32 @@ async function openVerifyModal(ref) {
   $('verifyModal').classList.add('show');
 }
 
+async function rereadBookingReceipt() {
+  const ref = $('verifyModal').dataset.ref;
+  const button = $('vmRereadBtn');
+  const result = $('vmRereadResult');
+  if (!ref || button.disabled) return;
+  button.disabled = true;
+  result.textContent = 'Reading the stored receipt… Existing payment approvals will be preserved.';
+  try {
+    const outcome = await DB.rereadBookingReceipt(ref, crypto.randomUUID());
+    const b = await getBookingGroupByRef(ref);
+    if ($('verifyModal').dataset.ref !== ref) return;
+    if (b) await vmPopulateReceipt(b);
+    result.textContent = outcome.status === 'processing'
+      ? 'Queued or already processing. You can close this dialog; verification continues on the server. Reopen it to see the result.'
+      : outcome.preservedApproval ? 'Receipt reread. Existing payment approval preserved; review the new audit details below.'
+      : outcome.status === 'auto_approved' ? 'Receipt reread and automatically approved.'
+      : 'Receipt reread. It still needs review — see the reasons below.';
+    await renderBookings();
+    if (_curSection === 'payreview') await renderPaymentReview();
+  } catch (error) {
+    result.textContent = `Could not finish the re-read: ${error.message || 'Please try again later.'}`;
+  } finally {
+    button.disabled = false;
+  }
+}
+
 async function vmPopulateReceipt(b){
   const wrap = $('vmReceiptWrap');
   if ((b.receiptStatus || 'none') === 'none' && !b.receiptImageUrl) { if (wrap) wrap.style.display = 'none'; return; }
@@ -5213,6 +5244,12 @@ async function vmPopulateReceipt(b){
     try {
       const review = await DB.getReceiptReview(b.ref);
       trustedAudit = review.audit || null;
+      const jobInfo = $('vmRereadResult');
+      if (jobInfo && review.job && review.job.status !== 'done') {
+        jobInfo.textContent = `Verification ${review.job.status} (attempt ${review.job.attempts}/3).` +
+          (review.job.last_error ? ` Last error: ${review.job.last_error}` : '') +
+          (review.job.status === 'failed' ? ' Use Re-read receipt to try again.' : ' The server will continue processing.');
+      }
       if (img) img.src = review.url;
       if (link) { link.href = review.url; link.style.display = ''; }
     } catch(e) {
@@ -10172,7 +10209,7 @@ async function checkAgreementGate(session) {
 </script>
 
 <script src="supabase.min.js"></script>
-<script src="supabase-config.js?v=20260730-remittance-due-date-v2"></script>
+<script src="supabase-config.js?v=20260925-receipt-retries-v1"></script>
 <script src="qrcode.min.js?v=1.5.4"></script>
 <script src="availability-graphic.js?v=20260920-pickle-bliss-v1"></script>
 </body>

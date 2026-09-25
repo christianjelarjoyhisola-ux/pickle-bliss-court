@@ -1316,6 +1316,12 @@ window.DB = {
     });
   },
 
+  async rereadBookingReceipt(bookingRef, requestKey) {
+    return _invokeEdgeFunction('verify-gcash-receipt', {
+      action: 'reread', bookingRef, requestKey,
+    });
+  },
+
   async abandonStagedBookingReceipt(payload) {
     return _invokeEdgeFunction('verify-gcash-receipt', {
       action: 'abandon_upload',
@@ -1339,7 +1345,7 @@ window.DB = {
     });
     if (error) throw new Error(_extractFnError(error, 'Could not load receipt'));
     if (!data?.url) throw new Error(data?.error || 'No receipt available');
-    return { url: data.url, audit: data.audit || null };
+    return { url: data.url, audit: data.audit || null, job: data.job || null };
   },
 
   async getOpenPlayReceiptSignedUrl(registrationId) {

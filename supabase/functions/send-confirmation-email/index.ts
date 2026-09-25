@@ -17,6 +17,7 @@ type Payload = {
   total: number;
   downpayment: number;
   contactNumber?: string;
+  idempotencyKey?: string;
   bookingItems?: Array<{
     courtName: string;
     date: string;
@@ -204,6 +205,13 @@ Deno.serve(async (req) => {
     if (!resendKey) throw new Error("RESEND_API_KEY is not configured");
 
     const body = (await req.json()) as Payload;
+    if (body.idempotencyKey) {
+      const serviceKeys = [...Object.values(JSON.parse(Deno.env.get("SUPABASE_SECRET_KEYS") || "{}")), Deno.env.get("SUPABASE_SERVICE_ROLE_KEY"), Deno.env.get("SERVICE_ROLE_KEY")].filter((key): key is string => typeof key === "string" && key.length > 0);
+      if (!serviceKeys.some(key => req.headers.get("apikey") === key || req.headers.get("authorization") === `Bearer ${key}`) ||
+          !/^receipt-confirmation\/[0-9a-f-]{36}$/i.test(body.idempotencyKey)) {
+        return new Response(JSON.stringify({ error: "Unauthorized confirmation retry" }), {status:403,headers:corsHeaders});
+      }
+    }
     if (!body.email || !body.bookingRef) {
       return new Response(JSON.stringify({ error: "Missing email or bookingRef" }), {
         status: 400,
@@ -218,6 +226,7 @@ Deno.serve(async (req) => {
       headers: {
         Authorization: `Bearer ${resendKey}`,
         "Content-Type": "application/json",
+        ...(body.idempotencyKey ? { "Idempotency-Key": body.idempotencyKey } : {}),
       },
       body: JSON.stringify({
         from: fromAddress,

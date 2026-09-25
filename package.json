@@ -4,6 +4,10 @@
     "pg": "^8.21.0"
   },
   "devDependencies": {
+    "@electric-sql/pglite": "^0.5.8",
     "wrangler": "^4.108.0"
+  },
+  "scripts": {
+    "test:receipts": "deno test --allow-env supabase/functions/verify-gcash-receipt/*_test.ts && node tools/receipt-jobs.test.mjs"
   }
 }
