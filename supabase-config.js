@@ -9,6 +9,19 @@ const SUPABASE_ANON_KEY = 'sb_publishable_o4zS7E8WD-XnQWD9MQRtCA_6gPJf4-I';
 // Initialize Supabase client (uses UMD global loaded from CDN)
 const _sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
+// Customer checkout must use the public booking policies even when this browser
+// also has a saved dashboard login. Keep the dashboard session intact.
+const _bookingWrites = document.currentScript?.dataset.customerBookings === 'true'
+  ? supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
+      auth: {
+        storageKey: 'pb-customer-booking-ephemeral',
+        persistSession: false,
+        autoRefreshToken: false,
+        detectSessionInUrl: false,
+      },
+    })
+  : _sb;
+
 // Expose globally so HTML pages can use real-time subscriptions
 window._supabase = _sb;
 
@@ -759,7 +772,7 @@ window.DB = {
       throw new Error('One or more time slots are no longer available. Please refresh and choose a different time.');
     }
 
-    const { error } = await _sb.from('bookings').insert(bookingToRow(booking));
+    const { error } = await _bookingWrites.from('bookings').insert(bookingToRow(booking));
     if (error) { console.error('addBooking:', error); throw error; }
     _pbClearFastCache(['bookings']);
   },
@@ -809,7 +822,7 @@ window.DB = {
     if (updates.confirmationEmailId !== undefined) row.confirmation_email_id = updates.confirmationEmailId;
     if (updates.confirmationEmailSentAt !== undefined) row.confirmation_email_sent_at = updates.confirmationEmailSentAt;
     if (updates.confirmationEmailLastEvent !== undefined) row.confirmation_email_last_event = updates.confirmationEmailLastEvent;
-    const { error } = await _sb.from('bookings').update(row).eq('ref', ref);
+    const { error } = await _bookingWrites.from('bookings').update(row).eq('ref', ref);
     if (error) { console.error('updateBooking:', error); throw error; }
     _pbClearFastCache(['bookings']);
   },
